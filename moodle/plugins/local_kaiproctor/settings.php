@@ -63,5 +63,53 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    $settings->add(new admin_setting_heading(
+        'local_kaiproctor/policy',
+        get_string('settings:policy', 'local_kaiproctor'),
+        get_string('settings:policy_desc', 'local_kaiproctor')
+    ));
+
+    // Intervals are in minutes; 0 switches a check off entirely.
+    foreach ([
+        'presenceminutes' => '2',
+        'verifyminutes' => '10',
+        'clickconfirmminutes' => '5',
+        'clickconfirmgracesec' => '30',
+        'mouseidleminutes' => '3',
+        'randomclipsperhour' => '4',
+        'clipseconds' => '8',
+        'blurallowance' => '0',
+    ] as $name => $default) {
+        $settings->add(new admin_setting_configtext(
+            'local_kaiproctor/' . $name,
+            get_string('settings:' . $name, 'local_kaiproctor'),
+            get_string('settings:' . $name . '_desc', 'local_kaiproctor'),
+            $default,
+            PARAM_FLOAT
+        ));
+    }
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kaiproctor/strictlockdown',
+        get_string('settings:strictlockdown', 'local_kaiproctor'),
+        get_string('settings:strictlockdown_desc', 'local_kaiproctor'),
+        1
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kaiproctor/desktopnotification',
+        get_string('settings:desktopnotification', 'local_kaiproctor'),
+        get_string('settings:desktopnotification_desc', 'local_kaiproctor'),
+        1
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_kaiproctor/lessonvideourl',
+        get_string('settings:lessonvideourl', 'local_kaiproctor'),
+        get_string('settings:lessonvideourl_desc', 'local_kaiproctor'),
+        '',
+        PARAM_URL
+    ));
+
     $ADMIN->add('localplugins', $settings);
 }

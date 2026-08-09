@@ -32,6 +32,55 @@ $string['settings:reviewmin_desc'] = 'Scores between this and the match threshol
 $string['settings:retentiondays'] = 'Evidence retention (days)';
 $string['settings:retentiondays_desc'] = 'Photographs and clips older than this are deleted by the scheduled purge task.';
 
+$string['settings:policy'] = 'Monitoring policy';
+$string['settings:policy_desc'] = 'How often each check runs during a monitored lesson. An interval of 0 switches that check off.';
+$string['settings:presenceminutes'] = 'Presence check every (minutes)';
+$string['settings:presenceminutes_desc'] = 'How often to confirm somebody is in front of the camera.';
+$string['settings:verifyminutes'] = 'Identity check every (minutes)';
+$string['settings:verifyminutes_desc'] = 'How often to confirm it is still the person who enrolled. Only runs for learners who have enrolled a face.';
+$string['settings:clickconfirmminutes'] = 'Ask for confirmation every (minutes)';
+$string['settings:clickconfirmminutes_desc'] = 'How often the learner must click to confirm they are still watching.';
+$string['settings:clickconfirmgracesec'] = 'Confirmation grace period (seconds)';
+$string['settings:clickconfirmgracesec_desc'] = 'How long they have to click before the video is paused.';
+$string['settings:mouseidleminutes'] = 'Idle tolerance (minutes)';
+$string['settings:mouseidleminutes_desc'] = 'Pause the video after this long with no mouse or keyboard activity.';
+$string['settings:randomclipsperhour'] = 'Random clips per hour';
+$string['settings:randomclipsperhour_desc'] = 'Average number of short camera clips kept as evidence each hour. Timing is randomised so it cannot be anticipated.';
+$string['settings:clipseconds'] = 'Clip length (seconds)';
+$string['settings:clipseconds_desc'] = 'How long each random evidence clip runs.';
+$string['settings:blurallowance'] = 'Focus losses tolerated';
+$string['settings:blurallowance_desc'] = 'How many times the learner may leave the lesson window before the session ends. 0 ends it the first time.';
+$string['settings:strictlockdown'] = 'Strict mode';
+$string['settings:strictlockdown_desc'] = 'End the session on a policy breach instead of pausing and letting the learner continue.';
+$string['settings:desktopnotification'] = 'Desktop notifications';
+$string['settings:desktopnotification_desc'] = 'Raise an operating-system notification when the learner leaves the lesson.';
+$string['settings:lessonvideourl'] = 'Lesson video URL';
+$string['settings:lessonvideourl_desc'] = 'The video played on the monitored lesson page.';
+
+// Enrolment page.
+$string['enrol:title'] = 'Enrol your face';
+$string['enrol:intro'] = 'Your identity is confirmed by camera during monitored lessons. Follow the on-screen instructions: look straight at the camera, then turn your head as asked.';
+$string['enrol:start'] = 'Start';
+$string['enrol:success'] = 'Your face has been enrolled.';
+$string['enrol:failed'] = 'Your face could not be enrolled. Make sure the room is well lit and only you are in frame, then try again.';
+$string['enrol:timeout'] = 'You did not complete the movement in time. Try again, moving slowly.';
+$string['enrol:replacing'] = 'You have already enrolled a face. Completing this will replace it.';
+$string['enrol:existing'] = 'Face enrolled on {$a}.';
+
+// Lesson page.
+$string['lesson:title'] = 'Monitored lesson';
+$string['lesson:start'] = 'Start the lesson';
+$string['lesson:monitoring'] = 'Monitoring is active. Stay in front of the camera and do not leave this window.';
+$string['lesson:notenrolled'] = 'You have not enrolled a face yet, so identity checks are switched off. Presence is still monitored.';
+$string['lesson:novideo'] = 'No lesson video has been configured. An administrator must set the lesson video URL in the plugin settings.';
+
+// Camera hints.
+$string['hint:noface'] = 'Move so your face is clearly visible.';
+$string['hint:multiplefaces'] = 'Only one face should be in frame.';
+$string['hint:spoof'] = 'Possible spoofing detected.';
+$string['error:nocamera'] = 'The camera could not be started. Allow camera access and make sure the page is served over HTTPS or localhost.';
+$string['error:generic'] = 'Something went wrong. Please try again.';
+
 // Capabilities.
 $string['kaiproctor:enrolface'] = 'Enrol own face';
 $string['kaiproctor:viewevidence'] = 'View proctoring evidence';

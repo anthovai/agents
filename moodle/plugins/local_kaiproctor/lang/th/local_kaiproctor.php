@@ -31,6 +31,52 @@ $string['settings:reviewmin_desc'] = 'คะแนนระหว่างค่
 $string['settings:retentiondays'] = 'ระยะเก็บหลักฐาน (วัน)';
 $string['settings:retentiondays_desc'] = 'ภาพและคลิปที่เก่ากว่านี้จะถูกลบโดย scheduled task';
 
+$string['settings:policy'] = 'นโยบายการเฝ้าดู';
+$string['settings:policy_desc'] = 'ความถี่ของการตรวจแต่ละอย่างระหว่างเรียน ใส่ 0 เพื่อปิดการตรวจนั้น';
+$string['settings:presenceminutes'] = 'ตรวจการมีตัวตนทุก (นาที)';
+$string['settings:presenceminutes_desc'] = 'ความถี่ในการยืนยันว่ามีคนนั่งอยู่หน้ากล้อง';
+$string['settings:verifyminutes'] = 'ตรวจตัวตนทุก (นาที)';
+$string['settings:verifyminutes_desc'] = 'ความถี่ในการยืนยันว่ายังเป็นคนที่ลงทะเบียนไว้ ทำงานเฉพาะผู้เรียนที่ลงทะเบียนใบหน้าแล้ว';
+$string['settings:clickconfirmminutes'] = 'ให้กดยืนยันทุก (นาที)';
+$string['settings:clickconfirmminutes_desc'] = 'ความถี่ที่ผู้เรียนต้องกดยืนยันว่ายังเรียนอยู่';
+$string['settings:clickconfirmgracesec'] = 'เวลาผ่อนผันการกดยืนยัน (วินาที)';
+$string['settings:clickconfirmgracesec_desc'] = 'เวลาที่ให้กดก่อนระบบจะหยุดวิดีโอ';
+$string['settings:mouseidleminutes'] = 'ทนการนิ่งได้ (นาที)';
+$string['settings:mouseidleminutes_desc'] = 'หยุดวิดีโอเมื่อไม่มีการขยับเมาส์หรือใช้คีย์บอร์ดนานเกินนี้';
+$string['settings:randomclipsperhour'] = 'สุ่มอัดคลิปต่อชั่วโมง';
+$string['settings:randomclipsperhour_desc'] = 'จำนวนคลิปสั้นที่เก็บเป็นหลักฐานโดยเฉลี่ยต่อชั่วโมง เวลาที่อัดถูกสุ่มให้คาดเดาไม่ได้';
+$string['settings:clipseconds'] = 'ความยาวคลิป (วินาที)';
+$string['settings:clipseconds_desc'] = 'ความยาวของคลิปหลักฐานแต่ละอัน';
+$string['settings:blurallowance'] = 'จำนวนครั้งที่ยอมให้ออกจากหน้าเรียน';
+$string['settings:blurallowance_desc'] = 'ออกจากหน้าต่างเรียนได้กี่ครั้งก่อนถูกยุติ ใส่ 0 = ยุติตั้งแต่ครั้งแรก';
+$string['settings:strictlockdown'] = 'โหมดเข้มงวด';
+$string['settings:strictlockdown_desc'] = 'ยุติการอบรมเมื่อละเมิดนโยบาย แทนการหยุดวิดีโอแล้วให้เรียนต่อ';
+$string['settings:desktopnotification'] = 'แจ้งเตือนระดับระบบ';
+$string['settings:desktopnotification_desc'] = 'เด้งการแจ้งเตือนของระบบปฏิบัติการเมื่อผู้เรียนออกจากหน้าเรียน';
+$string['settings:lessonvideourl'] = 'URL วิดีโอบทเรียน';
+$string['settings:lessonvideourl_desc'] = 'วิดีโอที่เล่นในหน้าเรียนแบบมีระบบเฝ้าดู';
+
+$string['enrol:title'] = 'ลงทะเบียนใบหน้า';
+$string['enrol:intro'] = 'ระบบจะยืนยันตัวตนผ่านกล้องระหว่างเรียน ทำตามคำสั่งบนหน้าจอ: มองตรงเข้ากล้อง แล้วหันหน้าตามที่ระบบบอก';
+$string['enrol:start'] = 'เริ่ม';
+$string['enrol:success'] = 'ลงทะเบียนใบหน้าเรียบร้อยแล้ว';
+$string['enrol:failed'] = 'ลงทะเบียนใบหน้าไม่สำเร็จ ตรวจสอบว่าห้องมีแสงเพียงพอและมีคุณอยู่คนเดียวในกรอบ แล้วลองใหม่';
+$string['enrol:timeout'] = 'ทำท่าไม่ทันในเวลาที่กำหนด ลองใหม่โดยหันหน้าช้าๆ';
+$string['enrol:replacing'] = 'คุณลงทะเบียนใบหน้าไว้แล้ว การทำรายการนี้จะแทนที่ของเดิม';
+$string['enrol:existing'] = 'ลงทะเบียนใบหน้าเมื่อ {$a}';
+
+$string['lesson:title'] = 'หน้าเรียนแบบมีระบบเฝ้าดู';
+$string['lesson:start'] = 'เริ่มเรียน';
+$string['lesson:monitoring'] = 'ระบบกำลังเฝ้าดู กรุณาอยู่หน้ากล้องและอย่าออกจากหน้าต่างนี้';
+$string['lesson:notenrolled'] = 'คุณยังไม่ได้ลงทะเบียนใบหน้า ระบบจึงปิดการตรวจตัวตนไว้ แต่ยังตรวจการมีตัวตนอยู่';
+$string['lesson:novideo'] = 'ยังไม่ได้ตั้งค่าวิดีโอบทเรียน ผู้ดูแลระบบต้องกำหนด URL วิดีโอในการตั้งค่าปลั๊กอิน';
+
+$string['hint:noface'] = 'ขยับให้เห็นใบหน้าชัดๆ';
+$string['hint:multiplefaces'] = 'ให้มีใบหน้าเดียวในกรอบ';
+$string['hint:spoof'] = 'ตรวจพบสัญญาณการปลอมแปลง';
+$string['error:nocamera'] = 'เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้อง และตรวจว่าหน้าเว็บอยู่บน HTTPS หรือ localhost';
+$string['error:generic'] = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+
 $string['kaiproctor:enrolface'] = 'ลงทะเบียนใบหน้าของตนเอง';
 $string['kaiproctor:viewevidence'] = 'ดูหลักฐานการคุมสอบ';
 $string['kaiproctor:manage'] = 'จัดการการตั้งค่าการคุมสอบ';

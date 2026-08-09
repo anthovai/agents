@@ -1,0 +1,29 @@
+{{!
+    Face enrolment page.
+
+    Context variables:
+    * alreadyenrolled - whether the learner already has a face on file
+    * enrolledon - formatted date of the existing enrolment
+}}
+<div class="kaiproctor-enrol" data-region="kaiproctor-enrol">
+    <p>{{#str}}enrol:intro, local_kaiproctor{{/str}}</p>
+
+    <div class="kaiproctor-camera-frame">
+        {{! Mirrored for a natural preview; captures are taken unmirrored. }}
+        <video data-region="preview" class="kaiproctor-preview" playsinline muted></video>
+    </div>
+
+    <p class="kaiproctor-instruction lead" data-region="instruction" aria-live="polite"></p>
+
+    <div class="alert" data-region="status" role="status" aria-live="polite" hidden></div>
+
+    <button type="button" class="btn btn-primary" data-action="start">
+        {{#str}}enrol:start, local_kaiproctor{{/str}}
+    </button>
+
+    {{#alreadyenrolled}}
+        <p class="text-muted mt-3">
+            {{#str}}enrol:existing, local_kaiproctor, {{enrolledon}}{{/str}}
+        </p>
+    {{/alreadyenrolled}}
+</div>

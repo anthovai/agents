@@ -37,3 +37,42 @@
 .kaiproctor-overlay-btn {
     margin-top: 0.4rem;
 }
+
+/* Camera preview. Mirrored so it reads like a mirror to the learner; the
+   captured frames are drawn straight from the video element and stay
+   unmirrored, which is what the yaw sign convention depends on. */
+
+.kaiproctor-preview {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 12px;
+    background: #000;
+    transform: scaleX(-1);
+}
+
+.kaiproctor-instruction {
+    min-height: 2rem;
+    margin-top: 0.75rem;
+}
+
+.kaiproctor-lesson-stage {
+    position: relative;
+    max-width: 960px;
+}
+
+.kaiproctor-lesson-video {
+    width: 100%;
+    border-radius: 12px;
+    background: #000;
+}
+
+/* Keeps the learner aware they are on camera without covering the lesson. */
+.kaiproctor-preview-corner {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: 22%;
+    max-width: 200px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
