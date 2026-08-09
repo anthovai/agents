@@ -52,6 +52,66 @@ function kp_ensure_user(string $username, string $password,
     return $DB->get_record('user', ['id' => $user->id]);
 }
 
+mtrace('consent policy:');
+// PDPA section 26 requires explicit consent before biometric data is collected.
+// tool_policy is Moodle's own mechanism for that — versioned, timestamped, and
+// wired into the Privacy API — so the plugin does not carry a consent table of
+// its own. Switching the site policy handler over is what makes it enforced.
+set_config('sitepolicyhandler', 'tool_policy');
+
+$policyname = 'ความยินยอมการเก็บข้อมูลชีวมิติ (PDPA)';
+$existingpolicy = false;
+foreach (\tool_policy\api::list_policies() as $policy) {
+    // The name lives on the version, not on the policy. Comparing $policy->name
+    // silently never matched, so every re-run published another copy of the
+    // same policy and learners were asked to consent twice.
+    foreach ([$policy->currentversion ?? null, ...array_values($policy->draftversions ?? [])] as $version) {
+        if ($version && $version->name === $policyname) {
+            $existingpolicy = true;
+            break 2;
+        }
+    }
+}
+
+if ($existingpolicy) {
+    mtrace('  policy already exists');
+} else {
+    // api::form_policydoc_add() takes the shape the policy form submits, so
+    // summary and content arrive as editor arrays, not plain strings.
+    $policydoc = (object) [
+        'name' => $policyname,
+        'type' => \tool_policy\policy_version::TYPE_PRIVACY,
+        'audience' => \tool_policy\policy_version::AUDIENCE_LOGGEDIN,
+        'agreementstyle' => \tool_policy\policy_version::AGREEMENTSTYLE_CONSENTPAGE,
+        'optional' => \tool_policy\policy_version::AGREEMENT_COMPULSORY,
+        'revision' => '1.0',
+        'summary_editor' => [
+            'text' => 'ระบบเก็บภาพใบหน้าและค่าที่แทนใบหน้าของท่าน เพื่อยืนยันว่าผู้เรียนคือผู้ถือใบอนุญาตจริง',
+            'format' => FORMAT_HTML,
+            'itemid' => 0,
+        ],
+        'content_editor' => [
+            'format' => FORMAT_HTML,
+            'itemid' => 0,
+            'text' => '<p>เพื่อให้การอบรมนี้ใช้เป็นหลักฐานได้ ระบบจำเป็นต้องเก็บ:</p>
+            <ul>
+                <li>ค่าที่แทนใบหน้าของท่าน (ไม่เก็บภาพถ่ายต้นฉบับ)</li>
+                <li>ภาพนิ่งและคลิปสั้นระหว่างการเรียนและการสอบ</li>
+                <li>ผลการตรวจตัวตนแต่ละครั้ง พร้อมเกณฑ์ที่ใช้ตัดสิน</li>
+                <li>บันทึกเหตุการณ์ระหว่างเรียน เช่น การออกจากหน้าต่างเรียน</li>
+            </ul>
+            <p>ข้อมูลชีวมิติเป็นข้อมูลส่วนบุคคลอ่อนไหวตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล
+            มาตรา 26 ท่านมีสิทธิขอเข้าถึง ขอสำเนา และขอให้ลบข้อมูลของท่านได้ตลอดเวลา
+            ผ่านเมนูคำขอเกี่ยวกับข้อมูลส่วนบุคคล</p>
+            <p>หากท่านไม่ให้ความยินยอม ระบบจะไม่สามารถยืนยันตัวตนได้
+            จึงไม่สามารถออกหลักฐานการอบรมให้ได้</p>',
+        ],
+    ];
+    $version = \tool_policy\api::form_policydoc_add($policydoc);
+    \tool_policy\api::make_current($version->get('id'));
+    mtrace('  created and published the PDPA consent policy');
+}
+
 mtrace('users:');
 $learner = kp_ensure_user('learner', 'Learn!2345', 'สมชาย', 'ผู้เรียน');
 $learner2 = kp_ensure_user('learner2', 'Learn!2345', 'สมหญิง', 'ผู้เรียน');
@@ -87,6 +147,23 @@ foreach ([[$learner, $studentrole], [$learner2, $studentrole], [$instructor, $te
     }
     $manual->enrol_user($instance, $user->id, $role->id);
     mtrace("  enrolled {$user->username} as {$role->shortname}");
+}
+
+mtrace('capabilities:');
+// Viewing biometric evidence is manager-only by default, deliberately: it is
+// not something every teacher on a site should see. For this course the
+// teacher running the exam does need it, so it is granted explicitly here
+// rather than by loosening the plugin's default.
+if (!$DB->record_exists('role_capabilities', [
+        'roleid' => $teacherrole->id,
+        'capability' => 'local/kaiproctor:viewevidence',
+        'contextid' => $coursecontext->id])) {
+    assign_capability('local/kaiproctor:viewevidence', CAP_ALLOW,
+        $teacherrole->id, $coursecontext->id, true);
+    $coursecontext->mark_dirty();
+    mtrace('  granted local/kaiproctor:viewevidence to the teacher in this course');
+} else {
+    mtrace('  teacher already has local/kaiproctor:viewevidence here');
 }
 
 mtrace('quiz:');
@@ -132,6 +209,24 @@ if ($existingquiz) {
     $quiz = $DB->get_record('quiz', ['id' => $moduleinfo->instance]);
     mtrace("  created quiz (id {$quiz->id}, cmid {$moduleinfo->coursemodule})");
 }
+
+// Review options. Creating a quiz through the mod form fills these in from
+// defaults; creating one in code leaves every one at zero, which shows the
+// learner "Review not permitted" and hides the grade they just earned.
+// 0x11110 is Moodle's "during, immediately after, later while open, after
+// close" — the whole point of a training quiz is that people see their result.
+$reviewall = 0x10000 | 0x01000 | 0x00100 | 0x00010;
+$DB->update_record('quiz', (object) [
+    'id' => $quiz->id,
+    'reviewattempt' => $reviewall,
+    'reviewcorrectness' => $reviewall,
+    'reviewmarks' => $reviewall,
+    'reviewspecificfeedback' => $reviewall,
+    'reviewgeneralfeedback' => $reviewall,
+    'reviewrightanswer' => $reviewall,
+    'reviewoverallfeedback' => $reviewall,
+]);
+mtrace('  review options enabled');
 
 // add_moduleinfo does not always route through the access rule's save_settings,
 // so the flag is written explicitly rather than assumed.

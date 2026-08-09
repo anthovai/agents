@@ -121,8 +121,10 @@ class provider implements
         foreach ($contextlist->get_contexts() as $context) {
             $DB->delete_records('local_kaiproctor_check',
                 ['userid' => $userid, 'contextid' => $context->id]);
-            $DB->delete_records('local_kaiproctor_evidence',
-                ['userid' => $userid, 'contextid' => $context->id]);
+            // Through evidence::delete_for_user so the stored photographs and
+            // clips go with the rows. Deleting the rows alone would satisfy a
+            // erasure request on paper while leaving the learner's face on disk.
+            \local_kaiproctor\evidence::delete_for_user($userid, $context->id);
         }
 
         // The face embedding is not context-bound: an erasure request must take
@@ -144,7 +146,10 @@ class provider implements
 
         $DB->delete_records_select('local_kaiproctor_check',
             "userid $insql AND contextid = :contextid", $params);
-        $DB->delete_records_select('local_kaiproctor_evidence',
-            "userid $insql AND contextid = :contextid", $params);
+
+        // Per user, so the files are removed alongside their rows.
+        foreach ($userids as $userid) {
+            \local_kaiproctor\evidence::delete_for_user((int) $userid, $context->id);
+        }
     }
 }

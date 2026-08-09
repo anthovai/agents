@@ -88,3 +88,26 @@
     border: 2px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* Evidence gallery on the report page. */
+.kaiproctor-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.kaiproctor-evidence-item {
+    margin: 0;
+}
+
+.kaiproctor-evidence-item img,
+.kaiproctor-evidence-item video {
+    width: 100%;
+    border-radius: 8px;
+    background: #000;
+}
+
+.kaiproctor-evidence-item figcaption {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}

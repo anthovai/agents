@@ -8,7 +8,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_kaiproctor';
-$plugin->version   = 2026080903;
+$plugin->version   = 2026080905;
 $plugin->requires  = 2024100700; // Moodle 4.5 LTS.
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = '0.1.0-dev';

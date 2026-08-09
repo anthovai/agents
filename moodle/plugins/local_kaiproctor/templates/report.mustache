@@ -1,0 +1,94 @@
+{{!
+    Evidence trail for one learner in one context.
+}}
+<div class="kaiproctor-report" data-region="kaiproctor-report">
+    <h3>{{fullname}}</h3>
+
+    {{#enrolled}}
+        <p class="text-muted">
+            {{#str}}report:enrolledon, local_kaiproctor, {{enrolledon}}{{/str}} ({{modelpack}})
+        </p>
+    {{/enrolled}}
+    {{^enrolled}}
+        <div class="alert alert-warning">{{#str}}report:notenrolled, local_kaiproctor{{/str}}</div>
+    {{/enrolled}}
+
+    <h4>{{#str}}report:checks, local_kaiproctor{{/str}}</h4>
+    {{#haschecks}}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{{#str}}report:time, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:kind, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:decision, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:similarity, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:liveness, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:threshold, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:model, local_kaiproctor{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#checks}}
+                        <tr class="{{#failed}}table-danger{{/failed}}">
+                            <td>{{time}}</td>
+                            <td>{{kind}}</td>
+                            <td>{{decision}}</td>
+                            <td>{{similarity}}</td>
+                            <td>{{liveness}}</td>
+                            <td>{{threshold}}</td>
+                            <td>{{modelpack}}</td>
+                        </tr>
+                    {{/checks}}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small">{{#str}}report:thresholdnote, local_kaiproctor{{/str}}</p>
+    {{/haschecks}}
+    {{^haschecks}}<p class="text-muted">{{#str}}report:nochecks, local_kaiproctor{{/str}}</p>{{/haschecks}}
+
+    <h4>{{#str}}report:evidence, local_kaiproctor{{/str}}</h4>
+    {{#hasevidence}}
+        <div class="kaiproctor-evidence-grid">
+            {{#evidence}}
+                <figure class="kaiproctor-evidence-item">
+                    {{#isclip}}
+                        <video src="{{url}}" controls preload="metadata"></video>
+                    {{/isclip}}
+                    {{^isclip}}
+                        <img src="{{url}}" alt="{{reason}}">
+                    {{/isclip}}
+                    <figcaption>{{reason}}<br><span class="text-muted">{{time}}</span></figcaption>
+                </figure>
+            {{/evidence}}
+        </div>
+    {{/hasevidence}}
+    {{^hasevidence}}<p class="text-muted">{{#str}}report:noevidence, local_kaiproctor{{/str}}</p>{{/hasevidence}}
+
+    <h4>{{#str}}report:events, local_kaiproctor{{/str}}</h4>
+    {{#hasevents}}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{{#str}}report:time, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:signal, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:videotime, local_kaiproctor{{/str}}</th>
+                        <th>{{#str}}report:detail, local_kaiproctor{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#events}}
+                        <tr>
+                            <td>{{time}}</td>
+                            <td><code>{{type}}</code></td>
+                            <td>{{#videotime}}{{videotime}}s{{/videotime}}{{^videotime}}—{{/videotime}}</td>
+                            <td><small>{{detail}}</small></td>
+                        </tr>
+                    {{/events}}
+                </tbody>
+            </table>
+        </div>
+    {{/hasevents}}
+    {{^hasevents}}<p class="text-muted">{{#str}}report:noevents, local_kaiproctor{{/str}}</p>{{/hasevents}}
+</div>

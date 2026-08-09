@@ -1,0 +1,3 @@
+sign in and start the monitored lesson
+the learner leaves the window, which should be photographed
+evidence rows: 16:56:01  ctx=14   snapshot  violation_window_blur        snapshot-31.jpg

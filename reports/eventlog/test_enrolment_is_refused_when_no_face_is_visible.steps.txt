@@ -1,0 +1,4 @@
+sign in and open the enrolment page
+start the challenge in front of a camera showing no face
+wait for the pose to time out
+status shown to the learner: ทำท่าไม่ทันในเวลาที่กำหนด ลองใหม่โดยหันหน้าช้าๆ

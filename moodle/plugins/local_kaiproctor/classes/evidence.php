@@ -43,31 +43,78 @@ class evidence {
         }
 
         $extension = $kind === 'clip' ? 'webm' : 'jpg';
-        $itemid = (int) $DB->get_field_sql(
-            'SELECT COALESCE(MAX(itemid), 0) + 1 FROM {local_kaiproctor_evidence}'
-        );
-        $filename = sprintf('%s-%d.%s', $kind, $itemid, $extension);
 
-        get_file_storage()->create_file_from_string([
-            'contextid' => $context->id,
-            'component' => self::COMPONENT,
-            'filearea' => self::FILEAREA,
-            'itemid' => $itemid,
-            'filepath' => '/',
-            'filename' => $filename,
-            'userid' => $userid,
-        ], $bytes);
+        // The row is inserted first so its id can be the itemid. Deriving the
+        // itemid from MAX(itemid)+1 looked equivalent and was not: once rows
+        // are deleted the counter restarts and collides with any file left
+        // behind, and the file API then refuses the write.
+        $transaction = $DB->start_delegated_transaction();
 
-        return $DB->insert_record('local_kaiproctor_evidence', (object) [
+        $id = $DB->insert_record('local_kaiproctor_evidence', (object) [
             'userid' => $userid,
             'contextid' => $context->id,
             'attemptid' => $attemptid,
             'kind' => $kind,
             'reason' => $reason,
-            'itemid' => $itemid,
-            'filename' => $filename,
+            'itemid' => 0,
+            'filename' => '',
             'timecreated' => time(),
         ]);
+
+        $filename = sprintf('%s-%d.%s', $kind, $id, $extension);
+        $DB->update_record('local_kaiproctor_evidence', (object) [
+            'id' => $id,
+            'itemid' => $id,
+            'filename' => $filename,
+        ]);
+
+        get_file_storage()->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => self::COMPONENT,
+            'filearea' => self::FILEAREA,
+            'itemid' => $id,
+            'filepath' => '/',
+            'filename' => $filename,
+            'userid' => $userid,
+        ], $bytes);
+
+        // A row without its file is a claim that evidence exists when it does
+        // not, so the insert is rolled back if the write throws.
+        $transaction->allow_commit();
+        return $id;
+    }
+
+    /**
+     * Delete a learner's evidence, rows and files together.
+     *
+     * @param int $userid
+     * @param int|null $contextid limit to one context, or null for all of them
+     * @return int how many records were removed
+     */
+    public static function delete_for_user(int $userid, ?int $contextid = null): int {
+        global $DB;
+
+        $conditions = ['userid' => $userid];
+        if ($contextid !== null) {
+            $conditions['contextid'] = $contextid;
+        }
+
+        $records = $DB->get_records('local_kaiproctor_evidence', $conditions);
+        if (!$records) {
+            return 0;
+        }
+
+        $fs = get_file_storage();
+        foreach ($records as $record) {
+            $file = $fs->get_file($record->contextid, self::COMPONENT, self::FILEAREA,
+                $record->itemid, '/', $record->filename);
+            if ($file) {
+                $file->delete();
+            }
+            $DB->delete_records('local_kaiproctor_evidence', ['id' => $record->id]);
+        }
+
+        return count($records);
     }
 
     /**

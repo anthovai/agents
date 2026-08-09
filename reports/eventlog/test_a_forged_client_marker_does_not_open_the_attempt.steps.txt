@@ -1,0 +1,4 @@
+sign in as an enrolled learner
+start the attempt to reach the identity check
+forge the client-side 'verified' marker and submit anyway
+the learner is told why they were refused

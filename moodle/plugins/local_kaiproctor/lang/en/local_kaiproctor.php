@@ -120,3 +120,25 @@ $string['violation:multiple_faces'] = 'More than one person is visible. Continue
 $string['violation:face_review'] = 'Your face could not be confirmed clearly. Centre yourself in the frame and continue.';
 $string['violation:fail'] = 'Your face does not match the enrolled learner.';
 $string['violation:fail_liveness'] = 'A photograph or video may have been used instead of a live person.';
+
+// Evidence report.
+$string['report:title'] = 'Proctoring evidence';
+$string['report:enrolledon'] = 'Face enrolled on {$a}';
+$string['report:notenrolled'] = 'This learner has not enrolled a face, so no identity check could be made against a reference.';
+$string['report:checks'] = 'Identity and presence checks';
+$string['report:nochecks'] = 'No checks were recorded in this context.';
+$string['report:evidence'] = 'Captured evidence';
+$string['report:noevidence'] = 'No photographs or clips were captured in this context.';
+$string['report:events'] = 'Attention signals';
+$string['report:noevents'] = 'No attention signals were recorded in this context.';
+$string['report:time'] = 'Time';
+$string['report:kind'] = 'Check';
+$string['report:decision'] = 'Decision';
+$string['report:similarity'] = 'Similarity';
+$string['report:liveness'] = 'Liveness';
+$string['report:threshold'] = 'Threshold';
+$string['report:model'] = 'Model';
+$string['report:signal'] = 'Signal';
+$string['report:videotime'] = 'Position';
+$string['report:detail'] = 'Detail';
+$string['report:thresholdnote'] = 'The threshold shown is the one that was in force when the check ran, not the one configured now.';
