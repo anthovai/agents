@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Model weights are large and fetched by face-service/models/fetch.sh.
+# LICENSES.md and fetch.sh are tracked; the binaries are not.
+face-service/models/*.onnx
+
+# Real faces used for threshold calibration must never reach the repository.
+face-service/tests/faces/

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/kaiproctor/db" VERSION="20260809" COMMENT="KAISER Proctor core tables">
+  <TABLES>
+    <TABLE NAME="local_kaiproctor_face" COMMENT="Enrolled face embeddings. One active row per user; superseded rows are kept for audit until purged.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="embedding" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="base64 float32 vector as returned by the face service"/>
+        <FIELD NAME="dimensions" TYPE="int" LENGTH="5" NOTNULL="true" SEQUENCE="false" COMMENT="Vector length; a mismatch means the model changed and the learner must re-enrol"/>
+        <FIELD NAME="modelpack" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="Which model produced this embedding"/>
+        <FIELD NAME="challenge" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON record of the active-liveness challenge that gated this enrolment"/>
+        <FIELD NAME="active" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid-active" UNIQUE="false" FIELDS="userid, active"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_kaiproctor_check" COMMENT="Result of every presence or identity check.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Where the check happened — quiz attempt context, course module context"/>
+        <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="quiz_attempts.id when the check belongs to an exam"/>
+        <FIELD NAME="kind" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="presence | identity | enrolment"/>
+        <FIELD NAME="decision" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="pass | review | fail | fail_liveness | absent"/>
+        <FIELD NAME="similarity" TYPE="number" LENGTH="6" DECIMALS="4" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="livenessscore" TYPE="number" LENGTH="6" DECIMALS="4" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="threshold" TYPE="number" LENGTH="6" DECIMALS="4" NOTNULL="false" SEQUENCE="false" COMMENT="The threshold in force at the time — do not resolve this from config when reading back"/>
+        <FIELD NAME="modelpack" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="detail" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="attemptid" UNIQUE="false" FIELDS="attemptid"/>
+        <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_kaiproctor_evidence" COMMENT="Pointer rows for snapshots and clips; the bytes live in the Moodle file API.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="kind" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" COMMENT="snapshot | clip"/>
+        <FIELD NAME="reason" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="scheduled | random_sample | violation_&lt;type&gt;"/>
+        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="File API itemid"/>
+        <FIELD NAME="filename" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="attemptid" UNIQUE="false" FIELDS="attemptid"/>
+        <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
