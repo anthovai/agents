@@ -76,3 +76,15 @@
     border: 2px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* Preview during a quiz attempt: small and out of the way, but visible, so
+   the learner is never unaware the camera is on. */
+.kaiproctor-preview-attempt {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    width: 160px;
+    z-index: 1030;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}

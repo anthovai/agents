@@ -6,10 +6,10 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'quizaccess_kaiproctor';
-$plugin->version   = 2026080900;
+$plugin->version   = 2026080903;
 $plugin->requires  = 2024100700; // Moodle 4.5 LTS.
 $plugin->dependencies = [
-    'local_kaiproctor' => 2026080900,
+    'local_kaiproctor' => 2026080903,
 ];
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = '0.1.0-dev';

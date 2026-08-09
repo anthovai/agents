@@ -1,0 +1,16 @@
+{{!
+    Identity check shown before a proctored attempt starts.
+}}
+<div class="kaiproctor-preflight" data-region="kaiproctor-preflight">
+    <div class="kaiproctor-camera-frame">
+        <video data-region="preview" class="kaiproctor-preview" playsinline muted></video>
+    </div>
+
+    <p class="kaiproctor-instruction lead" data-region="instruction" aria-live="polite"></p>
+
+    <div class="alert" data-region="status" role="status" aria-live="polite" hidden></div>
+
+    <button type="button" class="btn btn-secondary" data-action="verify">
+        {{#str}}preflight:verify, quizaccess_kaiproctor{{/str}}
+    </button>
+</div>

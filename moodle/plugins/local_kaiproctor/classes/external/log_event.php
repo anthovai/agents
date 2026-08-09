@@ -17,10 +17,10 @@ class log_event extends external_api {
      * rejected so a tampered client cannot flood the log with junk types. */
     const ALLOWED = [
         'monitor_started', 'monitor_stopped',
-        'tab_hidden', 'window_blur', 'fullscreen_exit',
-        'browser_shortcut', 'devtools_suspected', 'app_switch',
-        'context_menu', 'copy_attempt', 'paste_attempt',
-        'click_confirm_ok', 'click_confirm_timeout',
+        'tab_hidden', 'window_blur', 'fullscreen_exit', 'fullscreen_denied',
+        'browser_shortcut', 'devtools_suspected', 'app_switch', 'tab_switch',
+        'print_screen', 'context_menu', 'copy_attempt', 'paste_attempt',
+        'click_confirm_ok', 'click_confirm_timeout', 'resumed',
         'mouse_idle', 'face_absent', 'multiple_faces',
         'presence_ok', 'presence_error', 'identity_check', 'face_mismatch',
         'face_review', 'verify_error',
