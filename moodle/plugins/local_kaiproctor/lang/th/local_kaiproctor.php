@@ -36,3 +36,32 @@ $string['kaiproctor:viewevidence'] = 'ดูหลักฐานการคุ
 $string['kaiproctor:manage'] = 'จัดการการตั้งค่าการคุมสอบ';
 
 $string['task:purgeevidence'] = 'ล้างหลักฐานการคุมสอบที่หมดอายุ';
+$string['event:attention'] = 'สัญญาณจากระบบคุมสอบ';
+
+$string['invalidevidencekind'] = 'ชนิดหลักฐานไม่ถูกต้อง: {$a}';
+$string['evidencetoolarge'] = 'ไฟล์หลักฐานมีขนาดเกินที่กำหนด';
+
+$string['liveness:center'] = 'มองตรงเข้ากล้อง';
+$string['liveness:left'] = 'ค่อยๆ หันหน้าไปทางซ้าย';
+$string['liveness:right'] = 'ค่อยๆ หันหน้าไปทางขวา';
+
+$string['notification:title'] = 'ระบบคุมสอบ';
+$string['paused:title'] = 'วิดีโอถูกหยุด';
+$string['paused:resume'] = 'เล่นต่อ';
+$string['confirm:title'] = 'ยืนยันว่ายังเรียนอยู่';
+$string['confirm:body'] = 'กดปุ่มภายในเวลาที่กำหนด';
+$string['confirm:button'] = 'ยืนยัน';
+$string['terminated:title'] = 'การอบรมถูกยุติ';
+$string['terminated:close'] = 'ปิดหน้าเรียน';
+
+$string['violation:tab_hidden'] = 'สลับแท็บหรือย่อหน้าต่างระหว่างเรียน';
+$string['violation:window_blur'] = 'ออกจากหน้าต่างเรียน';
+$string['violation:fullscreen_exit'] = 'ออกจากโหมดเต็มจอระหว่างเรียน';
+$string['violation:devtools_suspected'] = 'ตรวจพบการเปิดเครื่องมือนักพัฒนา';
+$string['violation:click_confirm_timeout'] = 'ไม่ได้กดยืนยันในเวลาที่กำหนด';
+$string['violation:mouse_idle'] = 'ไม่มีการขยับเมาส์หรือใช้คีย์บอร์ดเป็นเวลานาน';
+$string['violation:face_absent'] = 'ไม่พบผู้เรียนหน้าจอ';
+$string['violation:multiple_faces'] = 'พบมากกว่าหนึ่งคนหน้ากล้อง กดเล่นต่อเมื่อเหลือผู้เรียนคนเดียว';
+$string['violation:face_review'] = 'ยืนยันใบหน้าไม่ชัดเจน จัดหน้าให้อยู่กลางกล้องแล้วกดเล่นต่อ';
+$string['violation:fail'] = 'ใบหน้าไม่ตรงกับผู้ลงทะเบียน';
+$string['violation:fail_liveness'] = 'สงสัยการใช้ภาพถ่ายหรือวิดีโอแทนคนจริง';

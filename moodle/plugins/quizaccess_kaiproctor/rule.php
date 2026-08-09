@@ -5,8 +5,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/mod/quiz/accessrule/accessrulebase.php');
-
+// access_rule_base is autoloaded — the old accessrulebase.php was removed when
+// it moved into mod_quiz\local, so requiring it fatals the whole quiz module.
 use mod_quiz\local\access_rule_base;
 use mod_quiz\quiz_settings;
 

@@ -45,6 +45,8 @@ services:
       face-service:
         condition: service_started
     environment:
+      # Only this container installs; see docker/moodle-entrypoint.sh.
+      MOODLE_ROLE: web
       MOODLE_WWWROOT: ${MOODLE_WWWROOT:-http://localhost:8080}
       MOODLE_DB_HOST: db
       MOODLE_DB_NAME: ${MOODLE_DB_NAME:-moodle}
@@ -57,9 +59,10 @@ services:
       - "8080:80"
     volumes:
       - moodledata:/var/moodledata
-      # Our plugins are bind-mounted: edit on the host, reload in the browser.
-      - ./moodle/plugins/local_kaiproctor:/var/www/html/local/kaiproctor
-      - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/mod/quiz/accessrule/kaiproctor
+      # Plugins are bind-mounted: edit on the host, reload in the browser.
+      # Moodle 5.0+ serves from public/, so plugins live under it too.
+      - ./moodle/plugins/local_kaiproctor:/var/www/html/public/local/kaiproctor
+      - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/public/mod/quiz/accessrule/kaiproctor
 
   cron:
     build:
@@ -69,18 +72,18 @@ services:
       moodle:
         condition: service_started
     environment:
+      # Shares the image with the web container but must never install: two
+      # installers on one moodledata volume race each other and corrupt it.
+      MOODLE_ROLE: cron
       MOODLE_WWWROOT: ${MOODLE_WWWROOT:-http://localhost:8080}
       MOODLE_DB_HOST: db
       MOODLE_DB_NAME: ${MOODLE_DB_NAME:-moodle}
       MOODLE_DB_USER: ${MOODLE_DB_USER:-moodle}
       MOODLE_DB_PASS: ${MOODLE_DB_PASS:-moodle}
-      MOODLE_ADMIN_USER: ${MOODLE_ADMIN_USER:-admin}
-      MOODLE_ADMIN_PASS: ${MOODLE_ADMIN_PASS:-Admin!2345}
-      MOODLE_ADMIN_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@example.com}
     volumes:
       - moodledata:/var/moodledata
-      - ./moodle/plugins/local_kaiproctor:/var/www/html/local/kaiproctor
-      - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/mod/quiz/accessrule/kaiproctor
+      - ./moodle/plugins/local_kaiproctor:/var/www/html/public/local/kaiproctor
+      - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/public/mod/quiz/accessrule/kaiproctor
     # Moodle scheduled tasks (evidence purge, notifications) need a real cron.
     command: sh -c "while true; do php /var/www/html/admin/cli/cron.php >/dev/null 2>&1; sleep 60; done"
 

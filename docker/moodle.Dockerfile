@@ -21,6 +21,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN a2enmod rewrite headers
 
+# Moodle 5.0 moved the web root into public/ — everything above it (lib/,
+# admin/cli/, vendor code) must stay off the web. Serving /var/www/html
+# directly would expose config.php and the CLI scripts.
+RUN sed -ri 's!/var/www/html!/var/www/html/public!g' \
+        /etc/apache2/sites-available/000-default.conf \
+        /etc/apache2/apache2.conf
+
 # Moodle refuses to install below these values.
 RUN { \
         echo 'max_input_vars = 5000'; \

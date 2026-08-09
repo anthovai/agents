@@ -38,3 +38,36 @@ $string['kaiproctor:viewevidence'] = 'View proctoring evidence';
 $string['kaiproctor:manage'] = 'Manage proctoring settings';
 
 $string['task:purgeevidence'] = 'Purge expired proctoring evidence';
+$string['event:attention'] = 'Proctoring signal';
+
+// Errors.
+$string['invalidevidencekind'] = 'Unknown evidence type: {$a}';
+$string['evidencetoolarge'] = 'The captured evidence is larger than the allowed size.';
+
+// Active liveness instructions.
+$string['liveness:center'] = 'Look straight at the camera';
+$string['liveness:left'] = 'Slowly turn your head to the left';
+$string['liveness:right'] = 'Slowly turn your head to the right';
+
+// Overlays.
+$string['notification:title'] = 'Proctoring';
+$string['paused:title'] = 'Video paused';
+$string['paused:resume'] = 'Resume';
+$string['confirm:title'] = 'Confirm you are still here';
+$string['confirm:body'] = 'Press the button before the time runs out.';
+$string['confirm:button'] = 'I am here';
+$string['terminated:title'] = 'Session ended';
+$string['terminated:close'] = 'Close the lesson';
+
+// What each signal means to the learner.
+$string['violation:tab_hidden'] = 'You switched tab or minimised the window during the lesson.';
+$string['violation:window_blur'] = 'You left the lesson window.';
+$string['violation:fullscreen_exit'] = 'You left fullscreen during the lesson.';
+$string['violation:devtools_suspected'] = 'Developer tools were detected.';
+$string['violation:click_confirm_timeout'] = 'You did not confirm in time.';
+$string['violation:mouse_idle'] = 'There has been no mouse or keyboard activity for some time.';
+$string['violation:face_absent'] = 'Nobody is visible in front of the camera.';
+$string['violation:multiple_faces'] = 'More than one person is visible. Continue once only you remain.';
+$string['violation:face_review'] = 'Your face could not be confirmed clearly. Centre yourself in the frame and continue.';
+$string['violation:fail'] = 'Your face does not match the enrolled learner.';
+$string['violation:fail_liveness'] = 'A photograph or video may have been used instead of a live person.';
