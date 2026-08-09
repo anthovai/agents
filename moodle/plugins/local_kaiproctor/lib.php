@@ -7,6 +7,81 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Attach the attention monitor to any activity that has been flagged as
+ * monitored.
+ *
+ * This is the whole integration with mod_interactivevideo: that plugin does
+ * the interactive video, we do the watching, and neither knows about the
+ * other's internals. Nothing here is specific to it — flag a page, a URL or
+ * an H5P activity and the same thing happens.
+ */
+function local_kaiproctor_before_footer() {
+    global $PAGE, $USER;
+
+    if (!isloggedin() || isguestuser() || CLI_SCRIPT) {
+        return;
+    }
+
+    $cm = $PAGE->cm;
+    if (!$cm || !\local_kaiproctor\monitored::is_supported($cm->modname)) {
+        return;
+    }
+
+    // Only the learner's own view is monitored. A teacher opening the activity
+    // to check it is not sitting an assessment.
+    if (has_capability('moodle/course:manageactivities', $PAGE->context)) {
+        return;
+    }
+
+    if (!\local_kaiproctor\monitored::is_monitored($cm->id)) {
+        return;
+    }
+
+    $PAGE->requires->js_call_amd('local_kaiproctor/monitor_activity', 'init', [[
+        'contextid' => $PAGE->context->id,
+        'enrolled' => \local_kaiproctor\enrolment::has_enrolled($USER->id),
+        'returnurl' => (new moodle_url('/course/view.php', ['id' => $cm->course]))->out(false),
+        'strictlockdown' => (bool) get_config('local_kaiproctor', 'strictlockdown'),
+        'blurallowance' => (int) get_config('local_kaiproctor', 'blurallowance'),
+        'presenceminutes' => (float) get_config('local_kaiproctor', 'presenceminutes'),
+        'verifyminutes' => (float) get_config('local_kaiproctor', 'verifyminutes'),
+        'clickconfirmminutes' => (float) get_config('local_kaiproctor', 'clickconfirmminutes'),
+        'clickconfirmgracesec' => (float) get_config('local_kaiproctor', 'clickconfirmgracesec'),
+        'mouseidleminutes' => (float) get_config('local_kaiproctor', 'mouseidleminutes'),
+        'randomclipsperhour' => (float) get_config('local_kaiproctor', 'randomclipsperhour'),
+        'clipseconds' => (float) get_config('local_kaiproctor', 'clipseconds'),
+        'desktopnotification' => (bool) get_config('local_kaiproctor', 'desktopnotification'),
+    ]]);
+}
+
+/**
+ * Offer staff a "monitor this activity" link on activities we can watch.
+ *
+ * @param cm_info $cm
+ */
+function local_kaiproctor_extend_navigation_course_module(
+    navigation_node $node,
+    stdClass $course,
+    cm_info $cm
+) {
+    if (!\local_kaiproctor\monitored::is_supported($cm->modname)) {
+        return;
+    }
+    if (!has_capability('local/kaiproctor:manage', $cm->context)
+            && !has_capability('moodle/course:manageactivities', $cm->context)) {
+        return;
+    }
+
+    $node->add(
+        get_string('activity:settings', 'local_kaiproctor'),
+        new moodle_url('/local/kaiproctor/monitor.php', ['cmid' => $cm->id]),
+        navigation_node::TYPE_SETTING,
+        null,
+        'local_kaiproctor_monitor'
+    );
+}
+
+/**
  * Serve a stored snapshot or clip.
  *
  * Evidence is biometric data, so the capability is checked in the context the

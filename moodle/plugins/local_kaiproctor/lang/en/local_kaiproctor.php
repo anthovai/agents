@@ -142,3 +142,15 @@ $string['report:signal'] = 'Signal';
 $string['report:videotime'] = 'Position';
 $string['report:detail'] = 'Detail';
 $string['report:thresholdnote'] = 'The threshold shown is the one that was in force when the check ran, not the one configured now.';
+
+// Monitoring an activity.
+$string['activity:settings'] = 'Proctoring';
+$string['activity:explain'] = 'When proctoring is on, learners opening this activity are watched: presence, identity, focus, and random evidence clips, exactly as during a proctored exam. Staff viewing the activity are not monitored.';
+$string['activity:on'] = 'This activity is proctored.';
+$string['activity:off'] = 'This activity is not proctored.';
+$string['activity:turnon'] = 'Turn proctoring on';
+$string['activity:turnoff'] = 'Turn proctoring off';
+$string['activity:saved'] = 'Saved.';
+$string['activity:unsupported'] = 'Proctoring cannot be attached to a {$a} activity.';
+$string['activity:willmonitor'] = 'This activity is proctored. Click or press a key to start — your camera will be used to confirm you are present.';
+$string['activity:monitoring'] = 'Monitoring is active. Stay in front of the camera and do not leave this window.';

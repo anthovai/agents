@@ -22,10 +22,57 @@ sh face-service/models/fetch.sh
 ```
 
 ```bash
+sh moodle/plugins/fetch-third-party.sh
+```
+
+```bash
 docker compose up --build
 ```
 
 เปิด http://localhost:8080 (ครั้งแรกใช้เวลาสักพัก — ติดตั้ง Moodle อัตโนมัติ)
+
+## สิ่งที่ไม่ได้เขียนเอง
+
+เขียนเองเฉพาะที่เป็น IP ที่เหลือใช้ของที่มีอยู่แล้ว
+
+| ความสามารถ | ใครทำ | ไลเซนส์ |
+|---|---|---|
+| ผู้ใช้ สิทธิ์ คอร์ส ข้อสอบ ตัดเกรด รายงาน | Moodle core | GPL-3 |
+| ความยินยอม PDPA + คำขอลบข้อมูล | `tool_policy` + Privacy API (core) | GPL-3 |
+| ล็อกเครื่องระดับ OS | Safe Exam Browser + `quizaccess_seb` (core) | MPL / GPL |
+| **วิดีโอแบบมีปฏิสัมพันธ์** | [`mod_interactivevideo`](https://github.com/sokunthearithmakara/moodle-mod_interactivevideo) | GPL-3 |
+| ตรวจจับใบหน้า / embedding | YuNet + SFace (OpenCV Zoo) | MIT / Apache-2.0 |
+| Liveness | MiniFASNet (Silent-Face-Anti-Spoofing) | Apache-2.0 |
+| **Active liveness challenge** | เขียนเอง | — |
+| **Attention enforcement 6 สัญญาณ** | เขียนเอง | — |
+| **หลักฐาน + retention + กติกาเข้าสอบ** | เขียนเอง | — |
+
+`mod_interactivevideo` ถูกดึงมาแบบ pin commit โดย `fetch-third-party.sh` ไม่ได้ก็อปเข้ามาในโปรเจค
+
+## Safe Exam Browser
+
+ข้อสอบ **"ความเสี่ยงสูง (SEB)"** เปิดทั้งสองชั้นพร้อมกัน:
+
+- **SEB** ล็อกเครื่อง — Moodle สร้างไฟล์ `.seb` และ **Config Key** ให้เอง (ของจริง ไม่ใช่ hash ที่ทำเอง)
+- **ระบบเรา** ยืนยันตัวตนและเก็บหลักฐาน
+
+เปิดจากเบราว์เซอร์ธรรมดาไม่ได้ ต้องกดลิงก์ `seb://` ซึ่ง SEB ที่ติดตั้งบนเครื่องจะรับช่วงต่อ
+
+> ชั้น lockdown ในเบราว์เซอร์ของเรา **ตรวจจับและบันทึก** เท่านั้น ห้าม Alt+Tab จอที่สอง
+> หรือมือถือข้างๆ ไม่ได้จริง ถ้าต้องการล็อกจริงต้องใช้ SEB
+
+## บทเรียนวิดีโอแบบมีปฏิสัมพันธ์
+
+`mod_interactivevideo` ให้ annotation คำถามระหว่างวิดีโอ และ player 22 แบบ (YouTube, Vimeo,
+PeerTube, HLS, HTML5, ...) ส่วนของเราคือเฝ้าดูผู้เรียนขณะใช้งาน
+
+เปิด/ปิดรายกิจกรรมได้ที่เมนู **"การคุมสอบ"** ในกิจกรรมนั้น (`/local/kaiproctor/monitor.php?cmid=`)
+รองรับ `interactivevideo`, `h5pactivity`, `page`, `resource`, `url`
+
+การเชื่อมต่อใช้เฉพาะ `window.IVPLAYER` ที่ปลั๊กอินเปิดให้ใช้อย่างเป็นทางการ ไม่แตะภายใน
+จึงไม่พังเมื่อเขาออกเวอร์ชันใหม่ — ดู [video_adapter.js](moodle/plugins/local_kaiproctor/amd/src/video_adapter.js)
+
+**ผู้สอนที่เปิดดูกิจกรรมจะไม่ถูกเฝ้าดู** — คนตรวจงานไม่ใช่คนสอบ
 
 ## โครงสร้าง
 

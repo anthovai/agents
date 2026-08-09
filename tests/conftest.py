@@ -46,8 +46,10 @@ ACCOUNTS = {
     "admin": "DevAdmin!2345",
 }
 
-# The proctored demo quiz created by docker/seed-demo.php.
+# Activities created by docker/seed-demo.php.
 QUIZ_CMID = int(os.environ.get("KP_QUIZ_CMID", "8"))
+SEB_QUIZ_CMID = int(os.environ.get("KP_SEB_QUIZ_CMID", "10"))
+INTERACTIVE_VIDEO_CMID = int(os.environ.get("KP_IV_CMID", "11"))
 
 
 # --------------------------------------------------------------------------

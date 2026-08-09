@@ -29,28 +29,50 @@ if [ "$ROLE" != "web" ]; then
     exec "$@"
 fi
 
+# config.php lives in the image, not in a volume, so recreating the container
+# loses it. Rather than run the installer again — which then fails on a
+# database that is already populated and leaves the container dead — it is
+# written from the environment every start. Everything in it is determined by
+# env anyway, so this makes the container properly disposable.
 if [ ! -f "$CONFIG" ]; then
-    echo "installing Moodle (first run)..."
-    # Install in English. Asking the installer for Thai makes it fetch the
-    # language pack mid-install, and a download failure there aborts the whole
-    # installation — the pack is added separately below where it can fail safely.
-    php admin/cli/install.php \
-        --non-interactive --agree-license --skip-database \
-        --lang=en \
-        --wwwroot="${MOODLE_WWWROOT}" \
-        --dataroot=/var/moodledata \
-        --dbtype=pgsql \
-        --dbhost="${MOODLE_DB_HOST}" \
-        --dbname="${MOODLE_DB_NAME}" \
-        --dbuser="${MOODLE_DB_USER}" \
-        --dbpass="${MOODLE_DB_PASS}" \
-        --fullname="KAISER Proctor" \
-        --shortname="KAIPROCTOR" \
-        --adminuser="${MOODLE_ADMIN_USER}" \
-        --adminpass="${MOODLE_ADMIN_PASS}" \
-        --adminemail="${MOODLE_ADMIN_EMAIL}"
+    echo "writing config.php from the environment"
+    cat > "$CONFIG" <<PHPCONFIG
+<?php
+unset(\$CFG);
+global \$CFG;
+\$CFG = new stdClass();
 
-    echo "populating database..."
+\$CFG->dbtype    = 'pgsql';
+\$CFG->dblibrary = 'native';
+\$CFG->dbhost    = '${MOODLE_DB_HOST}';
+\$CFG->dbname    = '${MOODLE_DB_NAME}';
+\$CFG->dbuser    = '${MOODLE_DB_USER}';
+\$CFG->dbpass    = '${MOODLE_DB_PASS}';
+\$CFG->prefix    = 'mdl_';
+\$CFG->dboptions = ['dbpersist' => 0, 'dbport' => '', 'dbsocket' => ''];
+
+\$CFG->wwwroot   = '${MOODLE_WWWROOT}';
+\$CFG->dataroot  = '/var/moodledata';
+\$CFG->admin     = 'admin';
+\$CFG->directorypermissions = 0777;
+
+require_once(__DIR__ . '/lib/setup.php');
+PHPCONFIG
+    chown www-data:www-data "$CONFIG"
+fi
+
+# Has the database been populated yet? An empty database needs the installer;
+# a populated one only ever needs the upgrade step.
+INSTALLED=$(php -r '
+    $c = @pg_connect(sprintf("host=%s dbname=%s user=%s password=%s",
+        getenv("MOODLE_DB_HOST"), getenv("MOODLE_DB_NAME"),
+        getenv("MOODLE_DB_USER"), getenv("MOODLE_DB_PASS")));
+    $r = $c ? @pg_query($c, "SELECT 1 FROM mdl_config LIMIT 1") : false;
+    echo $r ? "yes" : "no";
+')
+
+if [ "$INSTALLED" = "no" ]; then
+    echo "populating database (first run)..."
     php admin/cli/install_database.php --agree-license \
         --adminpass="${MOODLE_ADMIN_PASS}" \
         --adminemail="${MOODLE_ADMIN_EMAIL}" \
@@ -77,7 +99,7 @@ if [ ! -f "$CONFIG" ]; then
 
     chown -R www-data:www-data /var/www/html /var/moodledata
 else
-    echo "config.php present — upgrading if needed"
+    echo "database already populated — upgrading if needed"
     php admin/cli/upgrade.php --non-interactive --allow-unstable || true
 fi
 

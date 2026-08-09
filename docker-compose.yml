@@ -63,6 +63,8 @@ services:
       # Moodle 5.0+ serves from public/, so plugins live under it too.
       - ./moodle/plugins/local_kaiproctor:/var/www/html/public/local/kaiproctor
       - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/public/mod/quiz/accessrule/kaiproctor
+      # Third-party, fetched by moodle/plugins/fetch-third-party.sh.
+      - ./moodle/plugins/mod_interactivevideo:/var/www/html/public/mod/interactivevideo
 
   cron:
     build:
@@ -84,6 +86,8 @@ services:
       - moodledata:/var/moodledata
       - ./moodle/plugins/local_kaiproctor:/var/www/html/public/local/kaiproctor
       - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/public/mod/quiz/accessrule/kaiproctor
+      # Third-party, fetched by moodle/plugins/fetch-third-party.sh.
+      - ./moodle/plugins/mod_interactivevideo:/var/www/html/public/mod/interactivevideo
     # Moodle scheduled tasks (evidence purge, notifications) need a real cron.
     command: sh -c "while true; do php /var/www/html/admin/cli/cron.php >/dev/null 2>&1; sleep 60; done"
 

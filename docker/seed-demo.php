@@ -239,10 +239,145 @@ if (!$DB->record_exists('quizaccess_kaiproctor', ['quizid' => $quiz->id])) {
 
 $cm = get_coursemodule_from_instance('quiz', $quiz->id);
 
-mtrace('questions:');
-if ($DB->record_exists('quiz_slots', ['quizid' => $quiz->id])) {
-    mtrace('  quiz already has questions');
+mtrace('high-stakes quiz (Safe Exam Browser + face proctoring):');
+// SEB is the only open-source thing that locks the machine itself. Our
+// browser-side lockdown detects and reports; it cannot stop Alt+Tab, a second
+// monitor, or a phone. For an exam where that matters, both run together:
+// SEB owns the machine, we own the identity and the evidence.
+$sebquiz = $DB->get_record('quiz', ['course' => $course->id, 'name' => 'ข้อสอบความเสี่ยงสูง (SEB)']);
+if ($sebquiz) {
+    mtrace("  quiz already exists (id {$sebquiz->id})");
 } else {
+    $moduleinfo = add_moduleinfo((object) [
+        'course' => $course->id,
+        'name' => 'ข้อสอบความเสี่ยงสูง (SEB)',
+        'intro' => 'ต้องเปิดด้วย Safe Exam Browser เท่านั้น และยืนยันตัวตนผ่านกล้อง',
+        'introformat' => FORMAT_HTML,
+        'timelimit' => 0,
+        'preferredbehaviour' => 'deferredfeedback',
+        'grade' => 10,
+        'sumgrades' => 0,
+        'modulename' => 'quiz',
+        'module' => $quizmodule->id,
+        'section' => 1,
+        'visible' => 1,
+        'cmidnumber' => '',
+        'quizpassword' => '',
+        'subnet' => '',
+        'delay1' => 0,
+        'delay2' => 0,
+        'browsersecurity' => '-',
+        'attempts' => 0,
+        'kaiproctorenabled' => 1,
+    ], $course);
+    $sebquiz = $DB->get_record('quiz', ['id' => $moduleinfo->instance]);
+    mtrace("  created quiz (id {$sebquiz->id}, cmid {$moduleinfo->coursemodule})");
+}
+
+$DB->update_record('quiz', (object) [
+    'id' => $sebquiz->id,
+    'reviewattempt' => $reviewall,
+    'reviewcorrectness' => $reviewall,
+    'reviewmarks' => $reviewall,
+    'reviewspecificfeedback' => $reviewall,
+    'reviewgeneralfeedback' => $reviewall,
+    'reviewrightanswer' => $reviewall,
+    'reviewoverallfeedback' => $reviewall,
+]);
+
+$sebcm = get_coursemodule_from_instance('quiz', $sebquiz->id);
+
+if (!$DB->record_exists('quizaccess_kaiproctor', ['quizid' => $sebquiz->id])) {
+    $DB->insert_record('quizaccess_kaiproctor',
+        (object) ['quizid' => $sebquiz->id, 'enabled' => 1]);
+    mtrace('  face proctoring enabled');
+}
+
+if (\quizaccess_seb\seb_quiz_settings::get_record(['quizid' => $sebquiz->id])) {
+    mtrace('  SEB already configured');
+} else {
+    // USE_SEB_CONFIG_MANUALLY: Moodle builds the .seb file and its Config Key
+    // itself. That is the part the earlier prototype approximated by hand and
+    // got wrong — core does the real cryptography.
+    $sebsettings = new \quizaccess_seb\seb_quiz_settings(0, (object) [
+        'quizid' => $sebquiz->id,
+        'cmid' => $sebcm->id,
+        'requiresafeexambrowser' => \quizaccess_seb\settings_provider::USE_SEB_CONFIG_MANUALLY,
+        'showsebtaskbar' => 0,
+        'showwificontrol' => 0,
+        'showreloadbutton' => 0,
+        'showtime' => 1,
+        'showkeyboardlayout' => 0,
+        'allowuserquitseb' => 1,
+        'quitpassword' => '',
+        'linkquitseb' => '',
+        'userconfirmquit' => 1,
+        'enableaudiocontrol' => 0,
+        'muteonstartup' => 0,
+        'allowspellchecking' => 0,
+        'allowreloadinexam' => 0,
+        'activateurlfiltering' => 0,
+        'filterembeddedcontent' => 0,
+        'expressionsallowed' => '',
+        'regexallowed' => '',
+        'expressionsblocked' => '',
+        'regexblocked' => '',
+        'allowedbrowserexamkeys' => '',
+    ]);
+    $sebsettings->save();
+    mtrace('  SEB configured (manual config, Moodle generates the .seb file and Config Key)');
+}
+
+mtrace('interactive video:');
+// The interactive part is mod_interactivevideo (GPL-3, fetched by
+// moodle/plugins/fetch-third-party.sh) — annotations, in-video questions and
+// 22 player backends, none of which we had to write. Our contribution is
+// watching the learner while they use it.
+if (!$DB->get_manager()->table_exists('interactivevideo')) {
+    mtrace('  mod_interactivevideo is not installed — run moodle/plugins/fetch-third-party.sh');
+} else {
+    $ivmodule = $DB->get_record('modules', ['name' => 'interactivevideo']);
+    $ivname = 'บทเรียนวิดีโอแบบมีปฏิสัมพันธ์';
+    $iv = $DB->get_record('interactivevideo', ['course' => $course->id, 'name' => $ivname]);
+
+    if ($iv) {
+        mtrace("  activity already exists (id {$iv->id})");
+    } else {
+        $moduleinfo = add_moduleinfo((object) [
+            'course' => $course->id,
+            'name' => $ivname,
+            'intro' => 'วิดีโอบทเรียนที่แทรกคำถามระหว่างเล่นได้ และมีระบบเฝ้าดูผู้เรียน',
+            'introformat' => FORMAT_HTML,
+            'modulename' => 'interactivevideo',
+            'module' => $ivmodule->id,
+            'section' => 1,
+            'visible' => 1,
+            'cmidnumber' => '',
+            'source' => 'url',
+            'videourl' => $CFG->wwwroot . '/local/kaiproctor/samples/lesson.mp4',
+            'type' => 'html5video',
+            'starttime' => 0,
+            'endtime' => 0,
+            'grade' => 0,
+            'completionpercentage' => 0,
+            'displayasstartscreen' => 1,
+            'endscreentext' => '',
+        ], $course);
+        $iv = $DB->get_record('interactivevideo', ['id' => $moduleinfo->instance]);
+        mtrace("  created activity (id {$iv->id})");
+    }
+
+    $ivcm = get_coursemodule_from_instance('interactivevideo', $iv->id);
+    if (\local_kaiproctor\monitored::is_monitored($ivcm->id)) {
+        mtrace('  already flagged as proctored');
+    } else {
+        \local_kaiproctor\monitored::set($ivcm->id, true);
+        mtrace("  flagged as proctored (cmid {$ivcm->id})");
+    }
+}
+
+mtrace('questions:');
+{
     // Imported through the GIFT importer rather than written straight to the
     // question tables: it is the supported path, and it is the same one a
     // real question bank would arrive through.
@@ -286,6 +421,16 @@ if ($DB->record_exists('quiz_slots', ['quizid' => $quiz->id])) {
     $bankcontext = context_module::instance($bankcm->id);
     $category = question_get_default_category($bankcontext->id, true);
 
+    $existingcount = $DB->count_records_sql(
+        "SELECT COUNT(1)
+           FROM {question_bank_entries} qbe
+          WHERE qbe.questioncategoryid = :cat",
+        ['cat' => $category->id]
+    );
+
+if ($existingcount > 0) {
+    mtrace("  question bank already holds {$existingcount} questions — not importing again");
+} else {
     $qformat = new qformat_gift();
     $qformat->setCategory($category);
     $qformat->setContexts([$bankcontext]);
@@ -302,6 +447,11 @@ if ($DB->record_exists('quiz_slots', ['quizid' => $quiz->id])) {
     if (!$qformat->importpreprocess() || !$qformat->importprocess() || !$qformat->importpostprocess()) {
         mtrace('  !! question import failed');
     } else {
+        mtrace('  imported the question bank');
+    }
+}
+
+    {
         $questions = $DB->get_records_sql(
             "SELECT q.id
                FROM {question} q
@@ -311,17 +461,22 @@ if ($DB->record_exists('quiz_slots', ['quizid' => $quiz->id])) {
            ORDER BY q.id",
             ['cat' => $category->id]
         );
-        foreach ($questions as $question) {
-            quiz_add_quiz_question($question->id, $quiz);
+        foreach ([$quiz, $sebquiz] as $target) {
+            if ($DB->record_exists('quiz_slots', ['quizid' => $target->id])) {
+                continue;
+            }
+            foreach ($questions as $question) {
+                quiz_add_quiz_question($question->id, $target);
+            }
+            // Adding slots does not recalculate the total; without this the
+            // quiz refuses every attempt with "none of the questions have a
+            // grade". quiz_update_sumgrades() looks like the function for this
+            // but has been a no-op deprecation shim since 4.2.
+            \mod_quiz\quiz_settings::create($target->id)
+                ->get_grade_calculator()
+                ->recompute_quiz_sumgrades();
+            mtrace("  added " . count($questions) . " questions to quiz {$target->id}");
         }
-        // Adding slots does not recalculate the total; without this the quiz
-        // refuses every attempt with "none of the questions have a grade".
-        // quiz_update_sumgrades() looks like the function for this but has
-        // been a no-op deprecation shim since 4.2.
-        \mod_quiz\quiz_settings::create($quiz->id)
-            ->get_grade_calculator()
-            ->recompute_quiz_sumgrades();
-        mtrace('  added ' . count($questions) . ' questions to the quiz');
     }
 }
 

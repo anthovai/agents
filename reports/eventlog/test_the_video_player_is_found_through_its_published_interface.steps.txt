@@ -1,0 +1,2 @@
+sign in and open the interactive video
+adapter surface: {'found': True, 'hasPause': True, 'hasPlay': True, 'pausedIsBoolean': True, 'timeIsNumber': True, 'ivplayer': True}

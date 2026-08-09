@@ -18,3 +18,6 @@ reports/screenshots/
 reports/.rawvideo/
 reports/pytest-output.txt
 reports/junit.xml
+
+# Third-party Moodle plugins, fetched by moodle/plugins/fetch-third-party.sh.
+moodle/plugins/mod_interactivevideo/

@@ -67,5 +67,18 @@
         <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>
+
+    <TABLE NAME="local_kaiproctor_monitored" COMMENT="Which course modules are watched. Kept here rather than as a setting on the activity: the activities being watched belong to other plugins, and reaching into a third-party module's settings form is how you end up maintaining a fork.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="cmid" TYPE="unique" FIELDS="cmid"/>
+      </KEYS>
+    </TABLE>
   </TABLES>
 </XMLDB>

@@ -162,6 +162,31 @@ switch ($command) {
         echo "purged quiz attempts for {$argv[2]}\n";
         break;
 
+    case 'seb-info':
+        // seb-info <cmid>
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);
+        $settings = \quizaccess_seb\seb_quiz_settings::get_record(['quizid' => $cm->instance]);
+        echo json_encode([
+            'requiresafeexambrowser' => $settings ? (int) $settings->get('requiresafeexambrowser') : 0,
+            'configkey' => $settings ? (string) $settings->get_config_key() : '',
+            'configbytes' => $settings ? strlen((string) $settings->get_config()) : 0,
+            'kaiproctorenabled' => $DB->record_exists('quizaccess_kaiproctor',
+                ['quizid' => $cm->instance, 'enabled' => 1]),
+        ], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'monitored':
+        // monitored <cmid>
+        echo \local_kaiproctor\monitored::is_monitored((int) $argv[2]) ? "yes\n" : "no\n";
+        break;
+
+    case 'set-monitored':
+        // set-monitored <cmid> <0|1>
+        \local_kaiproctor\monitored::set((int) $argv[2], (bool) (int) $argv[3]);
+        echo "set\n";
+        break;
+
     case 'correct-answers':
         // The correct option text for each question in a quiz, so a test can
         // answer correctly even though Moodle shuffles the options per learner.

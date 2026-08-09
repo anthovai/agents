@@ -41,6 +41,8 @@ REQUIREMENTS = [
         [
             "test_lockdown_blocks_and_reports_every_browser_exit",
             "test_text_selection_and_dragging_are_suppressed",
+            "test_an_ordinary_browser_cannot_start_the_seb_quiz",
+            "test_seb_is_configured_with_a_real_config_key",
         ],
     ),
     (
@@ -92,6 +94,34 @@ REQUIREMENTS = [
     ),
 ]
 
+# Capabilities beyond the original seven, added since.
+EXTRAS = [
+    (
+        "บทเรียนวิดีโอแบบมีปฏิสัมพันธ์ ภายใต้การเฝ้าดู",
+        [
+            "test_the_activity_says_it_is_proctored_before_anything_starts",
+            "test_monitoring_starts_when_the_learner_begins",
+            "test_the_video_player_is_found_through_its_published_interface",
+            "test_leaving_the_activity_window_is_recorded",
+        ],
+    ),
+    (
+        "ผู้สอนไม่ถูกเฝ้าดู และเปิด/ปิดการเฝ้าดูรายกิจกรรมได้",
+        [
+            "test_staff_viewing_the_activity_are_not_monitored",
+            "test_staff_can_turn_proctoring_off_and_on",
+            "test_an_unmonitored_activity_is_left_alone",
+        ],
+    ),
+    (
+        "Safe Exam Browser คู่กับการยืนยันตัวตนด้วยใบหน้า",
+        [
+            "test_the_seb_config_file_is_downloadable_by_the_learner",
+            "test_both_rules_describe_themselves_to_the_learner",
+        ],
+    ),
+]
+
 MANUAL_ONLY = [
     (
         "ความแม่นยำของการเทียบใบหน้า",
@@ -117,7 +147,12 @@ MANUAL_ONLY = [
     (
         "การล็อกระดับเครื่อง",
         "หน้าเว็บไม่มีสิทธิ์ระดับระบบปฏิบัติการ — Alt+Tab จอที่สอง และมือถือข้างๆ ห้ามไม่ได้จริง",
-        "ใช้ Safe Exam Browser คู่กับ quizaccess_seb สำหรับการสอบที่มีความเสี่ยงสูง",
+        "ใช้ Safe Exam Browser คู่กับ quizaccess_seb ซึ่งตั้งค่าไว้แล้วในข้อสอบ 'ความเสี่ยงสูง (SEB)'",
+    ),
+    (
+        "การทำงานของ Safe Exam Browser ตัวจริง",
+        "SEB เป็นโปรแกรมติดตั้งบนเครื่อง เบราว์เซอร์อัตโนมัติปลอมเป็นมันไม่ได้",
+        "ติดตั้ง SEB แล้วเปิดลิงก์ seb:// จากหน้าข้อสอบ ต้องเข้าสอบได้และ Config Key ต้องตรง",
     ),
 ]
 
@@ -246,6 +281,22 @@ def main() -> int:
             for name in tests
         )
         add(f"| {number} | {title} | {mark} | {listed} |")
+    add("")
+
+    add("## ความสามารถที่เพิ่มมาภายหลัง")
+    add("")
+    add("| ความสามารถ | สถานะ | เทสต์ |")
+    add("|---|---|---|")
+    for title, tests in EXTRAS:
+        statuses = [by_name.get(name, {}).get("status", "missing") for name in tests]
+        if all(status == "passed" for status in statuses):
+            mark = "ผ่าน"
+        elif any(status == "failed" for status in statuses):
+            mark = "**ไม่ผ่าน**"
+        else:
+            mark = "**ยังไม่ได้พิสูจน์**"
+        listed = "<br>".join(f"`{name}`" for name in tests)
+        add(f"| {title} | {mark} | {listed} |")
     add("")
 
     add("## รายการเทสต์ทั้งหมด")
