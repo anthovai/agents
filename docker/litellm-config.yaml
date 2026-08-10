@@ -1,0 +1,39 @@
+# LiteLLM gateway configuration.
+#
+# One OpenAI-compatible endpoint in front of whatever model this deployment is
+# allowed to use. The point is not convenience: it is that swapping GPT-5 mini
+# for a model running on our own hardware becomes a config change here rather
+# than a code change, and a customer whose data may not leave the country can
+# be served without forking anything.
+#
+# Set OPENAI_API_KEY in .env to use the hosted model. Leave it unset and the
+# gateway still starts — the AI features simply report themselves unavailable,
+# which is the correct behaviour for an optional aid.
+
+model_list:
+  # The name the plugin asks for. What it maps to is this file's business.
+  - model_name: proctor-reviewer
+    litellm_params:
+      model: openai/gpt-5-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # A locally-hosted alternative for deployments that may not send anything
+  # outside their own network. Point OLLAMA_BASE_URL at the host running it and
+  # change proctor-reviewer above to this entry's model.
+  - model_name: proctor-reviewer-local
+    litellm_params:
+      model: ollama/qwen2.5:7b-instruct
+      api_base: os.environ/OLLAMA_BASE_URL
+
+litellm_settings:
+  # Prompts and completions carry learner activity. Logging them to a third
+  # party would move personal data somewhere the consent document does not
+  # mention.
+  turn_off_message_logging: true
+  drop_params: true
+  request_timeout: 60
+
+general_settings:
+  # The plugin authenticates with this; it is not an OpenAI key and never
+  # leaves the internal network.
+  master_key: os.environ/LITELLM_MASTER_KEY

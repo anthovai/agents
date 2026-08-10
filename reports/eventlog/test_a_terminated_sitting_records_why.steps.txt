@@ -1,3 +1,3 @@
 sign in and start the lesson
 the learner leaves the window, which ends it in strict mode
-sitting after the breach: [{'id': 110, 'status': 'terminated', 'reason': 'window_blur', 'attemptid': None, 'timestart': 1786350816, 'timeend': 1786350818, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]
+sitting after the breach: [{'id': 160, 'status': 'terminated', 'reason': 'window_blur', 'attemptid': None, 'timestart': 1786363948, 'timeend': 1786363950, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]

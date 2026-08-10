@@ -216,3 +216,40 @@ $string['stats:purgelastrun'] = 'Purge task last ran';
 $string['stats:neverrun'] = 'never';
 $string['stats:overdue'] = 'There is evidence older than the retention period. The purge task is not running — check that Moodle cron is working.';
 $string['stats:nodata'] = 'Nothing recorded yet.';
+
+// How the paper was drawn.
+$string['draw:title'] = 'How this paper was drawn';
+$string['draw:note'] = 'The seed is calculated from the learner, the quiz and the attempt number alone. It could not have been chosen to produce a particular paper, and anybody with those three values can recalculate it. The question list is the paper actually given, and stays true even if the question bank is edited later.';
+$string['draw:attemptnumber'] = 'Attempt';
+$string['draw:seed'] = 'Seed';
+$string['draw:seedverified'] = 'recalculates correctly';
+$string['draw:seedmismatch'] = 'DOES NOT MATCH — investigate';
+$string['draw:questions'] = 'Questions given';
+$string['draw:slot'] = 'Question {$a}';
+$string['draw:randomfrom'] = 'drawn at random from: {$a}';
+$string['draw:fixed'] = 'the same for every learner';
+$string['draw:papertitle'] = 'Exam paper';
+$string['draw:papernote'] = 'An attempt was drawn but monitoring never started for it — a camera that would not open, or a learner who left before beginning. The paper is recorded either way.';
+
+// AI assistance.
+$string['settings:ai'] = 'AI assistance';
+$string['settings:ai_desc'] = 'Optional. A language model can summarise a sitting for whoever reviews it, and flag imported questions whose Thai text looks damaged. It never sees a photograph, a clip or a face measurement, and it never decides anything: every answer is advice a person then judges.<br><br><strong>Before enabling this against a hosted model, check that sending learner activity outside your organisation is covered by your consent document and your data processing agreements.</strong> Point the gateway at a locally-run model instead if it is not.';
+$string['settings:aienabled'] = 'Enable AI assistance';
+$string['settings:aienabled_desc'] = 'Off by default. Nothing else in the system depends on it.';
+$string['settings:aibaseurl'] = 'Gateway URL';
+$string['settings:aibaseurl_desc'] = 'An OpenAI-compatible endpoint, e.g. http://llm-gateway:4000/v1. Start the bundled gateway with: docker compose --profile ai up -d';
+$string['settings:aiapikey'] = 'Gateway key';
+$string['settings:aiapikey_desc'] = 'Sent as a bearer token. This is the gateway\'s own key, not a provider key — the provider key lives in the gateway.';
+$string['settings:aimodel'] = 'Model name';
+$string['settings:aimodel_desc'] = 'The name the gateway maps to a real model. Which model that is stays a gateway decision, so switching from a hosted model to a local one needs no change here.';
+
+$string['ai:notconfigured'] = 'AI assistance is not switched on.';
+$string['ai:badresponse'] = 'The gateway answered, but not with a completion.';
+$string['ai:emptyresponse'] = 'The model returned nothing.';
+$string['ai:summarytitle'] = 'Draft summary';
+$string['ai:summarynote'] = 'Written by a language model from the counts on this page. It is a reading aid, not a finding: it did not see any image or score, and nothing here decides anything. Check it against the record below.';
+$string['ai:summarise'] = 'Draft a summary';
+$string['ai:failed'] = 'The summary could not be drafted: {$a}';
+$string['ai:questiontitle'] = 'Questions that may have come through damaged';
+$string['ai:questionnote'] = 'Thai vowels and tone marks can end up in the wrong order when text is extracted from a PDF. These are suggestions to look at, not corrections.';
+$string['ai:nofindings'] = 'Nothing looked damaged.';

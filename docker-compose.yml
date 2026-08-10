@@ -53,6 +53,26 @@ services:
       - ./reports:/app/reports
     command: python calibrate.py
 
+  # One OpenAI-compatible endpoint in front of whatever model this deployment
+  # is allowed to use — GPT-5 mini, or something on our own hardware for a
+  # customer whose data may not leave the country. MIT licensed.
+  #
+  # Behind a profile: the AI features are an aid for reviewers, not part of any
+  # decision, and the stack must run without them.
+  llm-gateway:
+    image: ghcr.io/berriai/litellm:main-stable
+    profiles: ["ai"]
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-kaiproctor-local}
+    volumes:
+      - ./docker/litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    # Not published to the host: only Moodle talks to it.
+    expose:
+      - "4000"
+
   moodle:
     build:
       context: .

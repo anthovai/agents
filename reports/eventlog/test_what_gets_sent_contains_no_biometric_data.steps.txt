@@ -1,0 +1,3 @@
+run a monitored lesson so there is a sitting to summarise
+what would be sent: {"status": "terminated", "reason": "window_blur", "minutes": 0, "checks": [], "events": {"monitor_started": 1, "window_blur": 1, "session_terminated": 1, "monitor_stopped": 1}, "evidence": {"violation_window_blur": 1}, "policy": {"presenceminutes": 2, "verifyminutes": 10, "clickconfirmminutes": 5, "
+payload holds counts and event names only

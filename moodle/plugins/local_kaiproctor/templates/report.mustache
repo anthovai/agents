@@ -26,7 +26,11 @@
                     <h4 class="card-title">{{statuslabel}}</h4>
                     <p class="text-muted">{{#str}}report:orphansnote, local_kaiproctor{{/str}}</p>
                 {{/isorphan}}
-                {{^isorphan}}
+                {{#isdrawonly}}
+                    <h4 class="card-title">{{statuslabel}}</h4>
+                    <p class="text-muted">{{#str}}draw:papernote, local_kaiproctor{{/str}}</p>
+                {{/isdrawonly}}
+                {{^isorphan}}{{^isdrawonly}}
                     <h4 class="card-title">
                         {{timestart}}
                         <span class="badge {{#ended}}bg-danger{{/ended}}{{^ended}}{{#active}}bg-warning{{/active}}{{^active}}bg-success{{/active}}{{/ended}}">
@@ -52,7 +56,51 @@
                         </table>
                     </div>
                 </details>
-                {{/isorphan}}
+                {{/isdrawonly}}{{/isorphan}}
+
+                {{#hasdraw}}
+                    <details class="mb-3" data-region="draw">
+                        <summary>{{#str}}draw:title, local_kaiproctor{{/str}}</summary>
+                        <p class="text-muted small mt-2">{{#str}}draw:note, local_kaiproctor{{/str}}</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm w-auto">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">{{#str}}draw:attemptnumber, local_kaiproctor{{/str}}</th>
+                                        <td>{{draw.attemptnumber}}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">{{#str}}draw:seed, local_kaiproctor{{/str}}</th>
+                                        <td>
+                                            <code data-region="seed">{{draw.seed}}</code>
+                                            {{#draw.seedverified}}
+                                                <span class="badge bg-success" data-region="seed-verified">
+                                                    {{#str}}draw:seedverified, local_kaiproctor{{/str}}
+                                                </span>
+                                            {{/draw.seedverified}}
+                                            {{^draw.seedverified}}
+                                                <span class="badge bg-danger" data-region="seed-mismatch">
+                                                    {{#str}}draw:seedmismatch, local_kaiproctor{{/str}}
+                                                </span>
+                                            {{/draw.seedverified}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">{{#str}}draw:questions, local_kaiproctor{{/str}}</th>
+                                        <td><code>{{draw.questionids}}</code> ({{draw.questioncount}})</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <table class="table table-sm w-auto">
+                            <tbody>
+                                {{#draw.blueprint}}
+                                    <tr><th scope="row">{{#str}}draw:slot, local_kaiproctor, {{slot}}{{/str}}</th><td>{{rule}}</td></tr>
+                                {{/draw.blueprint}}
+                            </tbody>
+                        </table>
+                    </details>
+                {{/hasdraw}}
 
                 <h5>{{#str}}report:checks, local_kaiproctor{{/str}}</h5>
                 {{#haschecks}}

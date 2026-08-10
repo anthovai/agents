@@ -118,6 +118,9 @@ class report {
         $rendered = [];
         foreach ($sessions as $record) {
             $id = (int) $record->id;
+            // An exam sitting also has a paper, and how it was drawn is part of
+            // the same story as how it was watched.
+            $draw = $record->attemptid ? exam_draw::describe((int) $record->attemptid) : null;
             $rendered[] = [
                 'id' => $id,
                 'status' => $record->status,
@@ -137,6 +140,45 @@ class report {
                 'hasevidence' => !empty($evidenceby[$id]),
                 'events' => $eventsby[$id] ?? [],
                 'hasevents' => !empty($eventsby[$id]),
+                'hasdraw' => (bool) $draw,
+                'draw' => $draw ? self::draw_rows($draw) : null,
+            ];
+        }
+
+        // A paper exists whether or not monitoring ever started: the camera
+        // can fail after the attempt was drawn. Draws with no sitting to sit
+        // under get their own card rather than vanishing from the report.
+        $seen = [];
+        foreach ($sessions as $record) {
+            if ($record->attemptid) {
+                $seen[(int) $record->attemptid] = true;
+            }
+        }
+
+        foreach (self::draws_in_context($userid, $context) as $attemptid => $draw) {
+            if (isset($seen[$attemptid])) {
+                continue;
+            }
+            $rendered[] = [
+                'id' => 0,
+                'isdrawonly' => true,
+                'status' => '',
+                'statuslabel' => get_string('draw:papertitle', 'local_kaiproctor'),
+                'ended' => false,
+                'active' => false,
+                'reason' => null,
+                'timestart' => '',
+                'timeend' => '',
+                'duration' => '',
+                'policy' => [],
+                'checks' => [],
+                'haschecks' => false,
+                'evidence' => [],
+                'hasevidence' => false,
+                'events' => [],
+                'hasevents' => false,
+                'hasdraw' => true,
+                'draw' => self::draw_rows($draw),
             ];
         }
 
@@ -174,6 +216,48 @@ class report {
             'modelpack' => $enrolment ? $enrolment->modelpack : '',
             'sessions' => $rendered,
             'hassessions' => (bool) $rendered,
+        ];
+    }
+
+    /** Every recorded draw for this learner in this context, by attempt id. */
+    protected static function draws_in_context(int $userid, \context $context): array {
+        global $DB;
+
+        if (!($context instanceof \context_module)) {
+            return [];
+        }
+
+        $cm = get_coursemodule_from_id('quiz', $context->instanceid, 0, false, IGNORE_MISSING);
+        if (!$cm) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($DB->get_records('local_kaiproctor_draw',
+                ['userid' => $userid, 'quizid' => $cm->instance], 'attemptnumber ASC') as $record) {
+            $described = exam_draw::describe((int) $record->attemptid);
+            if ($described) {
+                $out[(int) $record->attemptid] = $described;
+            }
+        }
+        return $out;
+    }
+
+    /** Presentation for one recorded draw. */
+    protected static function draw_rows(array $draw): array {
+        return [
+            'seed' => $draw['seed'],
+            'seedverified' => $draw['seedverified'],
+            'attemptnumber' => $draw['attemptnumber'],
+            'questioncount' => count($draw['questionids']),
+            'questionids' => implode(', ', $draw['questionids']),
+            'blueprint' => array_map(static fn($slot) => [
+                'slot' => $slot['slot'],
+                'rule' => ($slot['type'] ?? '') === 'random'
+                    ? get_string('draw:randomfrom', 'local_kaiproctor',
+                        implode(', ', $slot['tags'] ?: ['—']))
+                    : get_string('draw:fixed', 'local_kaiproctor'),
+            ], $draw['blueprint']),
         ];
     }
 

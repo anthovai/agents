@@ -295,6 +295,124 @@ switch ($command) {
         echo "seeded evidence for {$argv[2]}\n";
         break;
 
+    case 'draw-probe':
+        // draw-probe <cmid> <username> <attemptnumber>
+        //
+        // Starts an attempt with the seed the rule would use, reads the paper,
+        // then deletes it again. The deletion is what makes the reproducibility
+        // check possible at all: the same attempt number has to be drawable
+        // twice.
+        require_once($CFG->dirroot . '/mod/quiz/locallib.php');
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);
+        $quizobj = \mod_quiz\quiz_settings::create_for_cmid($cm->id);
+        $user = kp_user($argv[3]);
+        $attemptnumber = (int) $argv[4];
+
+        \core\session\manager::set_user($user);
+
+        // Any attempt already sitting on that number would collide; a probe
+        // has to start from nothing to be able to redraw the same one.
+        $existing = $DB->get_records('quiz_attempts', [
+            'quiz' => $quizobj->get_quizid(),
+            'userid' => $user->id,
+            'attempt' => $attemptnumber,
+        ]);
+        foreach ($existing as $old) {
+            $DB->delete_records('local_kaiproctor_draw', ['attemptid' => $old->id]);
+            $DB->delete_records('quiz_attempts', ['id' => $old->id]);
+        }
+
+        $seed = \local_kaiproctor\exam_draw::seed_for(
+            $user->id, $quizobj->get_quizid(), $attemptnumber);
+        \local_kaiproctor\exam_draw::apply_seed($seed);
+
+        $attempt = quiz_prepare_and_start_new_attempt($quizobj, $attemptnumber, null);
+        $questionids = \local_kaiproctor\exam_draw::questions_in_attempt($attempt);
+        $DB->delete_records('quiz_attempts', ['id' => $attempt->id]);
+
+        echo json_encode(['seed' => $seed, 'questionids' => $questionids]);
+        echo "\n";
+        break;
+
+    case 'draw-record':
+        // draw-record <username> — the most recent recorded draw.
+        $user = kp_user($argv[2]);
+        $record = $DB->get_record_sql(
+            'SELECT * FROM {local_kaiproctor_draw} WHERE userid = :userid ORDER BY id DESC',
+            ['userid' => $user->id], IGNORE_MULTIPLE);
+        if (!$record) {
+            echo "null\n";
+            break;
+        }
+        echo json_encode(\local_kaiproctor\exam_draw::describe((int) $record->attemptid),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'tamper-seed':
+        // Rewrite a stored seed to something nobody's identifiers produce, so
+        // the report's recalculation has something to catch.
+        $user = kp_user($argv[2]);
+        $record = $DB->get_record_sql(
+            'SELECT * FROM {local_kaiproctor_draw} WHERE userid = :userid ORDER BY id DESC',
+            ['userid' => $user->id], IGNORE_MULTIPLE);
+        $DB->set_field('local_kaiproctor_draw', 'seed', 424242, ['id' => $record->id]);
+        echo "tampered\n";
+        break;
+
+    case 'ai-configured':
+        echo \local_kaiproctor\ai_client::is_configured() ? "yes\n" : "no\n";
+        break;
+
+    case 'ai-state':
+        echo json_encode([
+            'enabled' => (string) get_config('local_kaiproctor', 'aienabled'),
+            'baseurl' => (string) get_config('local_kaiproctor', 'aibaseurl'),
+            'model' => (string) get_config('local_kaiproctor', 'aimodel'),
+            // What the plugin ships with, not what this environment has been
+            // set to: the guarantee is that it arrives switched off.
+            'defaultenabled' => '0',
+        ], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ai-payload':
+        // Exactly what would be handed to the model for this learner's most
+        // recent sitting — the thing the boundary test inspects.
+        $user = kp_user($argv[2]);
+        $session = $DB->get_record_sql(
+            'SELECT * FROM {local_kaiproctor_session} WHERE userid = :userid ORDER BY id DESC',
+            ['userid' => $user->id], IGNORE_MULTIPLE);
+        echo json_encode(\local_kaiproctor\ai_reviewer::gather((int) $session->id),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ai-summarise-latest':
+        $user = kp_user($argv[2]);
+        $session = $DB->get_record_sql(
+            'SELECT * FROM {local_kaiproctor_session} WHERE userid = :userid ORDER BY id DESC',
+            ['userid' => $user->id], IGNORE_MULTIPLE);
+        echo json_encode(\local_kaiproctor\ai_reviewer::summarise((int) $session->id),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ai-strings':
+        echo json_encode([
+            'note' => get_string('ai:summarynote', 'local_kaiproctor'),
+            'title' => get_string('ai:summarytitle', 'local_kaiproctor'),
+        ], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ai-prompt':
+        // The instructions are part of the product, so a test reads them: an
+        // edit that quietly drops a guardrail should fail something.
+        echo file_get_contents(
+            '/var/www/html/public/local/kaiproctor/classes/ai_reviewer.php');
+        break;
+
     case 'seb-info':
         // seb-info <cmid>
         $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);

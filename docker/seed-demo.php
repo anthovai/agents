@@ -480,6 +480,129 @@ if ($existingcount > 0) {
     }
 }
 
+mtrace('blueprint quiz (random questions by difficulty):');
+// Reproducibility only means anything when the paper varies. This quiz draws
+// one question per difficulty from a tagged bank, which is the difficulty
+// blueprint the original system had, expressed the way Moodle expresses it.
+{
+    require_once($CFG->dirroot . '/question/format.php');
+    require_once($CFG->dirroot . '/question/format/xml/format.php');
+
+    $bankcm = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type(
+        $course, true);
+    $bankcontext = context_module::instance($bankcm->id);
+    $category = question_get_default_category($bankcontext->id, true);
+
+    $tagged = $DB->count_records_sql(
+        "SELECT COUNT(DISTINCT ti.itemid)
+           FROM {tag_instance} ti
+           JOIN {tag} t ON t.id = ti.tagid
+          WHERE ti.itemtype = 'question' AND t.rawname IN ('easy', 'medium', 'hard')");
+
+    if ($tagged >= 6) {
+        mtrace("  bank already holds {$tagged} tagged questions");
+    } else {
+        // Two per difficulty, so a slot has something to choose between.
+        $questions = [];
+        $index = 0;
+        foreach (['easy' => 'ง่าย', 'medium' => 'ปานกลาง', 'hard' => 'ยาก'] as $tag => $label) {
+            for ($n = 1; $n <= 2; $n++) {
+                $index++;
+                $questions[] = [
+                    'id' => "blueprint-{$tag}-{$n}",
+                    'difficulty' => $tag,
+                    'text' => "ข้อสอบระดับ{$label} ข้อที่ {$n}: ระบบคุมสอบบันทึกอะไรไว้เป็นหลักฐาน",
+                    'choices' => [
+                        "คำตอบถูกของข้อ {$index}",
+                        "คำตอบผิดที่หนึ่งของข้อ {$index}",
+                        "คำตอบผิดที่สองของข้อ {$index}",
+                        "คำตอบผิดที่สามของข้อ {$index}",
+                    ],
+                    'answer' => 0,
+                ];
+            }
+        }
+
+        $result = \local_kaiproctor\pdf_import::import($questions, $category, $bankcontext, $course);
+        mtrace('  imported ' . $result['imported'] . ' tagged questions');
+    }
+
+    $blueprintquiz = $DB->get_record('quiz',
+        ['course' => $course->id, 'name' => 'ข้อสอบสุ่มตามระดับความยาก']);
+
+    if ($blueprintquiz) {
+        mtrace("  quiz already exists (id {$blueprintquiz->id})");
+    } else {
+        $moduleinfo = add_moduleinfo((object) [
+            'course' => $course->id,
+            'name' => 'ข้อสอบสุ่มตามระดับความยาก',
+            'intro' => 'สุ่มข้อสอบระดับง่าย ปานกลาง และยาก อย่างละหนึ่งข้อ ต่างคนต่างชุด',
+            'introformat' => FORMAT_HTML,
+            'timelimit' => 0,
+            'preferredbehaviour' => 'deferredfeedback',
+            'grade' => 10,
+            'sumgrades' => 0,
+            'modulename' => 'quiz',
+            'module' => $quizmodule->id,
+            'section' => 1,
+            'visible' => 1,
+            'cmidnumber' => '',
+            'quizpassword' => '',
+            'subnet' => '',
+            'delay1' => 0,
+            'delay2' => 0,
+            'browsersecurity' => '-',
+            'attempts' => 0,
+            'kaiproctorenabled' => 1,
+        ], $course);
+        $blueprintquiz = $DB->get_record('quiz', ['id' => $moduleinfo->instance]);
+
+        $DB->update_record('quiz', (object) [
+            'id' => $blueprintquiz->id,
+            'reviewattempt' => $reviewall,
+            'reviewcorrectness' => $reviewall,
+            'reviewmarks' => $reviewall,
+            'reviewspecificfeedback' => $reviewall,
+            'reviewgeneralfeedback' => $reviewall,
+            'reviewrightanswer' => $reviewall,
+            'reviewoverallfeedback' => $reviewall,
+        ]);
+
+        if (!$DB->record_exists('quizaccess_kaiproctor', ['quizid' => $blueprintquiz->id])) {
+            $DB->insert_record('quizaccess_kaiproctor',
+                (object) ['quizid' => $blueprintquiz->id, 'enabled' => 1]);
+        }
+
+        // Adding slots is a capability-checked action and a CLI script has no
+        // user, so it acts explicitly as the admin.
+        \core\session\manager::set_user(get_admin());
+
+        $structure = \mod_quiz\quiz_settings::create($blueprintquiz->id)->get_structure();
+        foreach (['easy', 'medium', 'hard'] as $tag) {
+            $tagrecord = $DB->get_record('tag', ['rawname' => $tag]);
+            $structure->add_random_questions(0, 1, [
+                'filter' => [
+                    'category' => [
+                        'jointype' => 1,
+                        'values' => [$category->id],
+                        'filteroptions' => ['includesubcategories' => false],
+                    ],
+                    'qtagids' => [
+                        'jointype' => 2,
+                        'values' => [$tagrecord->id],
+                    ],
+                ],
+            ]);
+        }
+
+        \mod_quiz\quiz_settings::create($blueprintquiz->id)
+            ->get_grade_calculator()->recompute_quiz_sumgrades();
+
+        $cmid = get_coursemodule_from_instance('quiz', $blueprintquiz->id)->id;
+        mtrace("  created quiz (id {$blueprintquiz->id}, cmid {$cmid}) with 3 random slots");
+    }
+}
+
 mtrace('');
 mtrace('done. sign in at ' . $CFG->wwwroot);
 mtrace('  learner    / Learn!2345');

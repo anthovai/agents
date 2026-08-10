@@ -97,6 +97,26 @@ REQUIREMENTS = [
 # Capabilities beyond the original seven, added since.
 EXTRAS = [
     (
+        "สุ่มข้อสอบซ้ำได้จาก seed และพิสูจน์ว่าไม่ได้เลือกไว้ก่อน",
+        [
+            "test_the_same_learner_and_attempt_always_get_the_same_paper",
+            "test_a_second_attempt_gets_a_different_paper",
+            "test_two_learners_sitting_the_same_exam_get_different_papers",
+            "test_the_recorded_draw_is_checked_against_the_identifiers",
+            "test_a_tampered_seed_is_reported_as_tampered",
+        ],
+    ),
+    (
+        "ผู้ช่วย AI และขอบเขตที่ห้ามข้าม",
+        [
+            "test_ai_is_off_until_somebody_turns_it_on",
+            "test_what_gets_sent_contains_no_biometric_data",
+            "test_the_summary_is_labelled_as_a_draft_not_a_finding",
+            "test_a_gateway_that_is_not_there_fails_visibly",
+            "test_the_model_is_told_not_to_accuse_anybody",
+        ],
+    ),
+    (
         "นำเข้าข้อสอบจาก PDF แนวข้อสอบไทย",
         [
             "test_the_parser_reads_a_thai_exam_pack",
@@ -178,6 +198,12 @@ MANUAL_ONLY = [
         "การตรวจจับ devtools",
         "อาศัยสัดส่วนขนาดหน้าต่าง ซึ่งไม่แน่นอนในเบราว์เซอร์ที่ถูกควบคุมด้วยสคริปต์",
         "เปิด devtools แบบ docked ระหว่างเรียน ต้องถูกบันทึกเป็น devtools_suspected",
+    ),
+    (
+        "คุณภาพของสรุปที่ AI เขียน",
+        "เทสต์ที่ต้องใช้โมเดลจริงจะข้ามไปเมื่อ gateway ไม่ได้รัน ขอบเขตทั้งหมดถูกตรวจแล้วโดยไม่ต้องมีโมเดล",
+        "ใส่ API key แล้ว docker compose --profile ai up -d จากนั้นอ่านสรุปสัก 10-20 ครั้งด้วยตา "
+        "ก่อนเปิดให้ผู้ตรวจจริงใช้",
     ),
     (
         "การล็อกระดับเครื่อง",

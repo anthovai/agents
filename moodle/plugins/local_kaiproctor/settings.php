@@ -111,5 +111,41 @@ if ($hassiteconfig) {
         PARAM_URL
     ));
 
+    $settings->add(new admin_setting_heading(
+        'local_kaiproctor/ai',
+        get_string('settings:ai', 'local_kaiproctor'),
+        get_string('settings:ai_desc', 'local_kaiproctor')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_kaiproctor/aienabled',
+        get_string('settings:aienabled', 'local_kaiproctor'),
+        get_string('settings:aienabled_desc', 'local_kaiproctor'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_kaiproctor/aibaseurl',
+        get_string('settings:aibaseurl', 'local_kaiproctor'),
+        get_string('settings:aibaseurl_desc', 'local_kaiproctor'),
+        'http://llm-gateway:4000/v1',
+        PARAM_URL
+    ));
+
+    $settings->add(new admin_setting_configpasswordunmask(
+        'local_kaiproctor/aiapikey',
+        get_string('settings:aiapikey', 'local_kaiproctor'),
+        get_string('settings:aiapikey_desc', 'local_kaiproctor'),
+        ''
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_kaiproctor/aimodel',
+        get_string('settings:aimodel', 'local_kaiproctor'),
+        get_string('settings:aimodel_desc', 'local_kaiproctor'),
+        'proctor-reviewer',
+        PARAM_TEXT
+    ));
+
     $ADMIN->add('localplugins', $settings);
 }

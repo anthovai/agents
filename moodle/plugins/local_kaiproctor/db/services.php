@@ -20,6 +20,13 @@ $functions = [
         'ajax' => true,
         'loginrequired' => true,
     ],
+    'local_kaiproctor_summarise_session' => [
+        'classname' => 'local_kaiproctor\external\summarise_session',
+        'description' => 'Draft a summary of one monitored sitting for a reviewer.',
+        'type' => 'read',
+        'ajax' => true,
+        'loginrequired' => true,
+    ],
     'local_kaiproctor_analyze_frame' => [
         'classname' => 'local_kaiproctor\external\analyze_frame',
         'description' => 'Presence, head pose and liveness for one camera frame.',

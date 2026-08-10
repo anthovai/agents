@@ -138,8 +138,29 @@ class quizaccess_kaiproctor extends access_rule_base {
     }
 
     public function notify_preflight_check_passed($attemptid) {
-        global $SESSION;
+        global $SESSION, $USER, $DB;
+
         $SESSION->passedkaiproctor[$this->quiz->id] = true;
+
+        // This runs immediately before mod_quiz creates the attempt and draws
+        // its random questions, and that ordering is the whole trick: seeding
+        // the engine now makes the draw reproducible without touching core.
+        // Anything that consumes randomness between here and the draw would
+        // change the result, so nothing else belongs in this method.
+        $attemptnumber = 1 + (int) $DB->count_records('quiz_attempts', [
+            'quiz' => $this->quiz->id,
+            'userid' => $USER->id,
+            'preview' => 0,
+        ]);
+
+        $seed = \local_kaiproctor\exam_draw::seed_for(
+            $USER->id, (int) $this->quiz->id, $attemptnumber);
+
+        // Handed to the observer through the session: the attempt does not
+        // exist yet, so there is nothing to attach it to.
+        $SESSION->kaiproctordrawseed[$this->quiz->id] = $seed;
+
+        \local_kaiproctor\exam_draw::apply_seed($seed);
     }
 
     public function current_attempt_finished() {

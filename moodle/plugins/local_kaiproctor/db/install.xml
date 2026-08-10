@@ -106,5 +106,24 @@
         <INDEX NAME="status-timemodified" UNIQUE="false" FIELDS="status, timemodified"/>
       </INDEXES>
     </TABLE>
+
+    <TABLE NAME="local_kaiproctor_draw" COMMENT="Which paper a learner was given, and the seed that produced it. The seed is a pure function of learner, quiz and attempt number, so it cannot have been chosen after the fact.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="attemptnumber" TYPE="int" LENGTH="5" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="seed" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="blueprint" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="What each slot was allowed to draw from"/>
+        <FIELD NAME="questionids" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The paper actually given, in slot order. The durable evidence: a bank edit or a core upgrade can stop the seed reproducing it, but this stays true."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="attemptid" TYPE="unique" FIELDS="attemptid"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
   </TABLES>
 </XMLDB>

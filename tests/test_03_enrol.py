@@ -63,10 +63,12 @@ def test_enrolment_is_refused_when_no_face_is_visible(session, clean_learner, ev
     session.note("start the challenge in front of a camera showing no face")
     session.page.click('[data-action="start"]')
 
-    # The first pose has its own timeout; the module gives up when it expires.
+    # The first pose has its own 15-second timeout, but each poll makes a
+    # round trip to the face service, so the wait has to allow for a slow one
+    # rather than assume the happy path.
     session.note("wait for the pose to time out")
     session.page.wait_for_selector(
-        '[data-region="status"]:not([hidden])', timeout=40_000
+        '[data-region="status"]:not([hidden])', timeout=90_000
     )
     session.beat(2)
 
