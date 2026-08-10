@@ -18,7 +18,7 @@ import numpy as np
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
-from . import config, face_engine, liveness
+from . import config, exam_pdf, face_engine, liveness
 
 app = FastAPI(title="KAISER Proctor face service", version=config.SERVICE_VERSION)
 
@@ -136,6 +136,38 @@ async def embed(image: UploadFile = File(...)):
         "dimensions": int(face.embedding.size),
         "det_score": round(face.det_score, 4),
         "liveness": liveness.check_liveness(img, face.bbox),
+    }
+
+
+@app.post("/parse-questions", dependencies=[Depends(require_key)])
+async def parse_questions(file: UploadFile = File(...)):
+    """Turn a Thai licence-exam PDF into a question bank.
+
+    Not face work, and it sits here for a plain reason: the parser is Python
+    that already exists and is already tested, extracting text from a PDF is
+    something PHP does badly, and this container is the Python side of the
+    system. Rewriting it in PHP would mean re-deriving Thai font repairs and
+    answer-key matching that took real effort to get right.
+
+    Nothing is stored. Moodle receives the questions and imports them into its
+    own question bank, where they belong.
+    """
+    data = await file.read()
+    if len(data) > config.MAX_PDF_BYTES:
+        return _error("pdf_too_large", "PDF exceeds the maximum allowed size")
+
+    try:
+        _, title, note, questions = exam_pdf.parse_pdf(data)
+    except exam_pdf.ExamPdfError as e:
+        return _error(e.code, e.message)
+
+    return {
+        "ok": True,
+        **_meta(),
+        "title": title,
+        "note": note,
+        "count": len(questions),
+        "questions": questions,
     }
 
 

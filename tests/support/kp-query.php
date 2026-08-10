@@ -226,6 +226,75 @@ switch ($command) {
             + $DB->count_records('local_kaiproctor_evidence', $conditions)) . "\n";
         break;
 
+    case 'parse-pdf':
+        \core\session\manager::set_user(get_admin());
+        echo json_encode(\local_kaiproctor\pdf_import::parse(
+            file_get_contents('/tmp/sample.pdf')), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'parse-pdf-counts':
+        \core\session\manager::set_user(get_admin());
+        $parsed = \local_kaiproctor\pdf_import::parse(file_get_contents('/tmp/sample.pdf'));
+        echo json_encode(\local_kaiproctor\pdf_import::difficulty_counts(
+            $parsed['questions'] ?? []), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'parse-pdf-garbage':
+        \core\session\manager::set_user(get_admin());
+        echo json_encode(\local_kaiproctor\pdf_import::parse(
+            'this is not a pdf at all'), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'import-pdf':
+        \core\session\manager::set_user(get_admin());
+        $course = $DB->get_record('course', ['shortname' => 'KP-DEMO'], '*', MUST_EXIST);
+        $parsed = \local_kaiproctor\pdf_import::parse(file_get_contents('/tmp/sample.pdf'));
+        $bankcm = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type(
+            $course, true);
+        $bankcontext = context_module::instance($bankcm->id);
+        $category = question_get_default_category($bankcontext->id, true);
+        echo json_encode(\local_kaiproctor\pdf_import::import(
+            $parsed['questions'] ?? [], $category, $bankcontext, $course),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'bank-state':
+        $tags = [];
+        foreach ($DB->get_records_sql(
+                "SELECT t.rawname, COUNT(1) AS total
+                   FROM {tag} t
+                   JOIN {tag_instance} ti ON ti.tagid = t.id AND ti.itemtype = :itemtype
+               GROUP BY t.rawname", ['itemtype' => 'question']) as $row) {
+            $tags[$row->rawname] = (int) $row->total;
+        }
+        echo json_encode([
+            'entries' => $DB->count_records('question_bank_entries'),
+            'tags' => $tags,
+        ], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'get-setting':
+        echo (string) get_config('local_kaiproctor', $argv[2]) . "\n";
+        break;
+
+    case 'seed-evidence':
+        // A snapshot for a learner, so retention behaviour can be exercised
+        // without driving a camera.
+        $user = kp_user($argv[2]);
+        $image = imagecreatetruecolor(64, 64);
+        ob_start();
+        imagejpeg($image);
+        $bytes = ob_get_clean();
+        \local_kaiproctor\evidence::store($user->id, context_user::instance($user->id),
+            'snapshot', 'seeded_for_test', $bytes);
+        echo "seeded evidence for {$argv[2]}\n";
+        break;
+
     case 'seb-info':
         // seb-info <cmid>
         $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);

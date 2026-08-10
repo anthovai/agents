@@ -1,0 +1,3 @@
+sign in as an administrator
+point the plugin at a service that is not there
+status shown: Not reachable — Failed to connect to 127.0.0.1 port 9999 after 0 ms: Could not connect to 

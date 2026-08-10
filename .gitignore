@@ -29,3 +29,8 @@ reports/SANITY-CHECK.md
 
 # Third-party Moodle plugins, fetched by moodle/plugins/fetch-third-party.sh.
 moodle/plugins/mod_interactivevideo/
+
+# Test fixtures built by face-service/tests/make_sample_pdf.py, including the
+# OFL font it downloads. The generator is tracked; its output is not.
+face-service/tests/sample-exam.pdf
+face-service/tests/*.ttf

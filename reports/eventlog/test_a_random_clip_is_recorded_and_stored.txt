@@ -1,9 +1,9 @@
 # audit trail for learner
-08:22:59  ctx=14   monitor_started        videotime=0     {"strict":false,"verify_minutes":0,"presence_minutes":0,"clips_per_hour":3600}
-08:23:01  ctx=14   clip_started           videotime=0     {"seconds":2}
-08:23:03  ctx=14   clip_uploaded          videotime=0     {"evidenceid":101}
-08:23:05  ctx=14   clip_started           videotime=0     {"seconds":2}
-08:23:07  ctx=14   clip_uploaded          videotime=0     {"evidenceid":102}
-08:23:09  ctx=14   monitor_stopped        videotime=0     []
-08:23:09  ctx=14   clip_started           videotime=0     {"seconds":2}
-08:23:09  ctx=14   clip_uploaded          videotime=0     {"evidenceid":103}
+09:25:05  ctx=14   monitor_started        videotime=0     {"strict":false,"verify_minutes":0,"presence_minutes":0,"clips_per_hour":3600}
+09:25:07  ctx=14   clip_started           videotime=0     {"seconds":2}
+09:25:09  ctx=14   clip_uploaded          videotime=0     {"evidenceid":118}
+09:25:10  ctx=14   clip_started           videotime=0     {"seconds":2}
+09:25:12  ctx=14   clip_uploaded          videotime=0     {"evidenceid":119}
+09:25:13  ctx=14   clip_started           videotime=0     {"seconds":2}
+09:25:15  ctx=14   monitor_stopped        videotime=0     []
+09:25:15  ctx=14   clip_uploaded          videotime=0     {"evidenceid":120}

@@ -1,0 +1,120 @@
+{{!
+    Site-wide proctoring figures.
+}}
+<div class="kaiproctor-stats" data-region="kaiproctor-stats">
+
+    <h4>{{#str}}stats:service, local_kaiproctor{{/str}}</h4>
+    {{#service.ok}}
+        <div class="alert alert-success" data-region="service-status">
+            {{#str}}stats:serviceup, local_kaiproctor{{/str}}
+            — {{service.modelpack}} · {{service.version}}
+            · {{#str}}stats:models, local_kaiproctor, {{service.models}}{{/str}}
+            · {{#str}}stats:threshold, local_kaiproctor, {{service.matchthreshold}}{{/str}}
+        </div>
+        {{^service.liveness}}
+            <div class="alert alert-danger">{{#str}}stats:nolivenessmodel, local_kaiproctor{{/str}}</div>
+        {{/service.liveness}}
+    {{/service.ok}}
+    {{^service.ok}}
+        <div class="alert alert-danger" data-region="service-status">
+            {{#str}}stats:servicedown, local_kaiproctor{{/str}} — {{service.problem}}
+        </div>
+    {{/service.ok}}
+
+    <h4>{{#str}}stats:usage, local_kaiproctor{{/str}}</h4>
+    <div class="table-responsive">
+        <table class="table table-sm w-auto">
+            <tbody>
+                <tr>
+                    <th scope="row">{{#str}}stats:enrolled, local_kaiproctor{{/str}}</th>
+                    <td data-stat="enrolled">{{enrolled}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">{{#str}}stats:sessions, local_kaiproctor{{/str}}</th>
+                    <td data-stat="sessions">{{sessions}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">{{#str}}stats:checks, local_kaiproctor{{/str}}</th>
+                    <td data-stat="checks">{{checks}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">{{#str}}stats:monitored, local_kaiproctor{{/str}}</th>
+                    <td data-stat="monitored">{{monitored}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">{{#str}}stats:proctoredquizzes, local_kaiproctor{{/str}}</th>
+                    <td data-stat="proctoredquizzes">{{proctoredquizzes}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h4>{{#str}}stats:sessionoutcomes, local_kaiproctor{{/str}}</h4>
+    {{#sessionstatuses.0}}
+        <div class="table-responsive">
+            <table class="table table-sm w-auto">
+                <tbody>
+                    {{#sessionstatuses}}
+                        <tr><th scope="row">{{label}}</th><td>{{total}}</td></tr>
+                    {{/sessionstatuses}}
+                </tbody>
+            </table>
+        </div>
+    {{/sessionstatuses.0}}
+    {{^sessionstatuses.0}}<p class="text-muted">{{#str}}stats:nodata, local_kaiproctor{{/str}}</p>{{/sessionstatuses.0}}
+
+    <h4>{{#str}}stats:decisions, local_kaiproctor{{/str}}</h4>
+    {{#decisions.0}}
+        <div class="table-responsive">
+            <table class="table table-sm w-auto">
+                <tbody>
+                    {{#decisions}}
+                        <tr class="{{#concerning}}table-danger{{/concerning}}">
+                            <th scope="row"><code>{{decision}}</code></th>
+                            <td>{{total}}</td>
+                        </tr>
+                    {{/decisions}}
+                </tbody>
+            </table>
+        </div>
+    {{/decisions.0}}
+    {{^decisions.0}}<p class="text-muted">{{#str}}stats:nodata, local_kaiproctor{{/str}}</p>{{/decisions.0}}
+
+    <h4>{{#str}}stats:retention, local_kaiproctor{{/str}}</h4>
+    {{#overdue}}
+        <div class="alert alert-danger" data-region="retention-warning">
+            {{#str}}stats:overdue, local_kaiproctor{{/str}}
+        </div>
+    {{/overdue}}
+    <div class="table-responsive">
+        <table class="table table-sm w-auto">
+            <tbody>
+                <tr>
+                    <th scope="row">{{#str}}stats:evidencecount, local_kaiproctor{{/str}}</th>
+                    <td data-stat="evidencecount">{{evidencecount}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">{{#str}}stats:evidencesize, local_kaiproctor{{/str}}</th>
+                    <td>{{evidencesize}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">{{#str}}settings:retentiondays, local_kaiproctor{{/str}}</th>
+                    <td>{{retentiondays}}</td>
+                </tr>
+                {{#hasoldest}}
+                    <tr>
+                        <th scope="row">{{#str}}stats:oldestevidence, local_kaiproctor{{/str}}</th>
+                        <td>{{oldestevidence}}</td>
+                    </tr>
+                {{/hasoldest}}
+                <tr>
+                    <th scope="row">{{#str}}stats:purgelastrun, local_kaiproctor{{/str}}</th>
+                    <td>
+                        {{#purgeneverrun}}{{#str}}stats:neverrun, local_kaiproctor{{/str}}{{/purgeneverrun}}
+                        {{^purgeneverrun}}{{purgelastrun}}{{/purgeneverrun}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

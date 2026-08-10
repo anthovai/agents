@@ -73,13 +73,22 @@ def moodle(*args: str) -> str:
 
 @pytest.fixture(scope="session", autouse=True)
 def install_support_script():
-    """Put the support CLI in the container before anything runs."""
+    """Put the support CLI, and the sample exam pack, in the containers."""
     subprocess.run(
         ["docker", "compose", "cp", str(Path("tests") / "support" / "kp-query.php"),
          "moodle:/var/www/html/kp-query.php"],
         cwd=PROJECT_ROOT, capture_output=True, text=True,
         env={**os.environ, "MSYS_NO_PATHCONV": "1"}, check=True,
     )
+
+    sample = PROJECT_ROOT / "face-service" / "tests" / "sample-exam.pdf"
+    if sample.is_file():
+        subprocess.run(
+            ["docker", "compose", "cp", str(sample.relative_to(PROJECT_ROOT)),
+             "moodle:/tmp/sample.pdf"],
+            cwd=PROJECT_ROOT, capture_output=True, text=True,
+            env={**os.environ, "MSYS_NO_PATHCONV": "1"},
+        )
     yield
 
 

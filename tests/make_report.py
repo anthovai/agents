@@ -97,6 +97,23 @@ REQUIREMENTS = [
 # Capabilities beyond the original seven, added since.
 EXTRAS = [
     (
+        "นำเข้าข้อสอบจาก PDF แนวข้อสอบไทย",
+        [
+            "test_the_parser_reads_a_thai_exam_pack",
+            "test_difficulty_is_spread_across_the_pack",
+            "test_a_file_that_is_not_an_exam_pack_is_refused",
+            "test_importing_puts_the_questions_in_the_bank_with_difficulty_tags",
+        ],
+    ),
+    (
+        "หน้าสถิติสำหรับผู้ดูแล",
+        [
+            "test_the_stats_page_reports_the_service_and_the_evidence",
+            "test_the_stats_page_says_when_the_face_service_is_unreachable",
+            "test_the_stats_page_warns_when_retention_is_not_being_enforced",
+        ],
+    ),
+    (
         "บันทึกการเรียนเป็นครั้งๆ พร้อมกฎที่บังคับตอนนั้น (audit)",
         [
             "test_starting_a_lesson_opens_one_sitting",

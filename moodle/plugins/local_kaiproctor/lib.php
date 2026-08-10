@@ -177,4 +177,44 @@ function local_kaiproctor_extend_navigation(global_navigation $navigation) {
             new pix_icon('i/course', '')
         );
     }
+
+    if (has_capability('local/kaiproctor:manage', context_system::instance())) {
+        $node->add(
+            get_string('stats:title', 'local_kaiproctor'),
+            new moodle_url('/local/kaiproctor/stats.php'),
+            navigation_node::TYPE_CUSTOM,
+            null,
+            'local_kaiproctor_stats',
+            new pix_icon('i/report', '')
+        );
+    }
+}
+
+/**
+ * Offer the PDF question import inside a course.
+ *
+ * It belongs here rather than in site administration: questions go into a
+ * course's bank, and the person with the PDF is usually the teacher.
+ *
+ * @param navigation_node $navigation
+ * @param stdClass $course
+ * @param context_course $context
+ */
+function local_kaiproctor_extend_navigation_course(
+    navigation_node $navigation,
+    stdClass $course,
+    context_course $context
+) {
+    if (!has_capability('moodle/question:add', $context)) {
+        return;
+    }
+
+    $navigation->add(
+        get_string('import:title', 'local_kaiproctor'),
+        new moodle_url('/local/kaiproctor/import.php', ['courseid' => $course->id]),
+        navigation_node::TYPE_SETTING,
+        null,
+        'local_kaiproctor_import',
+        new pix_icon('i/import', '')
+    );
 }

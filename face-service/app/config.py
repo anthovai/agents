@@ -33,6 +33,10 @@ LIVENESS_THRESHOLD = _env_float("FACE_LIVENESS_THRESHOLD", 0.60)
 MIN_FACE_SIZE = int(_env_float("FACE_MIN_SIZE", 80))
 MAX_IMAGE_BYTES = int(_env_float("FACE_MAX_IMAGE_BYTES", 8 * 1024 * 1024))
 
+# Question-bank PDFs are uploaded by staff, not learners, but an unbounded
+# upload is still an unbounded upload.
+MAX_PDF_BYTES = int(_env_float("PROCTOR_MAX_PDF_BYTES", 32 * 1024 * 1024))
+
 # Face detector confidence — YuNet scores are well separated, 0.9 is strict.
 DET_SCORE_THRESHOLD = _env_float("FACE_DET_SCORE", 0.9)
 

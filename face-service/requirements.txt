@@ -3,6 +3,9 @@ uvicorn[standard]
 opencv-python-headless>=4.10
 onnxruntime
 numpy
+# MIT, and layout-aware. Deliberately not PyMuPDF, which is AGPL-3.0 and
+# would put a licence problem on a product that already had one.
+pdfminer.six
 python-multipart
 pytest
 httpx
