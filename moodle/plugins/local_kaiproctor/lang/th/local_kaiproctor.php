@@ -220,12 +220,10 @@ $string['settings:ai'] = 'ผู้ช่วย AI';
 $string['settings:ai_desc'] = 'ใช้หรือไม่ก็ได้ โมเดลภาษาช่วยสรุปการเรียนแต่ละครั้งให้ผู้ตรวจ และช่วยชี้ข้อสอบที่ข้อความไทยดูผิดเพี้ยนจากการนำเข้า PDF โมเดล<strong>ไม่เห็นภาพ คลิป หรือค่าที่แทนใบหน้า</strong> และ<strong>ไม่ตัดสินอะไรทั้งสิ้น</strong> ทุกคำตอบเป็นเพียงคำแนะนำที่คนต้องพิจารณาเอง<br><br><strong>ก่อนเปิดใช้กับโมเดลบนคลาวด์ ต้องตรวจว่าการส่งข้อมูลกิจกรรมของผู้เรียนออกนอกองค์กรอยู่ในขอบเขตของเอกสารความยินยอมและสัญญาประมวลผลข้อมูลแล้ว</strong> ถ้ายังไม่ครอบคลุม ให้ชี้ gateway ไปที่โมเดลที่รันเองแทน';
 $string['settings:aienabled'] = 'เปิดใช้ผู้ช่วย AI';
 $string['settings:aienabled_desc'] = 'ปิดไว้เป็นค่าเริ่มต้น ไม่มีส่วนอื่นของระบบที่ต้องพึ่งพา';
-$string['settings:aibaseurl'] = 'URL ของ gateway';
-$string['settings:aibaseurl_desc'] = 'ปลายทางที่เข้ากันได้กับ OpenAI เช่น http://llm-gateway:4000/v1 เริ่ม gateway ที่ให้มาด้วย: docker compose --profile ai up -d';
-$string['settings:aiapikey'] = 'กุญแจของ gateway';
-$string['settings:aiapikey_desc'] = 'ส่งเป็น bearer token นี่คือกุญแจของ gateway เอง ไม่ใช่กุญแจของผู้ให้บริการโมเดล ซึ่งเก็บอยู่ใน gateway';
-$string['settings:aimodel'] = 'ชื่อโมเดล';
-$string['settings:aimodel_desc'] = 'ชื่อที่ gateway แม็พไปยังโมเดลจริง การเลือกโมเดลเป็นเรื่องของ gateway การเปลี่ยนจากโมเดลคลาวด์เป็นโมเดลที่รันเองจึงไม่ต้องแก้ตรงนี้';
+$string['settings:aibaseurl'] = 'ที่อยู่บริการผู้ช่วย AI';
+$string['settings:aibaseurl_desc'] = 'ตำแหน่งที่บริการ AI reviewer ทำงาน เช่น http://ai-service:9100 — คำสั่งที่ให้โมเดลและกฎว่าส่งอะไรได้บ้าง อยู่ที่บริการนั้น ไม่ได้อยู่ที่นี่';
+$string['settings:aiapikey'] = 'กุญแจของบริการ';
+$string['settings:aiapikey_desc'] = 'ส่งเป็น X-Proctor-Key — ส่วนที่ว่าโมเดลไหนตอบ และรันบนเครื่องเราหรือของผู้ให้บริการ เป็นการตั้งค่าที่ตัวบริการ';
 
 $string['ai:notconfigured'] = 'ยังไม่ได้เปิดใช้ผู้ช่วย AI';
 $string['ai:badresponse'] = 'gateway ตอบกลับมา แต่ไม่ใช่ผลลัพธ์ของโมเดล';

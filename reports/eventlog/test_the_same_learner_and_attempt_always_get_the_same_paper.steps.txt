@@ -1,4 +1,4 @@
 draw attempt 1 for the learner
-seed 885221601 -> questions [19, 40, 12]
+seed 885221601 -> questions [7, 9, 30]
 throw it away and draw attempt 1 again
-seed 885221601 -> questions [19, 40, 12]
+seed 885221601 -> questions [7, 9, 30]

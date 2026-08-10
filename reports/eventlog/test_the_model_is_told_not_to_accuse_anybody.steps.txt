@@ -1,1 +1,1 @@
-guardrails found in: <?php // Drafting a summary of a sitting for the person who has to review it. // // A reviewer facing a hundred sittings
+guardrails found in: You summarise online exam monitoring records for a human reviewer at a Thai training provider. Write in Thai. You are gi

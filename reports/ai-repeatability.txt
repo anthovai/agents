@@ -1,0 +1,9 @@
+run 1: ['q1', 'q2']
+run 2: ['q1', 'q2']
+run 3: ['q1', 'q2']
+run 4: ['q1', 'q2']
+run 5: ['q1', 'q2']
+run 6: ['q1', 'q2']
+
+caught the damaged q1 in 6/6 runs
+false-flagged the clean q2 in 6/6 runs

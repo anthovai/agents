@@ -34,3 +34,4 @@ moodle/plugins/mod_interactivevideo/
 # OFL font it downloads. The generator is tracked; its output is not.
 face-service/tests/sample-exam.pdf
 face-service/tests/*.ttf
+ai-service/reports/

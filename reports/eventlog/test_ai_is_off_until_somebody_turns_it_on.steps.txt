@@ -1,1 +1,1 @@
-AI settings: {'enabled': '0', 'baseurl': 'http://llm-gateway:4000/v1', 'model': 'proctor-reviewer', 'defaultenabled': '0'}
+AI settings: {'enabled': '0', 'baseurl': 'http://ai-service:9100', 'defaultenabled': '0'}

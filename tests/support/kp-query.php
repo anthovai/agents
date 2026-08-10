@@ -7,6 +7,9 @@
 
 define('CLI_SCRIPT', true);
 require('/var/www/html/config.php');
+// A CLI script gets none of a web request's incidental includes, and \curl is
+// defined in filelib rather than somewhere the class autoloader will find.
+require_once($CFG->libdir . '/filelib.php');
 
 global $DB;
 
@@ -361,14 +364,21 @@ switch ($command) {
         break;
 
     case 'ai-configured':
-        echo \local_kaiproctor\ai_client::is_configured() ? "yes\n" : "no\n";
+        // Whether a model is reachable, asked directly of the service rather
+        // than through the plugin's on/off switch: a test that needs a model
+        // should skip when there is no model, not when a setting is off.
+        $base = rtrim((string) get_config('local_kaiproctor', 'aibaseurl'), '/')
+            ?: 'http://ai-service:9100';
+        $curl = new \curl(['ignoresecurity' => true]);
+        $health = json_decode($curl->get($base . '/health', [],
+            ['CURLOPT_TIMEOUT' => 10, 'CURLOPT_CONNECTTIMEOUT' => 5]), true);
+        echo !empty($health['backend_reachable']) ? "yes\n" : "no\n";
         break;
 
     case 'ai-state':
         echo json_encode([
             'enabled' => (string) get_config('local_kaiproctor', 'aienabled'),
             'baseurl' => (string) get_config('local_kaiproctor', 'aibaseurl'),
-            'model' => (string) get_config('local_kaiproctor', 'aimodel'),
             // What the plugin ships with, not what this environment has been
             // set to: the guarantee is that it arrives switched off.
             'defaultenabled' => '0',
@@ -376,8 +386,13 @@ switch ($command) {
         echo "\n";
         break;
 
+    case 'ai-health':
+        echo json_encode(\local_kaiproctor\ai_client::health(), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
     case 'ai-payload':
-        // Exactly what would be handed to the model for this learner's most
+        // Exactly what would be handed to the service for this learner's most
         // recent sitting — the thing the boundary test inspects.
         $user = kp_user($argv[2]);
         $session = $DB->get_record_sql(
@@ -407,10 +422,16 @@ switch ($command) {
         break;
 
     case 'ai-prompt':
-        // The instructions are part of the product, so a test reads them: an
-        // edit that quietly drops a guardrail should fail something.
-        echo file_get_contents(
-            '/var/www/html/public/local/kaiproctor/classes/ai_reviewer.php');
+        // The instructions now live in the service, which publishes them so an
+        // auditor can read the guardrails without being handed the source —
+        // and so this test can read them from outside the process that uses
+        // them, which is the only place the check is worth anything.
+        $base = rtrim((string) get_config('local_kaiproctor', 'aibaseurl'), '/');
+        $curl = new \curl(['ignoresecurity' => true]);
+        $body = json_decode($curl->get($base . '/prompts', [],
+            ['CURLOPT_TIMEOUT' => 10, 'CURLOPT_CONNECTTIMEOUT' => 5]), true);
+        echo implode("\n\n", $body['prompts'] ?? []);
+        echo "\n";
         break;
 
     case 'seb-info':

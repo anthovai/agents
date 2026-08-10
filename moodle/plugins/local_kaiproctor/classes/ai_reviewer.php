@@ -89,41 +89,10 @@ class ai_reviewer {
             return ['ok' => false, 'error' => ['code' => 'unknown_session', 'message' => '']];
         }
 
-        $system = <<<'PROMPT'
-You summarise online exam monitoring records for a human reviewer at a Thai
-training provider. Write in Thai.
-
-You are given counts of what a monitoring system recorded during one sitting.
-You are NOT given any image, any face measurement, or any identifying detail,
-and you must not ask for any.
-
-Write at most six short sentences:
-  1. What happened during the sitting, plainly.
-  2. Which parts, if any, a reviewer should look at, and why.
-
-Rules you must follow:
-  - Do not state or imply that the learner cheated, or that they did not. You
-    cannot know that, and a reviewer deciding it needs to weigh the evidence
-    themselves.
-  - Do not recommend passing, failing, or disciplining anybody.
-  - If the record shows nothing unusual, say so in one sentence rather than
-    inventing concerns.
-  - Say when the record is too thin to say much, rather than filling the gap.
-PROMPT;
-
-        $user = "บันทึกการเรียน 1 ครั้ง:\n" .
-            json_encode($facts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-        $result = ai_client::ask($system, $user);
-        if (empty($result['ok'])) {
-            return $result;
-        }
-
-        return [
-            'ok' => true,
-            'summary' => trim($result['content']),
-            'model' => $result['model'] ?? '',
-        ];
+        // The prompt is not here any more. It lives in the reviewer service,
+        // where a customer running their own copy of this plugin cannot edit
+        // it — which is the point of the service existing.
+        return ai_client::call('/summarise', ['sitting' => $facts]);
     }
 
     /**
@@ -143,55 +112,15 @@ PROMPT;
             return ['ok' => false, 'error' => ['code' => 'nothing_to_check', 'message' => '']];
         }
 
-        $system = <<<'PROMPT'
-You are proof-reading Thai multiple-choice questions that were extracted from a
-PDF. Extraction sometimes puts Thai vowels and tone marks in the wrong order
-within a word, so a word can look almost right but be misspelled.
-
-For each question you are given, decide only whether the Thai text looks
-damaged. Reply as a JSON array, one object per problem found:
-
-  [{"id": "<question id>", "problem": "<what looks wrong, in Thai>"}]
-
-Reply with [] if nothing looks damaged. Judge only the spelling and the shape
-of the words. Do not comment on whether a question is a good question, and do
-not rewrite anything — a person will fix what you point at.
-PROMPT;
-
         $material = [];
         foreach ($sample as $question) {
             $material[] = [
-                'id' => $question['id'] ?? '',
-                'text' => $question['text'] ?? '',
-                'choices' => $question['choices'] ?? [],
+                'id' => (string) ($question['id'] ?? ''),
+                'text' => (string) ($question['text'] ?? ''),
+                'choices' => array_values($question['choices'] ?? []),
             ];
         }
 
-        $result = ai_client::ask($system,
-            json_encode($material, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        if (empty($result['ok'])) {
-            return $result;
-        }
-
-        // The model was asked for JSON but is not trusted to have obeyed; a
-        // malformed reply is reported as no findings rather than crashing an
-        // import screen.
-        $findings = json_decode(self::extract_json($result['content']), true);
-
-        return [
-            'ok' => true,
-            'findings' => is_array($findings) ? $findings : [],
-            'raw' => $result['content'],
-        ];
-    }
-
-    /** Pull the JSON array out of a reply that may be wrapped in prose. */
-    protected static function extract_json(string $content): string {
-        $start = strpos($content, '[');
-        $end = strrpos($content, ']');
-        if ($start === false || $end === false || $end < $start) {
-            return '[]';
-        }
-        return substr($content, $start, $end - $start + 1);
+        return ai_client::call('/check-questions', ['questions' => $material]);
     }
 }

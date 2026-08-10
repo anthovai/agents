@@ -52,6 +52,29 @@ function kp_ensure_user(string $username, string $password,
     return $DB->get_record('user', ['id' => $user->id]);
 }
 
+mtrace('service wiring:');
+// Where the two side-car services live, and the secret shared with them. These
+// were being set by hand, which meant a fresh site looked installed and then
+// failed at the first face check with an unhelpful error.
+//
+// Only filled in when empty, so re-seeding a site somebody has configured
+// properly does not overwrite their settings with the development defaults.
+$sharedkey = getenv('PROCTOR_API_KEY') ?: 'change-me';
+foreach ([
+    'faceserviceurl' => 'http://face-service:9000',
+    'apikey' => $sharedkey,
+    // The reviewer service, which holds the prompts and refuses payloads that
+    // carry anything derived from a face. Left switched off; aienabled is the
+    // administrator's decision, and off is the shipped default.
+    'aibaseurl' => 'http://ai-service:9100',
+    'aiapikey' => $sharedkey,
+] as $name => $value) {
+    if ((string) get_config('local_kaiproctor', $name) === '') {
+        set_config($name, $value, 'local_kaiproctor');
+        mtrace("  set {$name}");
+    }
+}
+
 mtrace('consent policy:');
 // PDPA section 26 requires explicit consent before biometric data is collected.
 // tool_policy is Moodle's own mechanism for that — versioned, timestamped, and

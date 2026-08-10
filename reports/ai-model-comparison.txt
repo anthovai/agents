@@ -1,0 +1,3 @@
+qwen2.5:7b-instruct      -> flagged ['q1', 'q3']   (q1,q3 are damaged; q2 is clean)
+qwen3:8b                 -> flagged ['q1', 'q3']   (q1,q3 are damaged; q2 is clean)
+llama3.1:8b              -> flagged ['q1', 'q3']   (q1,q3 are damaged; q2 is clean)

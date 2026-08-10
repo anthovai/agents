@@ -17,7 +17,8 @@ import pytest
 from conftest import moodle
 
 
-def gateway_available() -> bool:
+def model_available() -> bool:
+    """Asked of the reviewer service, not of the on/off switch."""
     return moodle("ai-configured").strip() == "yes"
 
 
@@ -92,7 +93,7 @@ def test_the_summary_is_labelled_as_a_draft_not_a_finding(session, clean_learner
     assert "ไม่มีส่วนตัดสิน" in note, "the wording does not say it decides nothing"
 
 
-def test_a_gateway_that_is_not_there_fails_visibly(session):
+def test_a_service_that_is_not_there_fails_visibly(session):
     """An advisory feature may be unavailable; it may not fail silently and
     leave a reviewer thinking there was nothing to say."""
     original = json.loads(moodle("ai-state"))
@@ -101,7 +102,7 @@ def test_a_gateway_that_is_not_there_fails_visibly(session):
         moodle("set-setting", "aibaseurl", "http://127.0.0.1:9998/v1")
 
         result = json.loads(moodle("ai-summarise-latest", "learner"))
-        session.note(f"result with no gateway: {result}")
+        session.note(f"result with no service: {result}")
 
         assert result["ok"] is False
         assert result["error"]["code"] in ("unreachable", "bad_response")
@@ -128,8 +129,13 @@ def test_the_model_is_told_not_to_accuse_anybody(session):
         assert guardrail in prompt, f"the instruction '{guardrail}' is gone"
 
 
-@pytest.mark.skipif(not gateway_available(), reason="the LLM gateway is not running")
-def test_a_summary_comes_back_when_the_gateway_is_up(session, clean_learner):
+@pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
+def test_a_summary_comes_back_when_a_model_is_behind_the_service(session, clean_learner):
+    """The whole chain: platform -> reviewer service -> model.
+
+    Left switched off outside this test, because the shipped default being
+    'off' is itself one of the guarantees.
+    """
     clean_learner("learner")
     moodle("seed-enrolment", "learner")
 
@@ -140,8 +146,20 @@ def test_a_summary_comes_back_when_the_gateway_is_up(session, clean_learner):
     session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
     session.beat(2)
 
-    result = json.loads(moodle("ai-summarise-latest", "learner"))
-    session.note(f"summary: {result}")
+    original = json.loads(moodle("ai-state"))
+    try:
+        moodle("set-setting", "aienabled", "1")
+        health = json.loads(moodle("ai-health"))
+        session.note(f"model behind the service: {health.get('model')} at {health.get('backend')}")
 
-    assert result["ok"] is True
-    assert len(result["summary"]) > 20
+        result = json.loads(moodle("ai-summarise-latest", "learner"))
+        session.note(f"summary: {str(result)[:400]}")
+
+        assert result["ok"] is True, f"the chain failed: {result}"
+        assert len(result["summary"]) > 20
+
+        # The service refuses to hand back a summary that reached a verdict,
+        # so a summary arriving at all is itself the assertion that it did not.
+        assert result["model"], "the service did not say which model wrote it"
+    finally:
+        moodle("set-setting", "aienabled", original["enabled"] or "0")

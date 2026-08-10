@@ -1,20 +1,20 @@
 <?php
-// Talking to the LLM gateway.
+// Talking to the AI reviewer service.
 //
-// Two rules are enforced here rather than left to callers, because a caller
-// that gets them wrong causes a data-protection incident, not a bug:
+// This used to call an OpenAI-compatible endpoint directly, with the prompts
+// and the rules about what may be sent living here, in the plugin. That works
+// while we own both ends. It stops working the moment a customer takes the
+// plugin source and maintains their own copy: the guardrails become theirs to
+// edit, and the payload becomes theirs to widen, while the summaries still
+// carry our name.
 //
-//   1. Only text goes out. No photograph, no clip, no face embedding, ever.
-//      The consent document tells learners their biometric data goes to a
-//      stateless service that keeps nothing; sending it to a language model
-//      instead would make that statement false.
+// So the plugin now posts a documented payload to a service we run, and the
+// service decides what to do with it — including refusing payloads that carry
+// anything derived from a face. The boundary is the product; see
+// ai-service/app/contract.py.
 //
-//   2. Nothing that comes back decides anything. Every response is advice for
-//      a human reviewer, stored and displayed as such. A proctoring decision
-//      that a person cannot trace to a rule is not evidence.
-//
-// The endpoint is OpenAI-compatible, so the gateway can put GPT-5 mini or a
-// model on our own hardware behind it without this file changing.
+// What stays true either way: only text goes out, and nothing that comes back
+// decides anything.
 
 namespace local_kaiproctor;
 
@@ -22,8 +22,12 @@ defined('MOODLE_INTERNAL') || die();
 
 class ai_client {
 
-    /** A reviewer is waiting for this, but not forever. */
-    const TIMEOUT = 60;
+    /** A reviewer is waiting for this, but not forever. A model on local
+     *  hardware is slower than a hosted one, so this is not tight. */
+    const TIMEOUT = 150;
+
+    /** The payload shape this plugin speaks. The service checks it. */
+    const CONTRACT = '1.0';
 
     public static function is_configured(): bool {
         return (bool) get_config('local_kaiproctor', 'aienabled')
@@ -31,13 +35,13 @@ class ai_client {
     }
 
     /**
-     * Ask the model for a structured answer.
+     * Post a payload to the reviewer service.
      *
-     * @param string $system what the model is being asked to be
-     * @param string $user the material, already stripped of anything personal
-     * @return array {ok, content} or {ok:false, error}
+     * @param string $path e.g. '/summarise'
+     * @param array $body already restricted to what the contract allows
+     * @return array whatever the service returned, or {ok:false, error}
      */
-    public static function ask(string $system, string $user): array {
+    public static function call(string $path, array $body): array {
         global $CFG;
 
         require_once($CFG->libdir . '/filelib.php');
@@ -48,20 +52,7 @@ class ai_client {
         }
 
         $base = rtrim(trim((string) get_config('local_kaiproctor', 'aibaseurl')), '/');
-        $model = trim((string) get_config('local_kaiproctor', 'aimodel')) ?: 'proctor-reviewer';
-
-        $payload = [
-            'model' => $model,
-            'messages' => [
-                ['role' => 'system', 'content' => $system],
-                ['role' => 'user', 'content' => $user],
-            ],
-            // Low, not zero: a summary that reads like a person wrote it is
-            // more useful than one that reads like a template, and nothing
-            // here is a decision that needs determinism.
-            'temperature' => 0.2,
-            'max_tokens' => 700,
-        ];
+        $body['contract'] = self::CONTRACT;
 
         // Same SSRF exemption as the face service, for the same reason: the
         // URL is an admin setting pointing at our own network, not user input.
@@ -69,10 +60,10 @@ class ai_client {
         $curl->setHeader('Content-Type: application/json');
         $key = (string) get_config('local_kaiproctor', 'aiapikey');
         if ($key !== '') {
-            $curl->setHeader('Authorization: Bearer ' . $key);
+            $curl->setHeader('X-Proctor-Key: ' . $key);
         }
 
-        $response = $curl->post($base . '/chat/completions', json_encode($payload),
+        $response = $curl->post($base . $path, json_encode($body),
             ['CURLOPT_TIMEOUT' => self::TIMEOUT, 'CURLOPT_CONNECTTIMEOUT' => 5]);
 
         if ($curl->get_errno()) {
@@ -84,16 +75,34 @@ class ai_client {
             return self::fail('bad_response',
                 get_string('ai:badresponse', 'local_kaiproctor'));
         }
-        if (isset($decoded['error'])) {
-            return self::fail('rejected', (string) ($decoded['error']['message'] ?? ''));
+
+        // The service already reports failures in this shape, including the
+        // ones it raises itself — a refused payload, or a model that reached a
+        // verdict — so they are passed through with their diagnosis intact.
+        return $decoded;
+    }
+
+    /** Whether the service answers at all, and what is behind it. */
+    public static function health(): array {
+        global $CFG;
+
+        require_once($CFG->libdir . '/filelib.php');
+
+        if (!self::is_configured()) {
+            return self::fail('not_configured', '');
         }
 
-        $content = $decoded['choices'][0]['message']['content'] ?? '';
-        if (trim($content) === '') {
-            return self::fail('empty', get_string('ai:emptyresponse', 'local_kaiproctor'));
-        }
+        $base = rtrim(trim((string) get_config('local_kaiproctor', 'aibaseurl')), '/');
+        $curl = new \curl(['ignoresecurity' => true]);
+        $response = $curl->get($base . '/health',
+            [], ['CURLOPT_TIMEOUT' => 10, 'CURLOPT_CONNECTTIMEOUT' => 5]);
 
-        return ['ok' => true, 'content' => $content, 'model' => $decoded['model'] ?? $model];
+        if ($curl->get_errno()) {
+            return self::fail('unreachable', $curl->error);
+        }
+        $decoded = json_decode($response, true);
+        return is_array($decoded) ? $decoded
+            : self::fail('bad_response', get_string('ai:badresponse', 'local_kaiproctor'));
     }
 
     protected static function fail(string $code, string $message): array {

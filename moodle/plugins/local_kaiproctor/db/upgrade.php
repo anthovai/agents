@@ -84,5 +84,25 @@ function xmldb_local_kaiproctor_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026081003, 'local', 'kaiproctor');
     }
 
+    if ($oldversion < 2026081005) {
+        // The plugin used to speak to an OpenAI-compatible gateway directly,
+        // holding the prompts and the payload rules itself. It now posts to
+        // the KAISER reviewer service, which enforces them at the boundary.
+        //
+        // A site that was already configured keeps pointing at the old gateway
+        // otherwise: changing a default in settings.php does nothing to a
+        // value that has already been stored.
+        $current = (string) get_config('local_kaiproctor', 'aibaseurl');
+        if ($current === '' || strpos($current, '/v1') !== false) {
+            set_config('aibaseurl', 'http://ai-service:9100', 'local_kaiproctor');
+        }
+
+        // The model is the service's decision now, so the setting is gone and
+        // its stored value would only mislead whoever reads the config table.
+        unset_config('aimodel', 'local_kaiproctor');
+
+        upgrade_plugin_savepoint(true, 2026081005, 'local', 'kaiproctor');
+    }
+
     return true;
 }

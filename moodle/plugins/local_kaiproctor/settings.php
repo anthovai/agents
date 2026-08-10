@@ -139,13 +139,6 @@ if ($hassiteconfig) {
         ''
     ));
 
-    $settings->add(new admin_setting_configtext(
-        'local_kaiproctor/aimodel',
-        get_string('settings:aimodel', 'local_kaiproctor'),
-        get_string('settings:aimodel_desc', 'local_kaiproctor'),
-        'proctor-reviewer',
-        PARAM_TEXT
-    ));
 
     $ADMIN->add('localplugins', $settings);
 }
