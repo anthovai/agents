@@ -106,10 +106,20 @@ def _estimate_pose(landmarks: np.ndarray, shape: tuple[int, int]) -> tuple[float
     """
     h, w = shape
     camera = np.array([[w, 0, w / 2], [0, w, h / 2], [0, 0, 1]], dtype=np.float64)
-    ok, rvec, _ = cv2.solvePnP(
-        _MODEL_POINTS, landmarks.astype(np.float64), camera,
-        np.zeros((4, 1)), flags=cv2.SOLVEPNP_ITERATIVE,
-    )
+
+    # SQPNP, not the default ITERATIVE: iterative bootstraps with DLT, which
+    # needs six point correspondences, and YuNet gives five. With five points
+    # it does not return a poor answer — it raises, on every real face.
+    try:
+        ok, rvec, _ = cv2.solvePnP(
+            _MODEL_POINTS, landmarks.astype(np.float64), camera,
+            np.zeros((4, 1)), flags=cv2.SOLVEPNP_SQPNP,
+        )
+    except cv2.error:
+        # Pose is used to steer the liveness challenge, not to decide identity.
+        # Losing it should degrade the challenge, never fail the detection.
+        return (0.0, 0.0, 0.0)
+
     if not ok:
         return (0.0, 0.0, 0.0)
 

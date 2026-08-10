@@ -1,6 +1,6 @@
 # ผลการทดสอบระบบคุมสอบบน Moodle
 
-รันเมื่อ **2026-08-09 18:07 UTC**
+รันเมื่อ **2026-08-10 02:05 UTC**
 · Moodle **5.1.5+ (Build: 20260807)**
 · face-service **yunet+sface** (โมเดล 4 ตัว, liveness พร้อม)
 · เกณฑ์ผ่านที่ใช้ตอนทดสอบ **0.363**
@@ -12,7 +12,7 @@
 |---|---|
 | ผ่าน | **48** |
 | ไม่ผ่าน | 0 |
-| เวลาที่ใช้ | 1151.9 วินาที |
+| เวลาที่ใช้ | 689.7 วินาที |
 
 ## ไฟล์หลักฐานในโฟลเดอร์นี้
 
@@ -49,54 +49,54 @@
 
 | เทสต์ | ผล | วินาที |
 |---|---|---|
-| `test_face_service_is_up_with_every_model_loaded` | ผ่าน | 15.6 |
-| `test_both_plugins_are_installed` | ผ่าน | 0.1 |
+| `test_face_service_is_up_with_every_model_loaded` | ผ่าน | 2.5 |
+| `test_both_plugins_are_installed` | ผ่าน | 0.0 |
 | `test_all_web_services_are_registered` | ผ่าน | 0.0 |
 | `test_pdpa_policy_is_the_site_policy_handler` | ผ่าน | 0.0 |
-| `test_site_loads` | ผ่าน | 16.4 |
-| `test_face_service_is_not_reachable_from_the_browser` | ผ่าน | 6.1 |
-| `test_nothing_is_reachable_before_consent_is_given` | ผ่าน | 27.5 |
-| `test_enrolment_becomes_reachable_once_consent_is_given` | ผ่าน | 29.2 |
-| `test_consent_document_states_what_is_collected` | ผ่าน | 33.9 |
-| `test_consent_is_compulsory_not_optional` | ผ่าน | 30.1 |
-| `test_learner_can_see_their_own_consent_record` | ผ่าน | 22.8 |
-| `test_enrol_page_explains_what_will_happen` | ผ่าน | 14.9 |
-| `test_challenge_asks_for_a_randomised_sequence` | ผ่าน | 14.7 |
-| `test_enrolment_is_refused_when_no_face_is_visible` | ผ่าน | 35.4 |
-| `test_the_page_reports_a_camera_that_will_not_start` | ผ่าน | 17.8 |
-| `test_lesson_page_offers_the_video_and_a_camera_preview` | ผ่าน | 15.0 |
-| `test_leaving_the_window_pauses_the_video_and_is_recorded` | ผ่าน | 23.8 |
-| `test_a_violation_captures_evidence` | ผ่าน | 28.7 |
-| `test_presence_check_runs_on_its_interval_and_pauses_the_lesson` | ผ่าน | 30.9 |
-| `test_identity_check_runs_on_its_own_interval` | ผ่าน | 37.8 |
-| `test_a_random_clip_is_recorded_and_stored` | ผ่าน | 33.5 |
-| `test_the_learner_is_asked_to_confirm_they_are_still_there` | ผ่าน | 29.1 |
-| `test_lockdown_blocks_and_reports_every_browser_exit` | ผ่าน | 27.4 |
-| `test_text_selection_and_dragging_are_suppressed` | ผ่าน | 20.3 |
-| `test_an_unknown_signal_is_refused_by_the_server` | ผ่าน | 25.9 |
-| `test_quiz_announces_that_it_is_proctored` | ผ่าน | 22.0 |
-| `test_a_learner_with_no_enrolled_face_cannot_start` | ผ่าน | 41.4 |
-| `test_the_preflight_check_asks_for_the_camera` | ผ่าน | 22.2 |
-| `test_a_forged_client_marker_does_not_open_the_attempt` | ผ่าน | 28.8 |
-| `test_a_server_written_pass_opens_the_attempt` | ผ่าน | 23.2 |
-| `test_monitoring_runs_during_the_attempt` | ผ่าน | 31.5 |
-| `test_answers_can_be_submitted_and_graded` | ผ่าน | 38.6 |
-| `test_the_report_shows_checks_evidence_and_signals` | ผ่าน | 31.4 |
-| `test_the_report_records_the_threshold_that_was_in_force` | ผ่าน | 23.2 |
-| `test_one_learner_cannot_read_another_learners_evidence` | ผ่าน | 43.3 |
-| `test_expired_evidence_is_purged` | ผ่าน | 29.1 |
-| `test_privacy_api_deletes_the_face_on_erasure` | ผ่าน | 34.8 |
-| `test_seb_is_configured_with_a_real_config_key` | ผ่าน | 2.1 |
-| `test_an_ordinary_browser_cannot_start_the_seb_quiz` | ผ่าน | 19.2 |
-| `test_the_seb_config_file_is_downloadable_by_the_learner` | ผ่าน | 17.3 |
-| `test_both_rules_describe_themselves_to_the_learner` | ผ่าน | 18.1 |
-| `test_the_activity_says_it_is_proctored_before_anything_starts` | ผ่าน | 20.0 |
-| `test_monitoring_starts_when_the_learner_begins` | ผ่าน | 25.3 |
-| `test_the_video_player_is_found_through_its_published_interface` | ผ่าน | 23.6 |
-| `test_leaving_the_activity_window_is_recorded` | ผ่าน | 32.4 |
-| `test_staff_viewing_the_activity_are_not_monitored` | ผ่าน | 15.1 |
-| `test_staff_can_turn_proctoring_off_and_on` | ผ่าน | 25.0 |
-| `test_an_unmonitored_activity_is_left_alone` | ผ่าน | 46.5 |
+| `test_site_loads` | ผ่าน | 8.5 |
+| `test_face_service_is_not_reachable_from_the_browser` | ผ่าน | 3.0 |
+| `test_nothing_is_reachable_before_consent_is_given` | ผ่าน | 12.7 |
+| `test_enrolment_becomes_reachable_once_consent_is_given` | ผ่าน | 19.6 |
+| `test_consent_document_states_what_is_collected` | ผ่าน | 14.5 |
+| `test_consent_is_compulsory_not_optional` | ผ่าน | 18.3 |
+| `test_learner_can_see_their_own_consent_record` | ผ่าน | 17.0 |
+| `test_enrol_page_explains_what_will_happen` | ผ่าน | 13.3 |
+| `test_challenge_asks_for_a_randomised_sequence` | ผ่าน | 11.1 |
+| `test_enrolment_is_refused_when_no_face_is_visible` | ผ่าน | 31.2 |
+| `test_the_page_reports_a_camera_that_will_not_start` | ผ่าน | 11.8 |
+| `test_lesson_page_offers_the_video_and_a_camera_preview` | ผ่าน | 11.1 |
+| `test_leaving_the_window_pauses_the_video_and_is_recorded` | ผ่าน | 18.3 |
+| `test_a_violation_captures_evidence` | ผ่าน | 16.3 |
+| `test_presence_check_runs_on_its_interval_and_pauses_the_lesson` | ผ่าน | 20.0 |
+| `test_identity_check_runs_on_its_own_interval` | ผ่าน | 23.1 |
+| `test_a_random_clip_is_recorded_and_stored` | ผ่าน | 23.5 |
+| `test_the_learner_is_asked_to_confirm_they_are_still_there` | ผ่าน | 17.0 |
+| `test_lockdown_blocks_and_reports_every_browser_exit` | ผ่าน | 14.6 |
+| `test_text_selection_and_dragging_are_suppressed` | ผ่าน | 9.7 |
+| `test_an_unknown_signal_is_refused_by_the_server` | ผ่าน | 10.1 |
+| `test_quiz_announces_that_it_is_proctored` | ผ่าน | 10.5 |
+| `test_a_learner_with_no_enrolled_face_cannot_start` | ผ่าน | 11.4 |
+| `test_the_preflight_check_asks_for_the_camera` | ผ่าน | 13.0 |
+| `test_a_forged_client_marker_does_not_open_the_attempt` | ผ่าน | 15.1 |
+| `test_a_server_written_pass_opens_the_attempt` | ผ่าน | 15.3 |
+| `test_monitoring_runs_during_the_attempt` | ผ่าน | 22.5 |
+| `test_answers_can_be_submitted_and_graded` | ผ่าน | 28.3 |
+| `test_the_report_shows_checks_evidence_and_signals` | ผ่าน | 20.6 |
+| `test_the_report_records_the_threshold_that_was_in_force` | ผ่าน | 14.3 |
+| `test_one_learner_cannot_read_another_learners_evidence` | ผ่าน | 30.4 |
+| `test_expired_evidence_is_purged` | ผ่าน | 17.5 |
+| `test_privacy_api_deletes_the_face_on_erasure` | ผ่าน | 18.8 |
+| `test_seb_is_configured_with_a_real_config_key` | ผ่าน | 1.0 |
+| `test_an_ordinary_browser_cannot_start_the_seb_quiz` | ผ่าน | 13.3 |
+| `test_the_seb_config_file_is_downloadable_by_the_learner` | ผ่าน | 12.4 |
+| `test_both_rules_describe_themselves_to_the_learner` | ผ่าน | 12.5 |
+| `test_the_activity_says_it_is_proctored_before_anything_starts` | ผ่าน | 12.0 |
+| `test_monitoring_starts_when_the_learner_begins` | ผ่าน | 15.8 |
+| `test_the_video_player_is_found_through_its_published_interface` | ผ่าน | 16.3 |
+| `test_leaving_the_activity_window_is_recorded` | ผ่าน | 17.8 |
+| `test_staff_viewing_the_activity_are_not_monitored` | ผ่าน | 10.2 |
+| `test_staff_can_turn_proctoring_off_and_on` | ผ่าน | 15.8 |
+| `test_an_unmonitored_activity_is_left_alone` | ผ่าน | 17.7 |
 
 ## ที่เทสต์อัตโนมัติทำแทนไม่ได้ ต้องตรวจด้วยมือ
 

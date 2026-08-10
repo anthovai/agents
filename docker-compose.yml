@@ -48,6 +48,8 @@ services:
       - ./face-service/models:/app/models:ro
       # Real faces, never committed: see .gitignore.
       - ./face-service/tests/faces:/app/tests/faces:ro
+      # Public-domain portraits used only to check the pipeline discriminates.
+      - ./face-service/tests/faces-public:/app/tests/faces-public:ro
       - ./reports:/app/reports
     command: python calibrate.py
 
