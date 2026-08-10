@@ -23,7 +23,8 @@ def test_both_plugins_are_installed(stack_health):
 
 
 def test_all_web_services_are_registered(stack_health):
-    assert stack_health["webservices"] == 5
+    # start_session and end_session joined the original five.
+    assert stack_health["webservices"] == 7
 
 
 def test_pdpa_policy_is_the_site_policy_handler(stack_health):

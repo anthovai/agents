@@ -143,8 +143,23 @@ class quizaccess_kaiproctor extends access_rule_base {
     }
 
     public function current_attempt_finished() {
-        global $SESSION;
+        global $SESSION, $USER, $DB;
+
         unset($SESSION->passedkaiproctor[$this->quiz->id]);
+
+        // mod_quiz knows when the exam really ends; the browser only knows
+        // when it stopped looking. Close the sitting from here so a submitted
+        // attempt is recorded as completed rather than left hanging.
+        $context = $this->quizobj->get_context();
+        $open = $DB->get_records('local_kaiproctor_session', [
+            'userid' => $USER->id,
+            'contextid' => $context->id,
+            'status' => \local_kaiproctor\session::STATUS_ACTIVE,
+        ]);
+        foreach ($open as $record) {
+            \local_kaiproctor\session::end($record->id,
+                \local_kaiproctor\session::STATUS_COMPLETED, 'attempt_submitted');
+        }
     }
 
     /**
@@ -179,8 +194,11 @@ class quizaccess_kaiproctor extends access_rule_base {
      * focus loss, presence, identity, idle, random clips — still applies.
      */
     public function setup_attempt_page($page) {
+        // The policy the monitor runs under is fetched from the server when
+        // the sitting opens, so it is not duplicated here.
         $page->requires->js_call_amd('quizaccess_kaiproctor/attempt', 'init', [[
             'contextid' => $this->quizobj->get_context()->id,
+            'attemptid' => optional_param('attempt', 0, PARAM_INT),
             'strictlockdown' => (bool) get_config('local_kaiproctor', 'strictlockdown'),
             'blurallowance' => (int) get_config('local_kaiproctor', 'blurallowance'),
             'presenceminutes' => (float) get_config('local_kaiproctor', 'presenceminutes'),

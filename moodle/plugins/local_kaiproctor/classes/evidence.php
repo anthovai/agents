@@ -30,7 +30,8 @@ class evidence {
         string $kind,
         string $reason,
         string $bytes,
-        ?int $attemptid = null
+        ?int $attemptid = null,
+        ?int $sessionid = null
     ): int {
         global $DB;
 
@@ -54,6 +55,7 @@ class evidence {
             'userid' => $userid,
             'contextid' => $context->id,
             'attemptid' => $attemptid,
+            'sessionid' => $sessionid,
             'kind' => $kind,
             'reason' => $reason,
             'itemid' => 0,

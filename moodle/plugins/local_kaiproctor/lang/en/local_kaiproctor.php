@@ -154,3 +154,18 @@ $string['activity:saved'] = 'Saved.';
 $string['activity:unsupported'] = 'Proctoring cannot be attached to a {$a} activity.';
 $string['activity:willmonitor'] = 'This activity is proctored. Click or press a key to start — your camera will be used to confirm you are present.';
 $string['activity:monitoring'] = 'Monitoring is active. Stay in front of the camera and do not leave this window.';
+
+// Sittings.
+$string['task:closestalesessions'] = 'Close abandoned proctoring sessions';
+$string['session:active'] = 'In progress';
+$string['session:completed'] = 'Completed';
+$string['session:terminated'] = 'Ended by the system';
+$string['session:abandoned'] = 'Ended without confirmation';
+$string['report:nosessions'] = 'No monitored sittings were recorded in this context.';
+$string['report:ended'] = 'ended';
+$string['report:policy'] = 'Rules enforced during this sitting';
+$string['report:policynote'] = 'This is what was in force when the sitting began, recorded at the time. Changing the settings now does not change it.';
+$string['report:everyminutes'] = 'every {$a} minutes';
+$string['report:checkoff'] = 'off';
+$string['report:orphans'] = 'Recorded outside any sitting';
+$string['report:orphansnote'] = 'From before sittings were recorded. Kept rather than hidden, but there is no policy snapshot for them.';

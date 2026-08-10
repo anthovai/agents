@@ -20,11 +20,12 @@ class store_evidence extends external_api {
             'reason' => new external_value(PARAM_ALPHANUMEXT, 'Why it was captured'),
             'data' => new external_value(PARAM_RAW, 'Base64-encoded media'),
             'attemptid' => new external_value(PARAM_INT, 'Quiz attempt id, 0 if none', VALUE_DEFAULT, 0),
+            'sessionid' => new external_value(PARAM_INT, 'The sitting this belongs to, 0 if none', VALUE_DEFAULT, 0),
         ]);
     }
 
     public static function execute(int $contextid, string $kind, string $reason,
-                                   string $data, int $attemptid = 0): array {
+                                   string $data, int $attemptid = 0, int $sessionid = 0): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -33,10 +34,17 @@ class store_evidence extends external_api {
             'reason' => $reason,
             'data' => $data,
             'attemptid' => $attemptid,
+            'sessionid' => $sessionid,
         ]);
 
         $context = \context::instance_by_id($params['contextid']);
         self::validate_context($context);
+
+        $sessionid = \local_kaiproctor\session::validate(
+            $params['sessionid'] ?: null, $USER->id, $context);
+        if ($sessionid) {
+            \local_kaiproctor\session::touch($sessionid);
+        }
 
         if (!in_array($params['kind'], ['snapshot', 'clip'], true)) {
             return ['ok' => false, 'errorcode' => 'invalid_kind'];
@@ -49,7 +57,7 @@ class store_evidence extends external_api {
 
         try {
             $id = evidence::store($USER->id, $context, $params['kind'],
-                $params['reason'], $bytes, $params['attemptid'] ?: null);
+                $params['reason'], $bytes, $params['attemptid'] ?: null, $sessionid);
         } catch (\moodle_exception $e) {
             return ['ok' => false, 'errorcode' => $e->errorcode];
         }

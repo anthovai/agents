@@ -4,19 +4,27 @@
 // The camera starts on the learner's first interaction, because getUserMedia
 // needs a user gesture. Until then the learner sees a banner saying the
 // activity is monitored and asking them to begin.
+//
+// The rules being enforced come from the server when the sitting opens, not
+// from the page: whatever policy is recorded against that sitting is what an
+// auditor will be shown later, so it has to be the same one that governs the
+// monitor's behaviour.
 define([
     'local_kaiproctor/camera',
     'local_kaiproctor/attention_monitor',
     'local_kaiproctor/video_adapter',
+    'local_kaiproctor/api',
     'core/str',
     'core/notification'
-], function(Camera, AttentionMonitor, VideoAdapter, Str, Notification) {
+], function(Camera, AttentionMonitor, VideoAdapter, Api, Str, Notification) {
 
     return {
         init: function(config) {
             var started = false;
             var monitor = null;
             var adapter = null;
+            var sessionid = 0;
+            var closed = false;
 
             var preview = document.createElement('video');
             preview.setAttribute('playsinline', '');
@@ -34,6 +42,18 @@ define([
             var region = document.querySelector('#region-main') || document.body;
             region.insertBefore(banner, region.firstChild);
 
+            var closeSession = function(status, reason) {
+                if (!sessionid || closed) {
+                    return;
+                }
+                closed = true;
+                Api.endSession(sessionid, status, reason).catch(function() {
+                    // A sitting nobody managed to close is picked up by the
+                    // cleanup task and marked abandoned, which is the truth.
+                    return null;
+                });
+            };
+
             var start = function() {
                 if (started) {
                     return;
@@ -42,8 +62,13 @@ define([
 
                 document.body.appendChild(preview);
                 var camera = new Camera(preview);
+                var policy = null;
 
                 camera.start().then(function() {
+                    return Api.startSession(config.contextid, 0);
+                }).then(function(response) {
+                    policy = response;
+                    sessionid = response.sessionid;
                     return VideoAdapter.forPage();
                 }).then(function(found) {
                     // No player is not a reason to stop watching: presence,
@@ -55,24 +80,26 @@ define([
                     monitor = new AttentionMonitor({
                         video: adapter,
                         contextid: config.contextid,
+                        sessionid: sessionid,
                         getSnapshot: function() {
                             return camera.snapshot();
                         },
                         getStream: function() {
                             return camera.getStream();
                         },
-                        identityEnabled: config.enrolled,
-                        strictLockdown: config.strictlockdown,
-                        blurAllowance: config.blurallowance,
-                        presenceMinutes: config.presenceminutes,
-                        verifyMinutes: config.verifyminutes,
-                        clickConfirmMinutes: config.clickconfirmminutes,
-                        clickConfirmGraceSec: config.clickconfirmgracesec,
-                        mouseIdleMinutes: config.mouseidleminutes,
-                        randomClipsPerHour: config.randomclipsperhour,
-                        clipSeconds: config.clipseconds,
-                        desktopNotification: config.desktopnotification,
+                        identityEnabled: policy.enrolled,
+                        strictLockdown: policy.strictlockdown,
+                        blurAllowance: policy.blurallowance,
+                        presenceMinutes: policy.presenceminutes,
+                        verifyMinutes: policy.verifyminutes,
+                        clickConfirmMinutes: policy.clickconfirmminutes,
+                        clickConfirmGraceSec: policy.clickconfirmgracesec,
+                        mouseIdleMinutes: policy.mouseidleminutes,
+                        randomClipsPerHour: policy.randomclipsperhour,
+                        clipSeconds: policy.clipseconds,
+                        desktopNotification: policy.desktopnotification,
                         onTerminate: function(info) {
+                            closeSession('terminated', info.type);
                             if (!info.closed) {
                                 return;
                             }
@@ -90,6 +117,7 @@ define([
                 }).catch(function(error) {
                     started = false;
                     camera.stop();
+                    closeSession('terminated', 'startup_failed');
                     var key = (error && error.message === 'nocamera')
                         ? 'error:nocamera' : 'error:generic';
                     Str.get_string(key, 'local_kaiproctor').then(function(text) {
@@ -104,6 +132,10 @@ define([
                 document.addEventListener(name, start, {once: true});
             });
 
+            // Deliberately does not close the sitting: see lesson_page.js.
+            // There is no completion signal for a page the learner simply
+            // navigates away from, and inventing one would be a lie in an
+            // audit trail.
             window.addEventListener('pagehide', function() {
                 if (monitor) {
                     monitor.stop();

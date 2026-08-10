@@ -20,7 +20,8 @@ class checks {
         ?float $livenessscore = null,
         ?string $modelpack = null,
         ?int $attemptid = null,
-        array $detail = []
+        array $detail = [],
+        ?int $sessionid = null
     ): int {
         global $DB;
 
@@ -28,6 +29,7 @@ class checks {
             'userid' => $userid,
             'contextid' => $context->id,
             'attemptid' => $attemptid,
+            'sessionid' => $sessionid,
             'kind' => $kind,
             'decision' => $decision,
             'similarity' => $similarity,

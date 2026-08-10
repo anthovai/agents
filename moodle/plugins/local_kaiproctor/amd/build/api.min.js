@@ -36,6 +36,40 @@ define(['core/ajax'], function(Ajax) {
         blobToBase64: blobToBase64,
 
         /**
+         * Open a sitting and get back the rules that will be enforced.
+         *
+         * The policy comes from the server rather than being read from the
+         * page: the snapshot recorded against the sitting has to come from
+         * the same place the enforcement does, or it proves nothing.
+         *
+         * @param {Number} contextid
+         * @param {Number} attemptid 0 when not in a quiz
+         * @return {Promise<Object>}
+         */
+        startSession: function(contextid, attemptid) {
+            return call('local_kaiproctor_start_session', {
+                contextid: contextid,
+                attemptid: attemptid || 0
+            });
+        },
+
+        /**
+         * Close a sitting.
+         *
+         * @param {Number} sessionid
+         * @param {String} status 'completed' or 'terminated'
+         * @param {String} reason
+         * @return {Promise<Object>}
+         */
+        endSession: function(sessionid, status, reason) {
+            return call('local_kaiproctor_end_session', {
+                sessionid: sessionid,
+                status: status,
+                reason: reason || ''
+            });
+        },
+
+        /**
          * Presence, head pose and liveness for one frame.
          *
          * @param {Blob} blob
@@ -72,13 +106,14 @@ define(['core/ajax'], function(Ajax) {
          * @param {Boolean} storeevidence
          * @return {Promise<Object>}
          */
-        verify: function(contextid, blob, attemptid, storeevidence) {
+        verify: function(contextid, blob, attemptid, storeevidence, sessionid) {
             return blobToBase64(blob).then(function(data) {
                 return call('local_kaiproctor_verify_frame', {
                     contextid: contextid,
                     imagedata: data,
                     attemptid: attemptid || 0,
-                    storeevidence: !!storeevidence
+                    storeevidence: !!storeevidence,
+                    sessionid: sessionid || 0
                 });
             });
         },
@@ -92,12 +127,13 @@ define(['core/ajax'], function(Ajax) {
          * @param {Number|null} videotime
          * @return {Promise<Object>}
          */
-        logEvent: function(contextid, type, detail, videotime) {
+        logEvent: function(contextid, type, detail, videotime, sessionid) {
             return call('local_kaiproctor_log_event', {
                 contextid: contextid,
                 type: type,
                 detail: JSON.stringify(detail || {}),
-                videotime: (videotime === null || videotime === undefined) ? -1 : videotime
+                videotime: (videotime === null || videotime === undefined) ? -1 : videotime,
+                sessionid: sessionid || 0
             });
         },
 
@@ -111,14 +147,15 @@ define(['core/ajax'], function(Ajax) {
          * @param {Number} attemptid
          * @return {Promise<Object>}
          */
-        storeEvidence: function(contextid, kind, reason, blob, attemptid) {
+        storeEvidence: function(contextid, kind, reason, blob, attemptid, sessionid) {
             return blobToBase64(blob).then(function(data) {
                 return call('local_kaiproctor_store_evidence', {
                     contextid: contextid,
                     kind: kind,
                     reason: reason,
                     data: data,
-                    attemptid: attemptid || 0
+                    attemptid: attemptid || 0,
+                    sessionid: sessionid || 0
                 });
             });
         }

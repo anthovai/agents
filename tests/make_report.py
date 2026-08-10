@@ -97,6 +97,24 @@ REQUIREMENTS = [
 # Capabilities beyond the original seven, added since.
 EXTRAS = [
     (
+        "บันทึกการเรียนเป็นครั้งๆ พร้อมกฎที่บังคับตอนนั้น (audit)",
+        [
+            "test_starting_a_lesson_opens_one_sitting",
+            "test_the_rules_in_force_are_recorded_on_the_sitting",
+            "test_changing_the_settings_does_not_rewrite_a_finished_sitting",
+            "test_the_report_groups_everything_by_sitting",
+        ],
+    ),
+    (
+        "สถานะการจบและการกันไม่ให้ปลอมสถานะ",
+        [
+            "test_a_terminated_sitting_records_why",
+            "test_a_late_completion_cannot_launder_a_terminated_sitting",
+            "test_a_client_cannot_mark_a_sitting_abandoned",
+            "test_a_sitting_nobody_closed_is_marked_abandoned",
+        ],
+    ),
+    (
         "บทเรียนวิดีโอแบบมีปฏิสัมพันธ์ ภายใต้การเฝ้าดู",
         [
             "test_the_activity_says_it_is_proctored_before_anything_starts",

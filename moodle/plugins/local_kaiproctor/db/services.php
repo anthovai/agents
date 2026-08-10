@@ -6,6 +6,20 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
+    'local_kaiproctor_start_session' => [
+        'classname' => 'local_kaiproctor\\external\\start_session',
+        'description' => 'Open a proctoring sitting and return the policy being enforced.',
+        'type' => 'write',
+        'ajax' => true,
+        'loginrequired' => true,
+    ],
+    'local_kaiproctor_end_session' => [
+        'classname' => 'local_kaiproctor\\external\\end_session',
+        'description' => 'Close a proctoring sitting.',
+        'type' => 'write',
+        'ajax' => true,
+        'loginrequired' => true,
+    ],
     'local_kaiproctor_analyze_frame' => [
         'classname' => 'local_kaiproctor\external\analyze_frame',
         'description' => 'Presence, head pose and liveness for one camera frame.',

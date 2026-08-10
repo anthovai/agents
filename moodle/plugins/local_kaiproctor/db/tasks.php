@@ -13,4 +13,15 @@ $tasks = [
         'month' => '*',
         'dayofweek' => '*',
     ],
+    [
+        // Sittings nobody closed — a shut laptop, a dropped connection. Left
+        // alone they read as "still in progress" to anyone auditing later.
+        'classname' => 'local_kaiproctor\\task\\close_stale_sessions',
+        'blocking' => 0,
+        'minute' => '*/15',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
 ];

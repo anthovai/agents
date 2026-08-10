@@ -3,6 +3,10 @@
 // The camera starts on the learner's first interaction rather than on load:
 // getUserMedia and requestFullscreen both need a user gesture, and a quiz page
 // the learner has not touched yet has no gesture to use.
+//
+// The sitting is opened against the attempt, so every check, clip and signal
+// from this attempt files under one record with the policy that was in force
+// when it began.
 define([
     'local_kaiproctor/camera',
     'local_kaiproctor/attention_monitor',
@@ -17,6 +21,8 @@ define([
             var started = false;
             var monitor = null;
             var lockdown = null;
+            var sessionid = 0;
+            var closed = false;
 
             var preview = document.createElement('video');
             preview.setAttribute('playsinline', '');
@@ -27,38 +33,57 @@ define([
             // The monitor pauses "the lesson" on a violation. A quiz has no
             // video, so it is given a detached one: pause() is then a no-op
             // and every other signal behaves exactly as it does in a lesson.
-            var stand_in = document.createElement('video');
+            var standIn = document.createElement('video');
 
             var camera = new Camera(preview);
+
+            var closeSession = function(status, reason) {
+                if (!sessionid || closed) {
+                    return;
+                }
+                closed = true;
+                Api.endSession(sessionid, status, reason).catch(function() {
+                    return null;
+                });
+            };
 
             var start = function() {
                 if (started) {
                     return;
                 }
                 started = true;
+                var policy = null;
 
                 camera.start().then(function() {
+                    return Api.startSession(config.contextid, config.attemptid || 0);
+                }).then(function(response) {
+                    policy = response;
+                    sessionid = response.sessionid;
+
                     monitor = new AttentionMonitor({
-                        video: stand_in,
+                        video: standIn,
                         contextid: config.contextid,
+                        attemptid: config.attemptid || 0,
+                        sessionid: sessionid,
                         getSnapshot: function() {
                             return camera.snapshot();
                         },
                         getStream: function() {
                             return camera.getStream();
                         },
-                        strictLockdown: config.strictlockdown,
-                        blurAllowance: config.blurallowance,
-                        presenceMinutes: config.presenceminutes,
-                        verifyMinutes: config.verifyminutes,
+                        strictLockdown: policy.strictlockdown,
+                        blurAllowance: policy.blurallowance,
+                        presenceMinutes: policy.presenceminutes,
+                        verifyMinutes: policy.verifyminutes,
                         // A quiz already demands attention; interrupting it to
                         // ask "are you still there" would cost answering time.
                         clickConfirmMinutes: 0,
-                        mouseIdleMinutes: config.mouseidleminutes,
-                        randomClipsPerHour: config.randomclipsperhour,
-                        clipSeconds: config.clipseconds,
-                        desktopNotification: config.desktopnotification,
+                        mouseIdleMinutes: policy.mouseidleminutes,
+                        randomClipsPerHour: policy.randomclipsperhour,
+                        clipSeconds: policy.clipseconds,
+                        desktopNotification: policy.desktopnotification,
                         onTerminate: function(info) {
+                            closeSession('terminated', info.type);
                             if (!info.closed) {
                                 return;
                             }
@@ -82,6 +107,7 @@ define([
                     return lockdown.start();
                 }).catch(function(error) {
                     started = false;
+                    closeSession('terminated', 'startup_failed');
                     var key = (error && error.message === 'nocamera')
                         ? 'error:nocamera' : 'error:generic';
                     Str.get_string(key, 'local_kaiproctor').then(function(message) {
@@ -92,7 +118,7 @@ define([
                     // monitored — record the gap rather than letting it pass
                     // as a clean attempt.
                     Api.logEvent(config.contextid, 'presence_error',
-                        {reason: 'camera_unavailable'}, null).catch(function() {
+                        {reason: 'camera_unavailable'}, null, sessionid).catch(function() {
                         return null;
                     });
                 });
@@ -110,6 +136,10 @@ define([
                     lockdown.stop();
                 }
                 camera.stop();
+                // The sitting is left open on purpose: leaving the page is not
+                // the same as finishing the exam. mod_quiz says when it really
+                // ends, through current_attempt_finished(), and the cleanup
+                // task closes anything that never got that far.
             });
         }
     };

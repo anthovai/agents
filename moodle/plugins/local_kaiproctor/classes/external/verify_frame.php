@@ -26,11 +26,12 @@ class verify_frame extends external_api {
             'imagedata' => new external_value(PARAM_RAW, 'Base64-encoded JPEG frame'),
             'attemptid' => new external_value(PARAM_INT, 'Quiz attempt id, 0 if none', VALUE_DEFAULT, 0),
             'storeevidence' => new external_value(PARAM_BOOL, 'Keep the frame even when the check passes', VALUE_DEFAULT, false),
+            'sessionid' => new external_value(PARAM_INT, 'The sitting this belongs to, 0 if none', VALUE_DEFAULT, 0),
         ]);
     }
 
-    public static function execute(int $contextid, string $imagedata,
-                                   int $attemptid = 0, bool $storeevidence = false): array {
+    public static function execute(int $contextid, string $imagedata, int $attemptid = 0,
+                                   bool $storeevidence = false, int $sessionid = 0): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -38,10 +39,19 @@ class verify_frame extends external_api {
             'imagedata' => $imagedata,
             'attemptid' => $attemptid,
             'storeevidence' => $storeevidence,
+            'sessionid' => $sessionid,
         ]);
 
         $context = \context::instance_by_id($params['contextid']);
         self::validate_context($context);
+
+        // A sitting id from the browser is a claim; it counts only if it really
+        // is this learner's sitting in this context.
+        $sessionid = \local_kaiproctor\session::validate(
+            $params['sessionid'] ?: null, $USER->id, $context);
+        if ($sessionid) {
+            \local_kaiproctor\session::touch($sessionid);
+        }
 
         $enrolled = enrolment::get_active($USER->id);
         if (!$enrolled) {
@@ -59,7 +69,7 @@ class verify_frame extends external_api {
             // A face that cannot be found is a presence problem, not proof of
             // impersonation — record it as such rather than as a mismatch.
             checks::record($USER->id, $context, 'identity', 'absent', null, null, null,
-                $params['attemptid'] ?: null, ['errorcode' => $code]);
+                $params['attemptid'] ?: null, ['errorcode' => $code], $sessionid);
             return ['ok' => false, 'errorcode' => $code, 'decision' => 'absent'];
         }
 
@@ -72,14 +82,15 @@ class verify_frame extends external_api {
             $USER->id, $context, 'identity', $decision,
             $similarity, $livenessscore, $result['model_pack'] ?? null,
             $params['attemptid'] ?: null,
-            ['det_score' => $result['det_score'] ?? null]
+            ['det_score' => $result['det_score'] ?? null],
+            $sessionid
         );
 
         $failed = in_array($decision, ['fail', 'fail_liveness'], true);
         if ($failed || $params['storeevidence']) {
             evidence::store($USER->id, $context, 'snapshot',
                 $failed ? 'identity_' . $decision : 'identity_check',
-                $jpeg, $params['attemptid'] ?: null);
+                $jpeg, $params['attemptid'] ?: null, $sessionid);
         }
 
         return [

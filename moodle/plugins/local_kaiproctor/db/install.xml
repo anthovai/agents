@@ -27,6 +27,7 @@
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Where the check happened — quiz attempt context, course module context"/>
         <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="quiz_attempts.id when the check belongs to an exam"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Which sitting this belongs to"/>
         <FIELD NAME="kind" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="presence | identity | enrolment"/>
         <FIELD NAME="decision" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="pass | review | fail | fail_liveness | absent"/>
         <FIELD NAME="similarity" TYPE="number" LENGTH="6" DECIMALS="4" NOTNULL="false" SEQUENCE="false"/>
@@ -52,6 +53,7 @@
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Which sitting this belongs to"/>
         <FIELD NAME="kind" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" COMMENT="snapshot | clip"/>
         <FIELD NAME="reason" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="scheduled | random_sample | violation_&lt;type&gt;"/>
         <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="File API itemid"/>
@@ -79,6 +81,30 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="cmid" TYPE="unique" FIELDS="cmid"/>
       </KEYS>
+    </TABLE>
+
+    <TABLE NAME="local_kaiproctor_session" COMMENT="One sitting under monitoring, with the policy that was in force recorded on it. Without this, checks and evidence accumulate against a context with no way to say which sitting they belong to.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="quiz_attempts.id when this sitting is an exam attempt"/>
+        <FIELD NAME="policy" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON snapshot of the rules enforced at the moment the sitting began, read from configuration server-side"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active | completed | terminated | abandoned"/>
+        <FIELD NAME="reason" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="what ended it, when it was not a normal finish"/>
+        <FIELD NAME="timestart" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timeend" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Last sign of life; the cleanup task uses it to spot sittings nobody ended"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid-contextid" UNIQUE="false" FIELDS="userid, contextid"/>
+        <INDEX NAME="status-timemodified" UNIQUE="false" FIELDS="status, timemodified"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

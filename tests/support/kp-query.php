@@ -113,6 +113,7 @@ switch ($command) {
         }
         $DB->delete_records('local_kaiproctor_evidence', ['userid' => $user->id]);
         $DB->delete_records('local_kaiproctor_face', ['userid' => $user->id]);
+        $DB->delete_records('local_kaiproctor_session', ['userid' => $user->id]);
         $DB->delete_records_select('logstore_standard_log',
             'userid = :userid AND ' . $DB->sql_like('eventname', ':pattern'),
             ['userid' => $user->id, 'pattern' => '%kaiproctor%']);
@@ -160,6 +161,69 @@ switch ($command) {
         $user = kp_user($argv[2]);
         $DB->delete_records('quiz_attempts', ['userid' => $user->id]);
         echo "purged quiz attempts for {$argv[2]}\n";
+        break;
+
+    case 'sessions':
+        // sessions <username> — newest first, with the policy snapshot parsed.
+        $user = kp_user($argv[2]);
+        $out = [];
+        foreach ($DB->get_records('local_kaiproctor_session',
+                ['userid' => $user->id], 'id DESC') as $record) {
+            $out[] = [
+                'id' => (int) $record->id,
+                'status' => $record->status,
+                'reason' => $record->reason,
+                'attemptid' => $record->attemptid ? (int) $record->attemptid : null,
+                'timestart' => (int) $record->timestart,
+                'timeend' => $record->timeend ? (int) $record->timeend : null,
+                'policy' => json_decode($record->policy, true),
+            ];
+        }
+        echo json_encode($out, JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'current-policy':
+        echo json_encode(\local_kaiproctor\session::current_policy(), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'set-setting':
+        // set-setting <name> <value>
+        set_config($argv[2], $argv[3], 'local_kaiproctor');
+        echo "set {$argv[2]}={$argv[3]}\n";
+        break;
+
+    case 'age-session':
+        // age-session <username> <hours> — backdate the last sign of life so
+        // the cleanup task sees the sitting as abandoned.
+        $user = kp_user($argv[2]);
+        $when = time() - ((int) $argv[3] * HOURSECS);
+        $DB->set_field('local_kaiproctor_session', 'timemodified', $when,
+            ['userid' => $user->id, 'status' => 'active']);
+        echo "backdated by {$argv[3]}h\n";
+        break;
+
+    case 'run-stale-task':
+        echo 'closed ' . \local_kaiproctor\session::close_stale() . " abandoned sessions\n";
+        break;
+
+    case 'unfiled':
+        // How many checks and evidence rows have no sitting attached.
+        $user = kp_user($argv[2]);
+        $checks = $DB->count_records_select('local_kaiproctor_check',
+            'userid = :userid AND sessionid IS NULL', ['userid' => $user->id]);
+        $evidence = $DB->count_records_select('local_kaiproctor_evidence',
+            'userid = :userid AND sessionid IS NULL', ['userid' => $user->id]);
+        echo ($checks + $evidence) . "\n";
+        break;
+
+    case 'filed-under':
+        // filed-under <username> <sessionid>
+        $user = kp_user($argv[2]);
+        $conditions = ['userid' => $user->id, 'sessionid' => (int) $argv[3]];
+        echo ($DB->count_records('local_kaiproctor_check', $conditions)
+            + $DB->count_records('local_kaiproctor_evidence', $conditions)) . "\n";
         break;
 
     case 'seb-info':

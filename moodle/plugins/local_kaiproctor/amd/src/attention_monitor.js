@@ -34,6 +34,9 @@ define([
         this.video = opts.video;
         this.contextid = opts.contextid;
         this.attemptid = opts.attemptid || 0;
+        // Everything recorded during this run is filed against one sitting, so
+        // an auditor can tell one sitting's evidence from the next one's.
+        this.sessionid = opts.sessionid || 0;
         this.getSnapshot = opts.getSnapshot || null;
         this.getStream = opts.getStream || null;
         this.onTerminate = opts.onTerminate || function() {};
@@ -337,7 +340,8 @@ define([
     AttentionMonitor.prototype._checkIdentity = function() {
         var self = this;
         this.getSnapshot().then(function(blob) {
-            return Api.verify(self.contextid, blob, self.attemptid, self.storeSnapshots);
+            return Api.verify(self.contextid, blob, self.attemptid, self.storeSnapshots,
+                self.sessionid);
         }).then(function(response) {
             if (!response.ok) {
                 self._log('verify_error', {code: response.errorcode});
@@ -426,7 +430,8 @@ define([
 
     AttentionMonitor.prototype._uploadClip = function(blob) {
         var self = this;
-        Api.storeEvidence(this.contextid, 'clip', 'random_sample', blob, this.attemptid)
+        Api.storeEvidence(this.contextid, 'clip', 'random_sample', blob, this.attemptid,
+            this.sessionid)
             .then(function(response) {
                 self._log(response.ok ? 'clip_uploaded' : 'clip_error',
                     response.ok ? {evidenceid: response.evidenceid} : {code: response.errorcode});
@@ -443,7 +448,8 @@ define([
             return;
         }
         this.getSnapshot().then(function(blob) {
-            return Api.storeEvidence(self.contextid, 'snapshot', reason, blob, self.attemptid);
+            return Api.storeEvidence(self.contextid, 'snapshot', reason, blob, self.attemptid,
+                self.sessionid);
         }).catch(function() {
             // Supplementary evidence — never let it break policy enforcement.
             return null;
@@ -534,7 +540,7 @@ define([
 
     AttentionMonitor.prototype._log = function(type, detail) {
         var videotime = this.video ? Math.round(this.video.currentTime) : null;
-        Api.logEvent(this.contextid, type, detail, videotime).catch(function() {
+        Api.logEvent(this.contextid, type, detail, videotime, this.sessionid).catch(function() {
             // Losing one audit line must not stop enforcement; the server-side
             // gap is itself visible in the log.
             return null;

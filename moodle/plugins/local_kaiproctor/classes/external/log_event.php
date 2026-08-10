@@ -34,11 +34,12 @@ class log_event extends external_api {
             'type' => new external_value(PARAM_ALPHANUMEXT, 'Signal type'),
             'detail' => new external_value(PARAM_RAW, 'JSON detail', VALUE_DEFAULT, '{}'),
             'videotime' => new external_value(PARAM_INT, 'Position in the lesson video, seconds', VALUE_DEFAULT, -1),
+            'sessionid' => new external_value(PARAM_INT, 'The sitting this belongs to, 0 if none', VALUE_DEFAULT, 0),
         ]);
     }
 
-    public static function execute(int $contextid, string $type,
-                                   string $detail = '{}', int $videotime = -1): array {
+    public static function execute(int $contextid, string $type, string $detail = '{}',
+                                   int $videotime = -1, int $sessionid = 0): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -46,10 +47,17 @@ class log_event extends external_api {
             'type' => $type,
             'detail' => $detail,
             'videotime' => $videotime,
+            'sessionid' => $sessionid,
         ]);
 
         $context = \context::instance_by_id($params['contextid']);
         self::validate_context($context);
+
+        $sessionid = \local_kaiproctor\session::validate(
+            $params['sessionid'] ?: null, $USER->id, $context);
+        if ($sessionid) {
+            \local_kaiproctor\session::touch($sessionid);
+        }
 
         if (!in_array($params['type'], self::ALLOWED, true)) {
             return ['ok' => false, 'errorcode' => 'unknown_type'];
@@ -64,6 +72,7 @@ class log_event extends external_api {
             'type' => $params['type'],
             'detail' => is_array($decoded) ? $decoded : [],
             'videotime' => $params['videotime'] >= 0 ? $params['videotime'] : null,
+            'sessionid' => $sessionid,
         ])->trigger();
 
         return ['ok' => true];

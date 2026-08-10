@@ -143,3 +143,17 @@ $string['activity:saved'] = 'บันทึกแล้ว';
 $string['activity:unsupported'] = 'ยังไม่รองรับการคุมสอบสำหรับกิจกรรมชนิด {$a}';
 $string['activity:willmonitor'] = 'กิจกรรมนี้มีระบบคุมสอบ คลิกหรือกดปุ่มใดก็ได้เพื่อเริ่ม ระบบจะใช้กล้องยืนยันว่าคุณอยู่หน้าจอ';
 $string['activity:monitoring'] = 'ระบบกำลังเฝ้าดู กรุณาอยู่หน้ากล้องและอย่าออกจากหน้าต่างนี้';
+
+$string['task:closestalesessions'] = 'ปิดการเรียนที่ค้างอยู่';
+$string['session:active'] = 'กำลังดำเนินอยู่';
+$string['session:completed'] = 'เสร็จสิ้น';
+$string['session:terminated'] = 'ถูกระบบยุติ';
+$string['session:abandoned'] = 'จบโดยไม่มีการยืนยัน';
+$string['report:nosessions'] = 'ไม่มีการเรียนที่ถูกเฝ้าดูในบริบทนี้';
+$string['report:ended'] = 'สิ้นสุด';
+$string['report:policy'] = 'กฎที่บังคับใช้ระหว่างการเรียนครั้งนี้';
+$string['report:policynote'] = 'นี่คือกฎที่บังคับอยู่ตอนเริ่ม บันทึกไว้ ณ เวลานั้น การแก้การตั้งค่าตอนนี้ไม่เปลี่ยนค่านี้';
+$string['report:everyminutes'] = 'ทุก {$a} นาที';
+$string['report:checkoff'] = 'ปิด';
+$string['report:orphans'] = 'บันทึกที่ไม่ได้อยู่ในการเรียนครั้งใด';
+$string['report:orphansnote'] = 'มาจากช่วงก่อนที่ระบบจะบันทึกเป็นครั้งๆ เก็บไว้แทนที่จะซ่อน แต่ไม่มีบันทึกกฎที่บังคับตอนนั้น';
