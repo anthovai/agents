@@ -206,3 +206,71 @@ def questions(payload: Any) -> list[dict[str, Any]]:
             ],
         })
     return out
+
+
+# --------------------------------------------------------------------------
+# Finding your way around the site
+# --------------------------------------------------------------------------
+# The calling platform does the retrieval, because it is the only side that
+# knows what this learner is allowed to see. What arrives here is already
+# filtered; the contract's job is to make sure it is only navigation — titles
+# and links — and never a grade, an attempt or anything about a person.
+
+MAX_QUESTION = 500
+MAX_CONTEXT = 12
+MAX_TITLE = 200
+MAX_SUMMARY = 400
+
+_LINK = re.compile(r"^(?:https?://[^\s<>\"']+|/[^\s<>\"']*)$")
+
+_ALLOWED_KINDS = {
+    "course", "section", "activity", "page", "quiz", "lesson", "video",
+    "resource", "tool",
+}
+
+
+def ask(payload: Any) -> dict[str, Any]:
+    """Validate a navigation question and the pages offered as context."""
+    if not isinstance(payload, dict):
+        raise ContractError("ask", "must be an object")
+
+    unknown = sorted(set(payload) - {"question", "context"})
+    if unknown:
+        raise ContractError(f"ask.{unknown[0]}", "is not part of the contract")
+
+    question = _text(payload.get("question"), "ask.question", MAX_QUESTION)
+    if not question.strip():
+        raise ContractError("ask.question", "is empty")
+
+    items = payload.get("context")
+    if not isinstance(items, list):
+        raise ContractError("ask.context", "must be a list")
+    if len(items) > MAX_CONTEXT:
+        raise ContractError("ask.context", f"more than {MAX_CONTEXT} pages")
+
+    out = []
+    for index, item in enumerate(items):
+        where = f"ask.context[{index}]"
+        if not isinstance(item, dict):
+            raise ContractError(where, "must be an object")
+        unknown = sorted(set(item) - {"title", "url", "kind", "summary"})
+        if unknown:
+            raise ContractError(f"{where}.{unknown[0]}", "is not part of the contract")
+
+        url = _text(item.get("url", ""), f"{where}.url", 500)
+        if not _LINK.match(url):
+            raise ContractError(f"{where}.url", "is not a link")
+
+        kind = item.get("kind", "page")
+        if kind not in _ALLOWED_KINDS:
+            raise ContractError(f"{where}.kind",
+                                f"must be one of {', '.join(sorted(_ALLOWED_KINDS))}")
+
+        out.append({
+            "title": _text(item.get("title", ""), f"{where}.title", MAX_TITLE),
+            "url": url,
+            "kind": kind,
+            "summary": _text(item.get("summary") or "", f"{where}.summary", MAX_SUMMARY),
+        })
+
+    return {"question": question, "context": out}

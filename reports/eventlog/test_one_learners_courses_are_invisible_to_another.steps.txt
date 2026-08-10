@@ -1,0 +1,2 @@
+course only learner2 is enrolled in: คอร์สลับเฉพาะบุคคล
+learner sees 8 pages, none of them learner2's course

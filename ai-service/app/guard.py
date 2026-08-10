@@ -54,3 +54,43 @@ def verdicts_in(summary: str) -> list[str]:
         if word not in seen:
             seen.append(word)
     return seen
+
+
+# --------------------------------------------------------------------------
+# Links in an answer
+# --------------------------------------------------------------------------
+# The failure mode for a navigation assistant is not a wrong sentence, it is a
+# link that looks right and goes nowhere. A model asked for the path to a page
+# it half-remembers will build one that matches the pattern of the others, and
+# the learner clicks it, lands on a 404, and stops believing the next answer.
+#
+# The prompt says to copy links exactly. This checks that it did, because
+# "usually copies correctly" is not a property worth shipping.
+
+_URL_IN_TEXT = re.compile(r"https?://[^\s<>\"'()\[\]]+|(?<![\w/])/[\w./?=&%#:-]+")
+
+# Trailing punctuation gets swept up when a link ends a Thai sentence.
+_TRAILING = ".,;:!?)]}ๆ"
+
+
+def links_in(answer: str) -> list[str]:
+    found = []
+    for match in _URL_IN_TEXT.finditer(answer):
+        link = match.group(0).rstrip(_TRAILING)
+        if link and link not in found:
+            found.append(link)
+    return found
+
+
+def invented_links(answer: str, allowed: list[str]) -> list[str]:
+    """Links in the answer that were not among the pages supplied."""
+    permitted = set(allowed)
+    return [link for link in links_in(answer) if link not in permitted]
+
+
+LINK_NOTE = """
+
+Your previous answer contained a link that was not in the list you were given.
+Answer again using only the links exactly as they appear in the list. If the
+right page is not in the list, say that you cannot find it.
+"""

@@ -1,0 +1,34 @@
+{{!
+    The navigation assistant.
+
+    Links are rendered from the returned sources rather than parsed out of the
+    answer text: the model is checked for inventing links, but a learner should
+    not have to pick a URL out of a paragraph either way.
+}}
+<div class="kaiproctor-ask" data-region="ask">
+    <p class="text-muted">{{#str}}ask:intro, local_kaiproctor{{/str}}</p>
+
+    <form class="d-flex gap-2 mb-3" data-action="ask-form">
+        <label class="sr-only" for="kaiproctor-ask-input">
+            {{#str}}ask:title, local_kaiproctor{{/str}}
+        </label>
+        <input type="text" class="form-control" id="kaiproctor-ask-input"
+               data-region="question" autocomplete="off"
+               placeholder="{{#str}}ask:placeholder, local_kaiproctor{{/str}}">
+        <button type="submit" class="btn btn-primary" data-action="send">
+            {{#str}}ask:send, local_kaiproctor{{/str}}
+        </button>
+    </form>
+
+    <div data-region="answer" hidden>
+        <div class="alert alert-secondary" data-region="answer-text"></div>
+        <div data-region="sources-wrap" hidden>
+            <h5>{{#str}}ask:sources, local_kaiproctor{{/str}}</h5>
+            <ul data-region="sources" class="list-unstyled"></ul>
+        </div>
+    </div>
+
+    <div class="alert alert-warning" data-region="problem" hidden></div>
+
+    <p class="small text-muted mt-4">{{#str}}ask:note, local_kaiproctor{{/str}}</p>
+</div>

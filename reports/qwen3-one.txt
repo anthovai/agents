@@ -1,0 +1,1 @@
+{'code': 'guardrail_violation', 'message': 'the model reached a verdict: กระทำผิด'}

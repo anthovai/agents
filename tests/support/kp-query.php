@@ -42,8 +42,8 @@ switch ($command) {
             'faceservice_models' => $face['models_present'] ?? [],
             'liveness_available' => $face['liveness_available'] ?? false,
             'match_threshold' => $face['thresholds']['match'] ?? null,
-            'webservices' => $DB->count_records_select('external_functions',
-                $DB->sql_like('name', ':p'), ['p' => 'local_kaiproctor%']),
+            'webservices' => array_values($DB->get_fieldset_select('external_functions',
+                'name', $DB->sql_like('name', ':p'), ['p' => 'local_kaiproctor%'])),
             'sitepolicyhandler' => get_config('core', 'sitepolicyhandler'),
             'policies' => count(\tool_policy\api::list_policies()),
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -432,6 +432,80 @@ switch ($command) {
             ['CURLOPT_TIMEOUT' => 10, 'CURLOPT_CONNECTTIMEOUT' => 5]), true);
         echo implode("\n\n", $body['prompts'] ?? []);
         echo "\n";
+        break;
+
+    case 'seed-private-course':
+        // seed-private-course <username> — a course only this user is in.
+        //
+        // The assistant must never reveal that a course exists to somebody who
+        // cannot open it, and that cannot be tested on a site where everybody
+        // is enrolled in everything.
+        require_once($CFG->dirroot . '/course/lib.php');
+        require_once($CFG->dirroot . '/lib/enrollib.php');
+        $user = kp_user($argv[2]);
+        $shortname = 'KP-PRIVATE-' . $user->id;
+
+        $course = $DB->get_record('course', ['shortname' => $shortname]);
+        if (!$course) {
+            $category = $DB->get_record('course_categories', [], '*', IGNORE_MULTIPLE);
+            $course = create_course((object) [
+                'fullname' => 'คอร์สลับเฉพาะบุคคล',
+                'shortname' => $shortname,
+                'category' => $category->id,
+                'format' => 'topics',
+                'visible' => 1,
+            ]);
+        }
+
+        $manual = enrol_get_plugin('manual');
+        $instance = $DB->get_record('enrol',
+            ['courseid' => $course->id, 'enrol' => 'manual'], '*', IGNORE_MULTIPLE);
+        $studentrole = $DB->get_record('role', ['shortname' => 'student']);
+        $manual->enrol_user($instance, $user->id, $studentrole->id);
+
+        echo json_encode(['courseid' => $course->id,
+            'fullname' => $course->fullname], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ask-index':
+        // Every page the assistant would consider for this learner. The test
+        // that matters reads this as one user and checks another user's course
+        // is absent.
+        $user = kp_user($argv[2]);
+        echo json_encode(\local_kaiproctor\site_index::for_user((int) $user->id),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ask-rank':
+        // Retrieval only, no model: which pages a question matches, and how
+        // well. Separating this from the answer keeps a retrieval regression
+        // from being blamed on the model, and vice versa.
+        $user = kp_user($argv[2]);
+        $question = $argv[3] ?? '';
+        $ranked = \local_kaiproctor\assistant::rank(
+            $question, \local_kaiproctor\site_index::for_user((int) $user->id));
+        echo json_encode(array_slice($ranked, 0, 8), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ask':
+        $user = kp_user($argv[2]);
+        $question = $argv[3] ?? '';
+        echo json_encode(
+            \local_kaiproctor\assistant::answer($question, (int) $user->id),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ask-purge-index':
+        // The index is cached per user; a test that enrols somebody and then
+        // asks would otherwise read a list built before the enrolment.
+        $cache = \cache::make_from_params(\cache_store::MODE_APPLICATION,
+            'local_kaiproctor', 'siteindex');
+        $cache->purge();
+        echo "purged\n";
         break;
 
     case 'seb-info':

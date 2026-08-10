@@ -62,4 +62,11 @@ $functions = [
         'ajax' => true,
         'loginrequired' => true,
     ],
+    'local_kaiproctor_ask' => [
+        'classname' => 'local_kaiproctor\\external\\ask',
+        'description' => 'Answer a learner\'s question about where something is on this site.',
+        'type' => 'read',
+        'ajax' => true,
+        'loginrequired' => true,
+    ],
 ];

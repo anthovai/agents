@@ -23,8 +23,28 @@ def test_both_plugins_are_installed(stack_health):
 
 
 def test_all_web_services_are_registered(stack_health):
-    # The original five, plus start_session, end_session and summarise_session.
-    assert stack_health["webservices"] == 8
+    """By name, not by count.
+
+    A number here has been wrong twice now — bumped after adding a service,
+    which tests nothing except that somebody remembered to bump it. Names say
+    which one is missing, and adding one is then a deliberate edit rather than
+    an increment.
+    """
+    expected = {
+        "local_kaiproctor_enrol_face",
+        "local_kaiproctor_verify_frame",
+        "local_kaiproctor_log_event",
+        "local_kaiproctor_store_evidence",
+        "local_kaiproctor_analyze_frame",
+        "local_kaiproctor_start_session",
+        "local_kaiproctor_end_session",
+        "local_kaiproctor_summarise_session",
+        "local_kaiproctor_ask",
+    }
+    registered = set(stack_health["webservices"])
+
+    assert not expected - registered, f"not registered: {sorted(expected - registered)}"
+    assert not registered - expected, f"registered but unexpected: {sorted(registered - expected)}"
 
 
 def test_pdpa_policy_is_the_site_policy_handler(stack_health):

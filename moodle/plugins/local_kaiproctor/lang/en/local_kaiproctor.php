@@ -251,3 +251,18 @@ $string['ai:failed'] = 'The summary could not be drafted: {$a}';
 $string['ai:questiontitle'] = 'Questions that may have come through damaged';
 $string['ai:questionnote'] = 'Thai vowels and tone marks can end up in the wrong order when text is extracted from a PDF. These are suggestions to look at, not corrections.';
 $string['ai:nofindings'] = 'Nothing looked damaged.';
+
+// The navigation assistant.
+$string['ask:title'] = 'Ask about this site';
+$string['ask:intro'] = 'Ask where something is and you will get the link. It only knows the pages you can already open, and it will say so when it cannot find one.';
+$string['ask:placeholder'] = 'e.g. where is the safety lesson?';
+$string['ask:send'] = 'Ask';
+$string['ask:thinking'] = 'Looking...';
+$string['ask:nomatch'] = 'Nothing on this site matches that. Try naming the course or the activity.';
+$string['ask:notavailable'] = 'The assistant is switched off.';
+$string['ask:sources'] = 'Pages this came from';
+$string['ask:note'] = 'Answers are built only from pages you can open. It cannot see your grades or your results, and it does not decide anything.';
+$string['ask:page:enrol'] = 'Enrol your face';
+$string['ask:page:enrol_desc'] = 'Register your face before a monitored lesson or exam.';
+$string['ask:page:lesson'] = 'Monitored lesson';
+$string['ask:page:lesson_desc'] = 'The lesson page that checks you are present while you study.';

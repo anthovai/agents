@@ -208,3 +208,91 @@ def test_an_ordinary_summary_is_not_blocked():
                 "และไม่มีเหตุการณ์ผิดปกติบันทึกไว้")
 
     assert guard.verdicts_in(ordinary) == []
+
+
+# --------------------------------------------------------------------------
+# Finding your way around
+# --------------------------------------------------------------------------
+
+def a_page(**overrides) -> dict:
+    base = {"title": "บทเรียนความปลอดภัย", "url": "/mod/quiz/view.php?id=8",
+            "kind": "quiz", "summary": "หลักสูตรทดสอบ"}
+    base.update(overrides)
+    return base
+
+
+def test_a_question_with_no_pages_is_refused_before_any_model():
+    """The caller is meant to refuse first, when retrieval found nothing. This
+    is the second line: a model handed a question and no material will answer
+    from what it learned elsewhere, confidently, about a site it never saw."""
+    response = client.post("/ask", json={
+        "contract": config.CONTRACT_VERSION,
+        "question": "บทเรียนความปลอดภัยอยู่ไหน",
+        "context": [],
+    })
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "no_context"
+
+
+def test_context_carries_navigation_and_nothing_else():
+    """A page's title and link are all that is needed to point somebody at it.
+    A grade or an attempt count would be neither needed nor ours to send."""
+    with pytest.raises(contract.ContractError) as caught:
+        contract.ask({"question": "อยู่ไหน",
+                      "context": [dict(a_page(), grade=82)]})
+
+    assert caught.value.path == "ask.context[0].grade"
+
+
+def test_something_that_is_not_a_link_is_refused():
+    with pytest.raises(contract.ContractError) as caught:
+        contract.ask({"question": "อยู่ไหน",
+                      "context": [a_page(url="javascript:alert(1)")]})
+
+    assert caught.value.path == "ask.context[0].url"
+
+
+def test_an_invented_link_is_caught():
+    """The failure that costs this feature its credibility is not a clumsy
+    sentence, it is a link that looks right and goes nowhere: the learner
+    clicks it, lands on a 404, and stops trusting the next answer."""
+    from app import guard
+    offered = ["/mod/quiz/view.php?id=8", "/course/view.php?id=2"]
+
+    answer = "ไปที่ /mod/quiz/view.php?id=8 ได้เลย"
+    assert guard.invented_links(answer, offered) == []
+
+    # id=9 was never offered — the shape is right, the page is not.
+    guessed = "ลองดูที่ /mod/quiz/view.php?id=9 ครับ"
+    assert guard.invented_links(guessed, offered) == ["/mod/quiz/view.php?id=9"]
+
+
+def test_a_link_ending_a_thai_sentence_is_not_mistaken_for_an_invention():
+    """Trailing punctuation gets swept into the match. Treating that as an
+    invented link would block correct answers, which is the same outage as
+    having no guard at all."""
+    from app import guard
+    offered = ["/course/view.php?id=2"]
+
+    assert guard.invented_links("อยู่ที่ /course/view.php?id=2.", offered) == []
+
+
+def test_the_navigation_guardrails_are_published():
+    body = client.get("/prompts").json()
+    ask_prompt = " ".join(body["prompts"]["ask"].split())
+
+    for guardrail in [
+        "Answer only from the list",
+        "Copy any link you give exactly as it appears in the list",
+        "Never state or guess a grade",
+    ]:
+        assert guardrail in ask_prompt, f"the instruction '{guardrail}' is gone"
+
+
+def test_a_caller_on_the_previous_contract_still_works():
+    """Adding an endpoint breaks nobody. Forcing every integration to move on
+    the same day is how a version check becomes an outage."""
+    response = client.post("/summarise", json={"contract": "1.0", "sitting": a_sitting()})
+
+    assert response.json().get("error", {}).get("code") != "contract_mismatch"

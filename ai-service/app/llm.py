@@ -34,10 +34,11 @@ def _headers() -> dict[str, str]:
     return headers
 
 
-def ask(system: str, user: str) -> tuple[str, str]:
+def ask(system: str, user: str, model: str | None = None) -> tuple[str, str]:
     """Return (content, model name that answered)."""
+    model = model or config.LLM_MODEL
     body = {
-        "model": config.LLM_MODEL,
+        "model": model,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -78,7 +79,7 @@ def ask(system: str, user: str) -> tuple[str, str]:
     if not content or not content.strip():
         raise LlmError("empty", "the model returned nothing")
 
-    return content.strip(), str(decoded.get("model") or config.LLM_MODEL)
+    return content.strip(), str(decoded.get("model") or model)
 
 
 def reachable() -> tuple[bool, str]:

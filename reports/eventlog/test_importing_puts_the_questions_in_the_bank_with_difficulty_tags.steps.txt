@@ -1,4 +1,4 @@
-question bank before: {'entries': 39, 'tags': {'easy': 12, 'medium': 12, 'hard': 12, 'pdfimport': 36}}
+question bank before: {'entries': 51, 'tags': {'easy': 16, 'medium': 16, 'hard': 16, 'pdfimport': 48}}
 import the pack
 import result: {'ok': True, 'imported': 6, 'skipped': 0, 'messages': []}
-question bank after: {'entries': 45, 'tags': {'easy': 14, 'medium': 14, 'hard': 14, 'pdfimport': 42}}
+question bank after: {'entries': 57, 'tags': {'easy': 18, 'medium': 18, 'hard': 18, 'pdfimport': 54}}

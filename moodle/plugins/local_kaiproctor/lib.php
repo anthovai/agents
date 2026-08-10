@@ -166,6 +166,19 @@ function local_kaiproctor_extend_navigation(global_navigation $navigation) {
         new pix_icon('i/user', '')
     );
 
+    // Only when it is switched on. A menu item that leads to "this is turned
+    // off" teaches people to stop reading the menu.
+    if (\local_kaiproctor\assistant::is_available()) {
+        $node->add(
+            get_string('ask:title', 'local_kaiproctor'),
+            new moodle_url('/local/kaiproctor/ask.php'),
+            navigation_node::TYPE_CUSTOM,
+            null,
+            'local_kaiproctor_ask',
+            new pix_icon('i/questions', '')
+        );
+    }
+
     // The lesson page is only offered once a video exists to play.
     if (trim((string) get_config('local_kaiproctor', 'lessonvideourl')) !== '') {
         $node->add(

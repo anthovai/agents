@@ -39,6 +39,11 @@ def health() -> dict:
         "service": "ai-reviewer",
         "version": config.SERVICE_VERSION,
         "contract": config.CONTRACT_VERSION,
+        "models": {
+            "summarise": config.MODEL_SUMMARISE,
+            "ask": config.MODEL_ASK,
+            "questions": config.MODEL_QUESTIONS,
+        },
         "model": config.LLM_MODEL,
         # Which host is answering, so an operator can see at a glance whether
         # this deployment is sending anything off the premises.
@@ -61,7 +66,7 @@ def get_prompts() -> dict:
 
 @app.post("/summarise", dependencies=[Depends(require_key)], response_model=None)
 def summarise(body: dict) -> JSONResponse | dict:
-    if body.get("contract") != config.CONTRACT_VERSION:
+    if body.get("contract") not in config.SUPPORTED_CONTRACTS:
         return _failed("contract_mismatch",
                        f"this service speaks contract {config.CONTRACT_VERSION}", 400)
 
@@ -74,13 +79,14 @@ def summarise(body: dict) -> JSONResponse | dict:
         facts, ensure_ascii=False, indent=2)
 
     try:
-        content, model = llm.ask(prompts.SUMMARISE, material)
+        content, model = llm.ask(prompts.SUMMARISE, material, config.MODEL_SUMMARISE)
         # Ask once more if it reached a verdict; small models do this often
         # enough that one retry is worth the wait, and rare enough that the
         # wait is usually not incurred.
         verdicts = guard.verdicts_in(content)
         if verdicts:
-            content, model = llm.ask(prompts.SUMMARISE + guard.RETRY_NOTE, material)
+            content, model = llm.ask(prompts.SUMMARISE + guard.RETRY_NOTE, material,
+                                     config.MODEL_SUMMARISE)
             verdicts = guard.verdicts_in(content)
     except llm.LlmError as error:
         return _failed(error.code, error.message)
@@ -103,9 +109,70 @@ def summarise(body: dict) -> JSONResponse | dict:
     }
 
 
+@app.post("/ask", dependencies=[Depends(require_key)], response_model=None)
+def ask(body: dict) -> JSONResponse | dict:
+    """Answer a learner's question about finding their way around the site.
+
+    The retrieval happens on the calling platform, because it is the only side
+    that knows what this learner is allowed to open. If it found nothing it
+    must not call here at all — an assistant that answers from general
+    knowledge when the site has no matching page is worse than one that says
+    it does not know, and refusing here is the second line, not the first.
+    """
+    if body.get("contract") not in config.SUPPORTED_CONTRACTS:
+        return _failed("contract_mismatch",
+                       f"this service speaks contract {config.CONTRACT_VERSION}", 400)
+
+    try:
+        # The version marker is envelope, not payload — the other endpoints
+        # never see it because theirs is nested one level down.
+        asked = contract.ask({k: v for k, v in body.items() if k != "contract"})
+    except contract.ContractError as error:
+        return _failed("invalid_payload", str(error), 422)
+
+    if not asked["context"]:
+        return _failed("no_context",
+                       "no pages were supplied, so there is nothing to answer from", 422)
+
+    pages = "\n".join(
+        f"{n + 1}. [{item['kind']}] {item['title']}\n   ลิงก์: {item['url']}"
+        + (f"\n   {item['summary']}" if item["summary"] else "")
+        for n, item in enumerate(asked["context"])
+    )
+    material = f"คำถามของผู้เรียน:\n{asked['question']}\n\nหน้าที่ผู้เรียนเปิดได้:\n{pages}"
+
+    allowed = [item["url"] for item in asked["context"]]
+
+    try:
+        content, model = llm.ask(prompts.ASK, material, config.MODEL_ASK)
+        if guard.invented_links(content, allowed):
+            content, model = llm.ask(prompts.ASK + guard.LINK_NOTE, material, config.MODEL_ASK)
+    except llm.LlmError as error:
+        return _failed(error.code, error.message)
+
+    invented = guard.invented_links(content, allowed)
+    if invented:
+        # A link that looks right and goes nowhere is the failure that costs
+        # the feature its credibility, so the answer is dropped rather than
+        # shown with a broken link in it.
+        return _failed("invented_link",
+                       "the model produced links that were not offered: "
+                       + ", ".join(invented), 502)
+
+    return {
+        "ok": True,
+        "answer": content,
+        "model": model,
+        "contract": config.CONTRACT_VERSION,
+        # Which pages the answer was allowed to draw on, so the caller can show
+        # them alongside and a learner is never relying on prose alone.
+        "sources": asked["context"],
+    }
+
+
 @app.post("/check-questions", dependencies=[Depends(require_key)], response_model=None)
 def check_questions(body: dict) -> JSONResponse | dict:
-    if body.get("contract") != config.CONTRACT_VERSION:
+    if body.get("contract") not in config.SUPPORTED_CONTRACTS:
         return _failed("contract_mismatch",
                        f"this service speaks contract {config.CONTRACT_VERSION}", 400)
 
@@ -117,7 +184,8 @@ def check_questions(body: dict) -> JSONResponse | dict:
     try:
         content, model = llm.ask(
             prompts.CHECK_QUESTIONS,
-            json.dumps(items, ensure_ascii=False, indent=2))
+            json.dumps(items, ensure_ascii=False, indent=2),
+            config.MODEL_QUESTIONS)
     except llm.LlmError as error:
         return _failed(error.code, error.message)
 

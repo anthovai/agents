@@ -17,6 +17,21 @@ import os
 LLM_BASE_URL = os.environ.get(
     "AI_LLM_BASE_URL", "http://host.docker.internal:11434/v1").rstrip("/")
 LLM_MODEL = os.environ.get("AI_LLM_MODEL", "qwen2.5:7b-instruct")
+
+# One model per task, because measuring them found no single best.
+#
+# qwen3:8b answered 15/15 navigation questions correctly where qwen2.5:7b
+# managed 9/15 — but qwen3:8b then failed the summary guardrail outright,
+# reaching a verdict even after being told not to. Forcing one model on both
+# jobs would mean giving up half the navigation accuracy or shipping a
+# summariser that gets blocked. Two names in a config file is the cheaper
+# answer, and it costs nothing to point them at the same model later.
+#
+# Each defaults to AI_LLM_MODEL, so a deployment that wants one model has one
+# setting to change. Measurements: reports/ai-ask-bench.txt.
+MODEL_SUMMARISE = os.environ.get("AI_MODEL_SUMMARISE", LLM_MODEL)
+MODEL_ASK = os.environ.get("AI_MODEL_ASK", LLM_MODEL)
+MODEL_QUESTIONS = os.environ.get("AI_MODEL_QUESTIONS", LLM_MODEL)
 LLM_API_KEY = os.environ.get("AI_LLM_API_KEY", "").strip()
 
 # Low, not zero: a summary that reads like a person wrote it is more useful
@@ -41,4 +56,9 @@ SERVICE_VERSION = "1.0.0"
 # The payload contract version. Callers send it and we check it, so that a
 # customer running an older integration gets a clear refusal rather than a
 # summary built from fields we have since redefined.
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"
+
+# Older callers still work. Adding an endpoint breaks nobody, and forcing every
+# integration to move on the same day is how a version check turns into an
+# outage instead of a safeguard.
+SUPPORTED_CONTRACTS = {"1.0", "1.1"}

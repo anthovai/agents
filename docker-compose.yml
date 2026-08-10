@@ -69,6 +69,10 @@ services:
       # building, which is what the customers who ask about this need.
       AI_LLM_BASE_URL: ${AI_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
       AI_LLM_MODEL: ${AI_LLM_MODEL:-qwen2.5:7b-instruct}
+      # Measured, not assumed: qwen3:8b answers navigation questions 15/15
+      # where qwen2.5 manages 9/15, but fails the summary guardrail. See
+      # reports/ai-ask-bench.txt and ai-service/app/config.py.
+      AI_MODEL_ASK: ${AI_MODEL_ASK:-qwen3:8b}
       AI_LLM_API_KEY: ${AI_LLM_API_KEY:-}
       AI_API_KEY: ${PROCTOR_API_KEY:-}
     extra_hosts:

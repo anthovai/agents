@@ -1,5 +1,5 @@
 # audit trail for learner
-15:28:40  ctx=14   monitor_started        videotime=0     {"strict":true,"verify_minutes":10,"presence_minutes":2,"clips_per_hour":4}
-15:28:43  ctx=14   window_blur            videotime=3     {"occurrence":1}
-15:28:43  ctx=14   session_terminated     videotime=3     {"cause":"window_blur"}
-15:28:43  ctx=14   monitor_stopped        videotime=3     []
+17:36:02  ctx=14   monitor_started        videotime=0     {"strict":true,"verify_minutes":10,"presence_minutes":2,"clips_per_hour":4}
+17:36:05  ctx=14   window_blur            videotime=2     {"occurrence":1}
+17:36:05  ctx=14   session_terminated     videotime=2     {"cause":"window_blur"}
+17:36:05  ctx=14   monitor_stopped        videotime=2     []

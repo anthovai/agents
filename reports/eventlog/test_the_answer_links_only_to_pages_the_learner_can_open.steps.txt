@@ -1,0 +1,1 @@
+answer: {'ok': True, 'answer': 'ไปที่ลิงก์นี้: http://localhost:8080/local/kaiproctor/enrol.php ตรงนี้คือหน้าลงทะเบียนใบหน้าที่คุณถามถึงครับ', 'model': 'qwen3:8b', 'contract': '1.1', 'sources': [{'title': 'ลงทะเบียนใบหน้า', 'url': 'http://localhost:8080/local/kaiproctor/enrol.php', 'kind': 'tool', 'summary'
