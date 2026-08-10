@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY tests ./tests
+# Calibration runs in this image on purpose: the thresholds have to be measured
+# against the same models and OpenCV build that will make the decisions.
+COPY calibrate.py ./calibrate.py
 
 # Model weights are bind-mounted read-only from the host (see docker-compose)
 # so the licence-audited files stay visible outside the image.

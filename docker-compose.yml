@@ -35,6 +35,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # Threshold calibration. Same image as face-service so the models and the
+  # OpenCV build are the ones that will make the real decisions. Behind a
+  # profile so `docker compose up` never starts it — run it with calibrate.sh.
+  calibrate:
+    build:
+      context: ./face-service
+    profiles: ["tools"]
+    environment:
+      PROCTOR_API_KEY: ${PROCTOR_API_KEY:-change-me}
+    volumes:
+      - ./face-service/models:/app/models:ro
+      # Real faces, never committed: see .gitignore.
+      - ./face-service/tests/faces:/app/tests/faces:ro
+      - ./reports:/app/reports
+    command: python calibrate.py
+
   moodle:
     build:
       context: .

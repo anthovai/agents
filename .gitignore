@@ -18,6 +18,8 @@ reports/screenshots/
 reports/.rawvideo/
 reports/pytest-output.txt
 reports/junit.xml
+# The calibration report names real people and their scores.
+reports/CALIBRATION.md
 
 # Third-party Moodle plugins, fetched by moodle/plugins/fetch-third-party.sh.
 moodle/plugins/mod_interactivevideo/
