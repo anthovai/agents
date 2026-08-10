@@ -266,3 +266,23 @@ $string['ask:page:enrol'] = 'Enrol your face';
 $string['ask:page:enrol_desc'] = 'Register your face before a monitored lesson or exam.';
 $string['ask:page:lesson'] = 'Monitored lesson';
 $string['ask:page:lesson_desc'] = 'The lesson page that checks you are present while you study.';
+
+// The AI console.
+$string['ai:console'] = 'AI assistance';
+$string['ai:on'] = 'On';
+$string['ai:off'] = 'Off';
+$string['ai:turnon'] = 'Turn on';
+$string['ai:turnoff'] = 'Turn off';
+$string['ai:turnedon'] = 'AI assistance is on.';
+$string['ai:turnedoff'] = 'AI assistance is off.';
+$string['ai:service'] = 'Reviewer service';
+$string['ai:backend'] = 'Model endpoint';
+$string['ai:contract'] = 'Payload contract';
+$string['ai:task:summarise'] = 'Model for sitting summaries';
+$string['ai:task:ask'] = 'Model for the navigation assistant';
+$string['ai:task:questions'] = 'Model for proof-reading imported questions';
+$string['ai:onpremises'] = 'The model runs on infrastructure you control. No learner activity leaves your network.';
+$string['ai:offpremises'] = 'The model endpoint is outside your network. Learner activity — event names and counts, never images or face measurements — will be sent to it. Check this is covered by your consent document and your data processing agreements before switching it on.';
+$string['ai:brokenwhileon'] = 'AI assistance is on, but no model is answering. Every attempt will fail until this is fixed.';
+$string['ai:note'] = 'The service never receives an image, a clip, a face measurement or a name; it refuses payloads that carry them. Nothing it returns decides anything.';
+$string['ai:settingslink'] = 'Plugin settings';

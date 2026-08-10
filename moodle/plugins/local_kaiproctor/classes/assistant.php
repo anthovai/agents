@@ -26,11 +26,20 @@ class assistant {
 
     /** Below this, "no match" is the honest answer.
      *
-     *  Set by hand rather than measured, and it is the number most likely to
-     *  need changing once real questions arrive: too low and the assistant
-     *  answers from loosely related pages, too high and it shrugs at
-     *  reasonable questions. */
-    const MIN_SCORE = 0.08;
+     *  Measured, not chosen: see reports/ASK-CALIBRATION.txt and the sweep in
+     *  tests/support/calibrate-ask.php. 0.14 is the highest threshold that
+     *  turns away every off-topic question in the set while keeping recall at
+     *  its best — sitting at the top of a plateau rather than at its edge, so
+     *  a differently worded question does not flip the outcome.
+     *
+     *  Zero off-topic acceptance is treated as a constraint rather than as one
+     *  side of a trade, because "a question with no matching page never
+     *  reaches a model" is a claim this feature makes, and a threshold that
+     *  admits one in ten only approximates it.
+     *
+     *  Recompute against questions real learners typed before relying on it:
+     *  19 questions cannot resolve better than about 5 percentage points. */
+    const MIN_SCORE = 0.14;
 
     public static function is_available(): bool {
         return ai_client::is_configured();
@@ -61,7 +70,10 @@ class assistant {
             // may copy elsewhere; a bare path stops working the moment it
             // leaves the page.
             $item['url'] = $CFG->wwwroot . $item['url'];
-            unset($item['score']);
+            // Scoring detail, not something the model has any use for. The
+            // contract would refuse both fields; dropping them here keeps the
+            // refusal for genuine mistakes.
+            unset($item['score'], $item['keywords']);
             $context[] = $item;
         }
 
@@ -79,7 +91,11 @@ class assistant {
      *
      * @return array items scoring above MIN_SCORE, each with 'score'
      */
-    public static function rank(string $question, array $items): array {
+    public static function rank(string $question, array $items,
+            ?float $minscore = null): array {
+        // Overridable so the threshold can be swept against a labelled set
+        // rather than guessed. See tests/support/calibrate-ask.php.
+        $minscore = $minscore ?? self::MIN_SCORE;
         $wanted = self::trigrams($question);
         if (!$wanted) {
             return [];
@@ -91,9 +107,13 @@ class assistant {
             // drown it if both counted equally.
             $title = self::overlap($wanted, self::trigrams($item['title']));
             $summary = self::overlap($wanted, self::trigrams($item['summary'] ?? ''));
-            $score = $title + ($summary * 0.3);
+            // Kind words weigh less than the title but more than the course
+            // name a hundred pages share: "ข้อสอบ" should surface the quizzes
+            // without letting the course they sit in outrank them.
+            $kind = self::overlap($wanted, self::trigrams($item['keywords'] ?? ''));
+            $score = $title + ($summary * 0.3) + ($kind * 0.35);
 
-            if ($score >= self::MIN_SCORE) {
+            if ($score >= $minscore) {
                 $item['score'] = round($score, 4);
                 $scored[] = $item;
             }

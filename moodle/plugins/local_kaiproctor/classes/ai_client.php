@@ -26,8 +26,10 @@ class ai_client {
      *  hardware is slower than a hosted one, so this is not tight. */
     const TIMEOUT = 150;
 
-    /** The payload shape this plugin speaks. The service checks it. */
-    const CONTRACT = '1.0';
+    /** The payload shape this plugin speaks. The service checks it, and
+     *  still accepts 1.0 — but declaring the version actually being sent is
+     *  the point of sending one. */
+    const CONTRACT = '1.1';
 
     public static function is_configured(): bool {
         return (bool) get_config('local_kaiproctor', 'aienabled')
@@ -84,17 +86,36 @@ class ai_client {
 
     /** Whether the service answers at all, and what is behind it. */
     public static function health(): array {
+        if (!self::is_configured()) {
+            return self::fail('not_configured', '');
+        }
+        return self::health_at(rtrim(trim(
+            (string) get_config('local_kaiproctor', 'aibaseurl')), '/'));
+    }
+
+    /**
+     * Health of a service at a given address, regardless of the on/off switch.
+     *
+     * Separate from health() because the console has to show an administrator
+     * what they would be switching on. Asking them to enable it first, look,
+     * and disable it again if the answer is wrong is how a feature gets turned
+     * on for a few minutes on a live site by somebody who only wanted to read.
+     *
+     * @param string $baseurl
+     * @return array
+     */
+    public static function health_at(string $baseurl): array {
         global $CFG;
 
         require_once($CFG->libdir . '/filelib.php');
 
-        if (!self::is_configured()) {
+        $baseurl = rtrim(trim($baseurl), '/');
+        if ($baseurl === '') {
             return self::fail('not_configured', '');
         }
 
-        $base = rtrim(trim((string) get_config('local_kaiproctor', 'aibaseurl')), '/');
         $curl = new \curl(['ignoresecurity' => true]);
-        $response = $curl->get($base . '/health',
+        $response = $curl->get($baseurl . '/health',
             [], ['CURLOPT_TIMEOUT' => 10, 'CURLOPT_CONNECTTIMEOUT' => 5]);
 
         if ($curl->get_errno()) {

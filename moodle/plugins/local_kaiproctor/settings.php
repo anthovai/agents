@@ -140,5 +140,16 @@ if ($hassiteconfig) {
     ));
 
 
+    // A findable home for the switch, sitting next to the facts that decide
+    // whether it may be used at all: which model answers, and whose machine it
+    // is on. The raw setting below still exists; this is where somebody who
+    // has to answer for that decision should be sent.
+    $ADMIN->add('localplugins', new admin_externalpage(
+        'local_kaiproctor_ai',
+        get_string('ai:console', 'local_kaiproctor'),
+        new moodle_url('/local/kaiproctor/ai.php'),
+        'local/kaiproctor:manage'
+    ));
+
     $ADMIN->add('localplugins', $settings);
 }

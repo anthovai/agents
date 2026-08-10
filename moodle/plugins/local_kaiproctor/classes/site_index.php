@@ -46,12 +46,14 @@ class site_index {
                 'url' => '/local/kaiproctor/enrol.php',
                 'kind' => 'tool',
                 'summary' => get_string('ask:page:enrol_desc', 'local_kaiproctor'),
+                'keywords' => self::keywords('tool'),
             ],
             [
                 'title' => get_string('ask:page:lesson', 'local_kaiproctor'),
                 'url' => '/local/kaiproctor/lesson.php',
                 'kind' => 'tool',
                 'summary' => get_string('ask:page:lesson_desc', 'local_kaiproctor'),
+                'keywords' => self::keywords('tool'),
             ],
         ];
     }
@@ -71,6 +73,7 @@ class site_index {
                 'url' => '/course/view.php?id=' . $course->id,
                 'kind' => 'course',
                 'summary' => self::shorten(strip_tags((string) ($course->summary ?? ''))),
+                'keywords' => self::keywords('course'),
             ];
 
             $modinfo = get_fast_modinfo($course, $userid);
@@ -86,6 +89,7 @@ class site_index {
                         . '#section-' . $section->sectionnum,
                     'kind' => 'section',
                     'summary' => format_string($course->fullname),
+                    'keywords' => self::keywords('section'),
                 ];
             }
 
@@ -96,16 +100,42 @@ class site_index {
                 if (!$cm->uservisible || !$cm->has_view()) {
                     continue;
                 }
+                $kind = self::kind_of($cm->modname);
                 $items[] = [
                     'title' => format_string($cm->get_formatted_name()),
                     'url' => '/mod/' . $cm->modname . '/view.php?id=' . $cm->id,
-                    'kind' => self::kind_of($cm->modname),
+                    'kind' => $kind,
                     'summary' => format_string($course->fullname),
+                    'keywords' => self::keywords($kind),
                 ];
             }
         }
 
         return $items;
+    }
+
+    /**
+     * Words for what a page is, for matching only.
+     *
+     * Calibration turned up "ขอลิงก์หน้าคอร์สหน่อย" matching nothing: the
+     * course is called "หลักสูตร...", and a learner who says "คอร์ส" shares no
+     * characters with it. People name the kind of thing when they do not
+     * remember its title, which is exactly when they need the assistant.
+     *
+     * Never sent to the model — the contract would refuse the field anyway,
+     * which is the boundary doing its job.
+     */
+    protected static function keywords(string $kind): string {
+        return [
+            'course' => 'คอร์ส หลักสูตร วิชา รายวิชา course',
+            'section' => 'บท หัวข้อ ตอน section',
+            'quiz' => 'ข้อสอบ แบบทดสอบ สอบ ทดสอบ quiz exam',
+            'lesson' => 'บทเรียน เรียน lesson',
+            'video' => 'วิดีโอ คลิป หนัง วีดีโอ video',
+            'resource' => 'ไฟล์ เอกสาร ดาวน์โหลด file document',
+            'page' => 'หน้า เนื้อหา page',
+            'tool' => 'เครื่องมือ tool',
+        ][$kind] ?? '';
     }
 
     /** Module names the contract understands; everything else is a page. */

@@ -1,0 +1,88 @@
+{{!
+    The AI console.
+
+    The switch sits next to the answers an administrator needs before using it:
+    which model replies, where that machine is, and whether the service is even
+    reachable. A switch on its own asks somebody to decide blind.
+}}
+<div class="kaiproctor-ai" data-region="ai-console" data-enabled="{{#enabled}}1{{/enabled}}{{^enabled}}0{{/enabled}}">
+
+    <div class="card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1">{{#str}}ai:console, local_kaiproctor{{/str}}</h4>
+                <p class="mb-0" data-region="state">
+                    {{#enabled}}<span class="badge badge-success">{{#str}}ai:on, local_kaiproctor{{/str}}</span>{{/enabled}}
+                    {{^enabled}}<span class="badge badge-secondary">{{#str}}ai:off, local_kaiproctor{{/str}}</span>{{/enabled}}
+                </p>
+            </div>
+            <form method="post" action="{{toggleurl}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="enable" value="{{#enabled}}0{{/enabled}}{{^enabled}}1{{/enabled}}">
+                <button type="submit" data-action="kaiproctor-ai-toggle"
+                        class="btn {{#enabled}}btn-outline-danger{{/enabled}}{{^enabled}}btn-primary{{/enabled}}">
+                    {{#enabled}}{{#str}}ai:turnoff, local_kaiproctor{{/str}}{{/enabled}}
+                    {{^enabled}}{{#str}}ai:turnon, local_kaiproctor{{/str}}{{/enabled}}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{#brokenwhileon}}
+    <div class="alert alert-danger" data-region="broken">
+        {{#str}}ai:brokenwhileon, local_kaiproctor{{/str}}
+    </div>
+    {{/brokenwhileon}}
+
+    {{#offpremises}}
+    <div class="alert alert-warning" data-region="offpremises">
+        {{#str}}ai:offpremises, local_kaiproctor{{/str}}
+    </div>
+    {{/offpremises}}
+    {{^offpremises}}
+    {{#backendreachable}}
+    <div class="alert alert-success" data-region="onpremises">
+        {{#str}}ai:onpremises, local_kaiproctor{{/str}}
+    </div>
+    {{/backendreachable}}
+    {{/offpremises}}
+
+    <table class="table" data-region="facts">
+        <tbody>
+            <tr>
+                <th scope="row">{{#str}}ai:service, local_kaiproctor{{/str}}</th>
+                <td data-field="service">
+                    {{baseurl}}
+                    {{#serviceok}}<span class="badge badge-success">OK</span>{{/serviceok}}
+                    {{^serviceok}}<span class="badge badge-danger">{{serviceproblem}}</span>{{/serviceok}}
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">{{#str}}ai:backend, local_kaiproctor{{/str}}</th>
+                <td data-field="backend">
+                    {{backend}}
+                    {{#backendreachable}}<span class="badge badge-success">OK</span>{{/backendreachable}}
+                    {{^backendreachable}}<span class="badge badge-danger">{{backendproblem}}</span>{{/backendreachable}}
+                </td>
+            </tr>
+            {{#tasks}}
+            <tr>
+                <th scope="row">{{task}}</th>
+                <td data-field="model">{{model}}</td>
+            </tr>
+            {{/tasks}}
+            <tr>
+                <th scope="row">{{#str}}ai:contract, local_kaiproctor{{/str}}</th>
+                <td data-field="contract">{{contract}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p class="small text-muted">{{#str}}ai:note, local_kaiproctor{{/str}}</p>
+
+    <p>
+        <a href="{{settingsurl}}">{{#str}}ai:settingslink, local_kaiproctor{{/str}}</a>
+        &middot;
+        <a href="{{askurl}}">{{#str}}ask:title, local_kaiproctor{{/str}}</a>
+    </p>
+</div>

@@ -1,2 +1,2 @@
 # audit trail for learner
-17:43:19  ctx=31   monitor_started        videotime=0     {"strict":true,"verify_minutes":10,"presence_minutes":2,"clips_per_hour":4}
+19:25:22  ctx=31   monitor_started        videotime=0     {"strict":true,"verify_minutes":10,"presence_minutes":2,"clips_per_hour":4}

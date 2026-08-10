@@ -468,6 +468,64 @@ switch ($command) {
         echo "\n";
         break;
 
+    case 'ask-score':
+        // How the shipped MIN_SCORE performs against the labelled set, so a
+        // change to the scoring that quietly breaks retrieval fails a test
+        // rather than being noticed by a learner. The sweep that chose the
+        // number lives in calibrate-ask.php; this only reports the number in
+        // force.
+        $user = kp_user($argv[2]);
+        $fixtures = json_decode(file_get_contents(__DIR__ . '/ask-questions.json'), true);
+        $index = \local_kaiproctor\site_index::for_user((int) $user->id);
+        $size = \local_kaiproctor\assistant::CONTEXT_SIZE;
+
+        $found = $top1 = 0;
+        $missed = [];
+        foreach ($fixtures['onTopic'] as $case) {
+            $shown = array_slice(
+                \local_kaiproctor\assistant::rank($case['q'], $index), 0, $size);
+            $hit = false;
+            foreach ($shown as $position => $item) {
+                if (strpos($item['url'], $case['expects']) !== false) {
+                    $hit = true;
+                    $top1 += ($position === 0) ? 1 : 0;
+                    break;
+                }
+            }
+            $hit ? $found++ : $missed[] = $case['q'];
+        }
+
+        $accepted = [];
+        foreach ($fixtures['offTopic'] as $case) {
+            if (\local_kaiproctor\assistant::rank($case['q'], $index)) {
+                $accepted[] = $case['q'];
+            }
+        }
+
+        echo json_encode([
+            'threshold' => \local_kaiproctor\assistant::MIN_SCORE,
+            'ontopic' => count($fixtures['onTopic']),
+            'offtopic' => count($fixtures['offTopic']),
+            'recall' => round($found / count($fixtures['onTopic']), 4),
+            'top1' => round($top1 / count($fixtures['onTopic']), 4),
+            'falseaccept' => round(count($accepted) / count($fixtures['offTopic']), 4),
+            'missed' => $missed,
+            'wronglyaccepted' => $accepted,
+        ], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ai-console':
+        echo json_encode(\local_kaiproctor\ai_console::build(), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'ai-islocal':
+        // ai-islocal <url> — whether that endpoint counts as "on hardware you
+        // control", which is what the console's warning turns on.
+        echo \local_kaiproctor\ai_console::is_local($argv[2]) ? "yes\n" : "no\n";
+        break;
+
     case 'ask-index':
         // Every page the assistant would consider for this learner. The test
         // that matters reads this as one user and checks another user's course

@@ -1,6 +1,6 @@
 # audit trail for learner
-17:36:56  ctx=14   monitor_started        videotime=0     {"strict":false,"verify_minutes":0.05,"presence_minutes":0,"clips_per_hour":0}
-17:36:59  ctx=14   verify_error           videotime=3     {"code":"no_face"}
-17:37:03  ctx=14   verify_error           videotime=7     {"code":"no_face"}
-17:37:06  ctx=14   monitor_stopped        videotime=10    []
-17:37:06  ctx=14   verify_error           videotime=10    {"code":"no_face"}
+19:18:56  ctx=14   monitor_started        videotime=0     {"strict":false,"verify_minutes":0.05,"presence_minutes":0,"clips_per_hour":0}
+19:18:59  ctx=14   verify_error           videotime=3     {"code":"no_face"}
+19:19:02  ctx=14   verify_error           videotime=6     {"code":"no_face"}
+19:19:06  ctx=14   monitor_stopped        videotime=10    []
+19:19:06  ctx=14   verify_error           videotime=10    {"code":"no_face"}

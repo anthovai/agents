@@ -1,0 +1,56 @@
+{
+  "_note": [
+    "Labelled questions for calibrating assistant::MIN_SCORE.",
+    "",
+    "'expects' is a substring of the URL the question should reach. null means",
+    "the question is about something this site does not have, so returning any",
+    "page at all is a false accept: the assistant would then hand a model a",
+    "question with irrelevant material and get a confident irrelevant answer.",
+    "",
+    "Written by the developer against the demo site, which is the honest limit",
+    "of what this measures. Real calibration needs questions real learners",
+    "actually typed, and the number should be recomputed once there are some."
+  ],
+
+  "onTopic": [
+    {"q": "จะไปหน้าลงทะเบียนใบหน้าได้ยังไง", "expects": "kaiproctor/enrol.php"},
+    {"q": "ลงทะเบียนใบหน้าอยู่ตรงไหน", "expects": "kaiproctor/enrol.php"},
+    {"q": "ต้องสแกนหน้าก่อนสอบใช่ไหม ทำที่ไหน", "expects": "kaiproctor/enrol.php"},
+    {"q": "อยากลงทะเบียนใบหน้าใหม่", "expects": "kaiproctor/enrol.php"},
+
+    {"q": "บทเรียนที่มีการเฝ้าดูอยู่ไหน", "expects": "kaiproctor/lesson.php"},
+    {"q": "หน้าเรียนแบบมีคนคุมอยู่ตรงไหน", "expects": "kaiproctor/lesson.php"},
+
+    {"q": "บทเรียนวิดีโออยู่ตรงไหน", "expects": "interactivevideo/view.php"},
+    {"q": "ขอลิงก์วิดีโอแบบมีปฏิสัมพันธ์", "expects": "interactivevideo/view.php"},
+    {"q": "อยากดูวิดีโอบทเรียน", "expects": "interactivevideo/view.php"},
+
+    {"q": "อยากทำข้อสอบความเสี่ยงสูง", "expects": "view.php?id=10"},
+    {"q": "ข้อสอบ SEB อยู่ไหน", "expects": "view.php?id=10"},
+
+    {"q": "ข้อสอบทดสอบระบบคุมสอบอยู่ตรงไหน", "expects": "view.php?id=8"},
+    {"q": "ขอลิงก์ข้อสอบทดสอบระบบ", "expects": "view.php?id=8"},
+
+    {"q": "ข้อสอบที่สุ่มตามความยากอยู่ไหน", "expects": "view.php?id=13"},
+    {"q": "ข้อสอบสุ่มตามระดับความยาก", "expects": "view.php?id=13"},
+
+    {"q": "ขอลิงก์หน้าคอร์สหน่อย", "expects": "course/view.php"},
+    {"q": "หลักสูตรทดสอบระบบคุมสอบอยู่ไหน", "expects": "course/view.php"},
+
+    {"q": "กระดานข่าวอยู่ตรงไหน", "expects": "forum/view.php"},
+    {"q": "อยากอ่านประกาศในกระดานข่าว", "expects": "forum/view.php"}
+  ],
+
+  "offTopic": [
+    {"q": "เมืองหลวงของฝรั่งเศสคืออะไร", "expects": null},
+    {"q": "พรุ่งนี้ฝนจะตกไหม", "expects": null},
+    {"q": "ช่วยเขียนโค้ด python ให้หน่อย", "expects": null},
+    {"q": "สวัสดีครับ", "expects": null},
+    {"q": "ราคาทองวันนี้เท่าไหร่", "expects": null},
+    {"q": "แนะนำร้านอาหารแถวนี้หน่อย", "expects": null},
+    {"q": "ประเทศไทยมีกี่จังหวัด", "expects": null},
+    {"q": "ช่วยแปลประโยคนี้เป็นภาษาอังกฤษ", "expects": null},
+    {"q": "รถไฟฟ้าสายสีชมพูเปิดกี่โมง", "expects": null},
+    {"q": "how do i cook rice", "expects": null}
+  ]
+}

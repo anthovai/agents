@@ -81,6 +81,17 @@ def install_support_script():
         env={**os.environ, "MSYS_NO_PATHCONV": "1"}, check=True,
     )
 
+    # The labelled question set the retrieval assertions score against; it
+    # lives beside the support script because both are read inside the
+    # container, not from here.
+    subprocess.run(
+        ["docker", "compose", "cp",
+         str(Path("tests") / "support" / "ask-questions.json"),
+         "moodle:/var/www/html/ask-questions.json"],
+        cwd=PROJECT_ROOT, capture_output=True, text=True,
+        env={**os.environ, "MSYS_NO_PATHCONV": "1"}, check=True,
+    )
+
     sample = PROJECT_ROOT / "face-service" / "tests" / "sample-exam.pdf"
     if sample.is_file():
         subprocess.run(

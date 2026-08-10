@@ -1,3 +1,3 @@
 sign in and open the proctored quiz
 the learner interacts, starting the camera and the sitting
-sittings: [{'id': 248, 'status': 'active', 'reason': None, 'attemptid': 126, 'timestart': 1786380464, 'timeend': None, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]
+sittings: [{'id': 332, 'status': 'active', 'reason': None, 'attemptid': 165, 'timestart': 1786386589, 'timeend': None, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]

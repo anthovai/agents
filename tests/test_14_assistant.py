@@ -166,3 +166,92 @@ def test_a_learner_asks_where_something_is_and_the_link_works(session, assistant
     for broken in ["Page not found", "ไม่พบหน้า", "error/invalidcoursemodule"]:
         assert broken not in body, f"the link the assistant gave leads to: {broken}"
     session.note("the link opened a real page")
+
+
+# --------------------------------------------------------------------------
+# The threshold, and the switch
+# --------------------------------------------------------------------------
+
+def test_the_shipped_threshold_still_earns_its_number(session):
+    """MIN_SCORE was measured, so a change that quietly undoes the measurement
+    should fail here rather than reach a learner.
+
+    The two figures are not symmetrical. Letting an off-topic question through
+    breaks something this feature claims — that a question with no matching
+    page never reaches a model — so it is asserted at zero. Recall is a quality
+    figure, so it gets a floor with room for a question set that grows.
+    """
+    moodle("ask-purge-index")
+    score = json.loads(moodle("ask-score", "learner"))
+    session.note(f"at MIN_SCORE={score['threshold']}: recall {score['recall']:.1%}, "
+                 f"top-1 {score['top1']:.1%}, false-accept {score['falseaccept']:.1%}")
+
+    assert score["falseaccept"] == 0, \
+        f"off-topic questions now reach a model: {score['wronglyaccepted']}"
+    assert score["recall"] >= 0.90, f"retrieval got worse; missing {score['missed']}"
+    assert score["top1"] >= 0.85, "the right page is no longer usually first"
+
+
+def test_the_console_names_the_model_and_where_it_runs(session):
+    """A switch on its own asks somebody to decide blind. Whether learner
+    activity leaves the organisation depends on which machine answers, and
+    that is the service's fact, not the setting's."""
+    console = json.loads(moodle("ai-console"))
+    session.note(f"backend {console['backend']}, off-premises={console['offpremises']}")
+
+    assert console["backend"], "the console does not say which endpoint answers"
+    assert console["tasks"], "the console does not say which model does what"
+    assert not console["offpremises"], \
+        "this deployment is configured to send learner activity off-site"
+
+
+def test_a_vendor_endpoint_is_not_mistaken_for_your_own_hardware(session):
+    """The warning is only worth having if it is right about the boundary."""
+    assert moodle("ai-islocal", "http://host.docker.internal:11434/v1").strip() == "yes"
+    assert moodle("ai-islocal", "http://ai-service:9100").strip() == "yes"
+    assert moodle("ai-islocal", "https://api.openai.com/v1").strip() == "no"
+    session.note("a hostname with dots is treated as somebody else's machine")
+
+
+def test_an_administrator_can_switch_it_on_and_off_from_the_console(session):
+    """Through the page, not the setting: the point of the console is that the
+    person deciding sees the consequences on the same screen."""
+    original = json.loads(moodle("ai-state"))
+    try:
+        moodle("set-setting", "aienabled", "0")
+
+        session.login("admin")
+        session.goto("/local/kaiproctor/ai.php")
+        session.beat(1.5)
+
+        console = session.page.query_selector('[data-region="ai-console"]')
+        assert console.get_attribute("data-enabled") == "0"
+
+        session.note("turn it on")
+        session.page.click('[data-action="kaiproctor-ai-toggle"]')
+        session.page.wait_for_selector('[data-region="ai-console"][data-enabled="1"]',
+                                       timeout=20_000)
+        session.beat(1.5)
+        assert json.loads(moodle("ai-state"))["enabled"] == "1"
+
+        session.note("and off again")
+        session.page.click('[data-action="kaiproctor-ai-toggle"]')
+        session.page.wait_for_selector('[data-region="ai-console"][data-enabled="0"]',
+                                       timeout=20_000)
+        session.beat(1.5)
+        assert json.loads(moodle("ai-state"))["enabled"] == "0"
+    finally:
+        moodle("set-setting", "aienabled", original["enabled"] or "0")
+
+
+def test_a_learner_cannot_reach_the_console(session):
+    """It decides whether learner activity leaves the organisation."""
+    session.login("learner")
+    session.goto("/local/kaiproctor/ai.php")
+    session.beat(1)
+
+    body = session.page.inner_text("body")
+    assert '[data-action="kaiproctor-ai-toggle"]' not in body
+    assert not session.page.query_selector('[data-action="kaiproctor-ai-toggle"]'), \
+        "a learner was shown the switch"
+    session.note("the console refuses a learner")
