@@ -1,15 +1,15 @@
-model: qwen3:8b   backend: http://127.0.0.1:11434/v1
+model: kai-ask   backend: http://127.0.0.1:11434/v1
 
-cold start (model not resident):   34.9s  [ok]
+cold start (model not resident):   28.1s  [ok]
 
-  25.0s  [ok                  ] บทเรียนวิดีโออยู่ตรงไหน
-  36.1s  [ok                  ] จะไปหน้าลงทะเบียนใบหน้าได้ยังไง
-  22.4s  [ok                  ] ข้อสอบทดสอบระบบคุมสอบได้กี่คะแนน
-  29.8s  [ok                  ] ฉันสอบผ่านไหม
-  48.7s  [unsupported_number  ] ข้อสอบทดสอบระบบคุมสอบ ผมขาดอีกกี่คะแนนถึงจะได้เต็ม
-  44.7s  [ok                  ] ข้อสอบความเสี่ยงสูงได้กี่คะแนน
+  17.7s  [ok                  ] บทเรียนวิดีโออยู่ตรงไหน
+  31.6s  [ok                  ] จะไปหน้าลงทะเบียนใบหน้าได้ยังไง
+  28.6s  [ok                  ] ข้อสอบทดสอบระบบคุมสอบได้กี่คะแนน
+  25.7s  [ok                  ] ฉันสอบผ่านไหม
+  41.8s  [unsupported_number  ] ข้อสอบทดสอบระบบคุมสอบ ผมขาดอีกกี่คะแนนถึงจะได้เต็ม
+  29.0s  [ok                  ] ข้อสอบความเสี่ยงสูงได้กี่คะแนน
 
-warm: median 33.0s   slowest 48.7s   n=6
+warm: median 28.8s   slowest 41.8s   n=6
 
 The timeout has to clear the slowest, not the median: the question that
 takes longest is the one a learner is most likely to be waiting on, and

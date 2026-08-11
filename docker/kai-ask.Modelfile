@@ -1,0 +1,8 @@
+FROM qwen3:8b
+
+# Our prompts are a page list and a question: a few hundred tokens, never
+# thousands. The default 40k context is what inflates the model to 7.8 GB,
+# which does not fit a 6 GB GPU, so it spills to CPU and every answer pays for
+# it. Shrinking the window is not a quality trade here; the window was never
+# being used.
+PARAMETER num_ctx 4096

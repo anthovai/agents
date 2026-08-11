@@ -278,3 +278,80 @@ def test_a_course_holding_one_can_still_be_backed_up_and_restored():
     assert result["activities"] >= 1, "the activity did not survive the round trip"
     assert result["questions"] >= 2, "the timeline did not come back"
     assert result["answers"] >= 1, "learner answers were lost in the round trip"
+
+
+# --------------------------------------------------------------------------
+# What the teacher sees, and when it counts as done
+# --------------------------------------------------------------------------
+
+def test_the_report_names_the_question_the_class_got_wrong(session, fresh_video):
+    """The reason this page exists.
+
+    "Most of the class picked answer 3 at 04:12" is not a fact about those
+    learners; it is a fact about the four minutes of video before it, and it
+    is the only thing on the page that tells somebody what to go and change.
+    """
+    first = fresh_video[0]
+    wrong = 1 if first["correctchoice"] != 1 else 0
+
+    session.note("arrange a class that mostly got the first question wrong")
+    for who in ("learner", "learner2"):
+        moodle("kaivideo-reset", who, str(KAIVIDEO_CMID))
+        moodle("kaivideo-answer", who, str(KAIVIDEO_CMID), "0", str(wrong))
+
+    session.login("instructor")
+    session.goto(f"/mod/kaivideo/report.php?cmid={KAIVIDEO_CMID}")
+    session.beat(2)
+
+    table = session.page.inner_text('[data-region="by-question"]')
+    session.note(f"the report says:\n{table[:400]}")
+
+    row = session.page.query_selector(
+        f'[data-question="{first["attime"]:02.0f}"], tr[data-struggled="1"]')
+    assert row is not None, "nothing was flagged despite everybody getting it wrong"
+    assert session.page.query_selector('[data-region="struggled"]'), \
+        "the question the class failed is not marked"
+
+    # And the commonest wrong answer is named, because that is usually the
+    # misconception rather than the question being unclear.
+    assert first["choices"][wrong] in table
+
+
+def test_a_learner_cannot_open_the_report(session):
+    session.login("learner")
+    session.goto(f"/mod/kaivideo/report.php?cmid={KAIVIDEO_CMID}")
+    session.beat(1.5)
+
+    assert not session.page.query_selector('[data-region="by-learner"]'), \
+        "a learner was shown everybody's results"
+    session.note("the report refuses a learner")
+
+
+def test_completion_counts_answering_every_question():
+    """Answering counts, not answering correctly: a learner who worked through
+    the whole video has done the activity, and whether they got the answers
+    right is what the grade is for."""
+    timeline = json.loads(moodle("kaivideo-timeline", str(KAIVIDEO_CMID)))
+    moodle("kaivideo-reset", "learner", str(KAIVIDEO_CMID))
+    moodle("kaivideo-set-completion", str(KAIVIDEO_CMID), "1", "0")
+
+    try:
+        state = json.loads(moodle("kaivideo-completion", "learner", str(KAIVIDEO_CMID)))
+        assert state["completionanswerall"] is False, "complete before answering anything"
+
+        # One of two is not all of them.
+        moodle("kaivideo-answer", "learner", str(KAIVIDEO_CMID), "0",
+               str(timeline[0]["correctchoice"]))
+        state = json.loads(moodle("kaivideo-completion", "learner", str(KAIVIDEO_CMID)))
+        assert state["completionanswerall"] is False, "half the questions counted as all"
+
+        # Answered wrongly, and it still counts: the rule is about working
+        # through the video, not about being right.
+        wrong = 1 if timeline[1]["correctchoice"] != 1 else 0
+        moodle("kaivideo-answer", "learner", str(KAIVIDEO_CMID), "1", str(wrong))
+        state = json.loads(moodle("kaivideo-completion", "learner", str(KAIVIDEO_CMID)))
+        assert state["completionanswerall"] is True, \
+            "answering every question did not complete the activity"
+    finally:
+        moodle("kaivideo-set-completion", str(KAIVIDEO_CMID), "0", "0")
+

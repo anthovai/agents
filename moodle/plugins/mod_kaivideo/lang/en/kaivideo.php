@@ -60,3 +60,28 @@ $string['privacy:metadata:kaivideo_progress:userid'] = 'The learner.';
 $string['privacy:metadata:kaivideo_progress:furthest'] = 'The furthest point reached, in seconds.';
 $string['privacy:metadata:kaivideo_progress:finished'] = 'Whether they reached the end.';
 $string['privacy:metadata:kaivideo_progress:timemodified'] = 'When this was last updated.';
+
+// Report.
+$string['report'] = 'Results';
+$string['report:byquestion'] = 'By question';
+$string['report:byquestion_help'] = 'Hardest first. A question most of the class got wrong is usually a fact about the minutes of video before it, not about the class.';
+$string['report:bylearner'] = 'By learner';
+$string['report:answered'] = 'Answered';
+$string['report:correct'] = 'Correct';
+$string['report:correctshare'] = 'Got it right';
+$string['report:share'] = 'Score';
+$string['report:commonestwrong'] = 'Commonest wrong answer';
+$string['report:struggled'] = 'Most got this wrong';
+$string['report:furthest'] = 'Watched to';
+$string['report:finished'] = 'Reached the end';
+$string['report:nobodyyet'] = 'Nobody has opened this yet.';
+
+// Completion.
+$string['completionanswerall'] = 'Answer every question';
+$string['completionanswerall_label'] = 'Learner must answer every question on the timeline';
+$string['completionanswerall_help'] = 'Answering counts, not answering correctly. A learner who works through the whole video has done the activity; whether they got the answers right is what the grade is for.';
+$string['completionanswerall_desc'] = 'Answer every question';
+$string['completionwatched'] = 'Reach the end';
+$string['completionwatched_label'] = 'Learner must reach the end of the video';
+$string['completionwatched_help'] = 'Reaching the end is reported by the browser, so it is a record of the playhead getting there rather than proof somebody watched. Pair it with answering the questions if that matters.';
+$string['completionwatched_desc'] = 'Reach the end of the video';

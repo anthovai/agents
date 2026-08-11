@@ -631,6 +631,66 @@ switch ($command) {
         echo "\n";
         break;
 
+    case 'kaivideo-answer':
+        // kaivideo-answer <username> <cmid> <itemindex> <choice>
+        // Recording an answer without a browser, so a test can arrange a class
+        // that mostly got one question wrong and then look at the report.
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[3], 0, false, MUST_EXIST);
+        $items = array_values($DB->get_records('kaivideo_item',
+            ['kaivideoid' => $cm->instance], 'attime ASC, id ASC'));
+        $item = $items[(int) $argv[4]];
+        \mod_kaivideo\responses::answer((int) $item->id, (int) $user->id,
+            (int) $argv[5], false);
+        $video = $DB->get_record('kaivideo', ['id' => $cm->instance], '*', MUST_EXIST);
+        require_once($CFG->dirroot . '/mod/kaivideo/lib.php');
+        kaivideo_update_grades($video, (int) $user->id);
+        echo "answered item {$argv[4]} with choice {$argv[5]}\n";
+        break;
+
+    case 'kaivideo-report':
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[2], 0, false, MUST_EXIST);
+        echo json_encode(\mod_kaivideo\report::build((int) $cm->instance,
+            (int) $cm->course), JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'kaivideo-set-completion':
+        require_once($CFG->libdir . '/completionlib.php');
+        // kaivideo-set-completion <cmid> <answerall 0|1> <watched 0|1>
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[2], 0, false, MUST_EXIST);
+        $DB->set_field('kaivideo', 'completionanswerall', (int) $argv[3],
+            ['id' => $cm->instance]);
+        $DB->set_field('kaivideo', 'completionwatched', (int) $argv[4],
+            ['id' => $cm->instance]);
+        // Custom rules only run when the module's completion is set to
+        // automatic; leaving it manual would make the rules silently inert.
+        $DB->set_field('course_modules', 'completion', COMPLETION_TRACKING_AUTOMATIC,
+            ['id' => $cm->id]);
+        rebuild_course_cache($cm->course, true);
+        echo "completion rules set on cmid {$argv[2]}\n";
+        break;
+
+    case 'kaivideo-completion':
+        require_once($CFG->libdir . '/completionlib.php');
+        // kaivideo-completion <username> <cmid>
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[3], 0, false, MUST_EXIST);
+        $completion = new \mod_kaivideo\completion\custom_completion(
+            cm_info::create($cm, $user->id), (int) $user->id);
+        // Only rules the activity actually has switched on: core refuses to
+        // evaluate a rule that is defined but disabled, and rightly so.
+        $enabled = cm_info::create($cm, $user->id)->customdata['customcompletionrules'] ?? [];
+        $out = [];
+        foreach (\mod_kaivideo\completion\custom_completion::get_defined_custom_rules()
+                as $rule) {
+            $out[$rule] = empty($enabled[$rule])
+                ? null : ($completion->get_state($rule) === COMPLETION_COMPLETE);
+        }
+        echo json_encode($out, JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
     case 'kaivideo-timeline':
         // kaivideo-timeline <cmid> — the timeline WITH the answers, which is
         // what a test needs to know which button to press. The player is never

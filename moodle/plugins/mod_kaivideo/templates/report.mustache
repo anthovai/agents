@@ -1,0 +1,95 @@
+{{!
+    The per-question table comes first, and is sorted hardest-first.
+
+    A report ordered by timestamp buries the problem in the middle of the list,
+    and the per-learner table — the one everybody asks for — mostly says that
+    some people did better than others, which the teacher already knew.
+}}
+<div class="kaivideo-report" data-region="kaivideo-report">
+
+    <p><a href="{{viewurl}}">{{#str}}backtovideo, mod_kaivideo{{/str}}</a></p>
+
+    <h3>{{#str}}report:byquestion, mod_kaivideo{{/str}}</h3>
+    <p class="text-muted">{{#str}}report:byquestion_help, mod_kaivideo{{/str}}</p>
+
+    {{#hasquestions}}
+    <table class="table" data-region="by-question">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}}attime, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}questiontext, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}report:answered, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}report:correctshare, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}report:commonestwrong, mod_kaivideo{{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#questions}}
+            <tr data-question="{{attimelabel}}" data-struggled="{{#struggled}}1{{/struggled}}{{^struggled}}0{{/struggled}}">
+                <td><code>{{attimelabel}}</code></td>
+                <td>
+                    {{questiontext}}
+                    {{#struggled}}
+                    <span class="badge badge-warning" data-region="struggled">
+                        {{#str}}report:struggled, mod_kaivideo{{/str}}
+                    </span>
+                    {{/struggled}}
+                </td>
+                <td data-field="answered">{{answered}}</td>
+                <td data-field="correctshare">
+                    {{#unanswered}}-{{/unanswered}}
+                    {{^unanswered}}{{correctshare}}%{{/unanswered}}
+                </td>
+                <td data-field="commonestwrong">{{commonestwrong}}</td>
+            </tr>
+            {{#breakdown}}
+            <tr class="small text-muted">
+                <td></td>
+                <td colspan="4">
+                    {{#iscorrect}}<strong>{{text}}</strong> &check;{{/iscorrect}}
+                    {{^iscorrect}}{{text}}{{/iscorrect}}
+                    &mdash; {{chosen}} ({{share}}%)
+                </td>
+            </tr>
+            {{/breakdown}}
+            {{/questions}}
+        </tbody>
+    </table>
+    {{/hasquestions}}
+    {{^hasquestions}}
+    <p data-region="noquestions">{{#str}}noquestions, mod_kaivideo{{/str}}</p>
+    {{/hasquestions}}
+
+    <h3>{{#str}}report:bylearner, mod_kaivideo{{/str}}</h3>
+
+    {{#haslearners}}
+    <table class="table" data-region="by-learner">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}}fullname{{/str}}</th>
+                <th scope="col">{{#str}}report:answered, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}report:correct, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}report:share, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}report:furthest, mod_kaivideo{{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#learners}}
+            <tr>
+                <td>{{fullname}}</td>
+                <td>{{answered}} / {{total}}</td>
+                <td>{{correct}}</td>
+                <td data-field="share">{{sharelabel}}</td>
+                <td>
+                    {{furthest}}
+                    {{#finished}}<span class="badge badge-success">{{#str}}report:finished, mod_kaivideo{{/str}}</span>{{/finished}}
+                </td>
+            </tr>
+            {{/learners}}
+        </tbody>
+    </table>
+    {{/haslearners}}
+    {{^haslearners}}
+    <p data-region="nolearners">{{#str}}report:nobodyyet, mod_kaivideo{{/str}}</p>
+    {{/haslearners}}
+</div>

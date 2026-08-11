@@ -1,0 +1,31 @@
+face-service /analyze under load
+48 requests per level, one real photograph, http://127.0.0.1:9000
+
+conc   median      p95   slowest   req/s   failed
+   1    0.20s    0.28s    0.34s     4.8       0
+   2    0.32s    0.57s    0.78s     5.8       0
+   4    0.78s    1.06s    1.25s     4.9       0
+   8    1.69s    2.73s    2.99s     4.6       0
+  16    3.44s    4.13s    6.41s     4.7       0
+  32    4.14s    7.08s    7.36s     4.8       0
+
+peak throughput 5.8 req/s at concurrency 2
+
+  watching a monitored lesson   ~691 learners
+      one request each per 120s presence check
+
+  enrolling a face at once      ~1 learners
+      the liveness challenge polls a few times a second, per learner,
+      for as long as it takes them to turn their head
+
+Enrolment is the constraint, and it is the number to plan around: a
+hundred people starting an exam together are all enrolling at once.
+
+Latency is the reason, not failures: 0 requests failed across all 6 levels,
+but p95 went from 0.28s alone to 7.08s at 32 in flight, and a
+liveness challenge waiting that long between frames cannot be finished.
+
+Ceiling for the face pipeline only. Moodle, the database, evidence
+writes and the browsers are not in this measurement, and the service
+was sharing a laptop with all of them while it ran. Treat it as an
+order of magnitude, not a capacity plan.

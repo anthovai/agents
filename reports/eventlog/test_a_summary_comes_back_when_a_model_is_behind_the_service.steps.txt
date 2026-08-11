@@ -1,3 +1,3 @@
 generate a sitting
 model behind the service: qwen2.5:7b-instruct at http://host.docker.internal:11434/v1
-summary: {'ok': True, 'summary': 'การสอบมีความต่อเนื่องตลอดเวลาที่กำหนด ไม่มีเหตุการณ์ผิดปกติหรือข้อมูลเพียงพอให้ตรวจสอบเพิ่มเติม ผู้ตรวจสอบอาจต้องพิจารณาเรื่องการเริ่มต้นของระบบการตรวจตราเท่านั้น เนื่องจากไม่มีข้อมูลที่ชัดเจนเกี่ยวกับพฤติกรรมหรือความผิดปกติของผู้เข้าสอบ.', 'model': 'qwen2.5:7b-instruct', 'contract': '1.1', 'reviewed': {'status': 'active', 'reason': None, 'minutes': None, 'checks': [], 'ev
+summary: {'ok': True, 'summary': 'การสอบมีความยาวไม่เกิน 2 นาที โดยไม่มีเหตุการณ์หรือข้อมูลผิดปกติใดๆ ให้ตรวจสอบ ผู้ตรวจสอบควรดูเฉพาะการเริ่มต้นของระบบการตรวจตราเท่านั้น เนื่องจากไม่มีข้อมูลเพียงพอที่จะสรุปถึงพฤติกรรมหรือความผิดปกติใดๆ', 'model': 'qwen2.5:7b-instruct', 'contract': '1.1', 'reviewed': {'status': 'active', 'reason': None, 'minutes': None, 'checks': [], 'events': {'monitor_started': 1}, 'evide

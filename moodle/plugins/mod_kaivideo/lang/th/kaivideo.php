@@ -60,3 +60,28 @@ $string['privacy:metadata:kaivideo_progress:userid'] = 'ผู้เรียน
 $string['privacy:metadata:kaivideo_progress:furthest'] = 'จุดที่ไกลที่สุดที่ดูถึง (วินาที)';
 $string['privacy:metadata:kaivideo_progress:finished'] = 'ดูจบหรือยัง';
 $string['privacy:metadata:kaivideo_progress:timemodified'] = 'เวลาที่อัปเดตล่าสุด';
+
+// Report.
+$string['report'] = 'ผลการเรียน';
+$string['report:byquestion'] = 'แยกตามคำถาม';
+$string['report:byquestion_help'] = 'เรียงจากข้อที่ยากที่สุด — ข้อที่คนส่วนใหญ่ตอบผิด มักบอกเรื่องของวิดีโอช่วงก่อนหน้านั้น ไม่ใช่เรื่องของผู้เรียน';
+$string['report:bylearner'] = 'แยกตามผู้เรียน';
+$string['report:answered'] = 'ตอบแล้ว';
+$string['report:correct'] = 'ตอบถูก';
+$string['report:correctshare'] = 'สัดส่วนที่ตอบถูก';
+$string['report:share'] = 'คะแนน';
+$string['report:commonestwrong'] = 'คำตอบผิดที่เลือกมากที่สุด';
+$string['report:struggled'] = 'ส่วนใหญ่ตอบผิด';
+$string['report:furthest'] = 'ดูถึง';
+$string['report:finished'] = 'ดูจบแล้ว';
+$string['report:nobodyyet'] = 'ยังไม่มีใครเปิดกิจกรรมนี้';
+
+// Completion.
+$string['completionanswerall'] = 'ตอบคำถามครบทุกข้อ';
+$string['completionanswerall_label'] = 'ผู้เรียนต้องตอบคำถามบนไทม์ไลน์ครบทุกข้อ';
+$string['completionanswerall_help'] = 'นับที่การตอบ ไม่ใช่การตอบถูก — คนที่ดูจนจบทั้งวิดีโอถือว่าทำกิจกรรมแล้ว ส่วนตอบถูกกี่ข้อเป็นเรื่องของคะแนน';
+$string['completionanswerall_desc'] = 'ตอบคำถามครบทุกข้อ';
+$string['completionwatched'] = 'ดูจนจบ';
+$string['completionwatched_label'] = 'ผู้เรียนต้องดูวิดีโอจนจบ';
+$string['completionwatched_help'] = 'การดูจนจบรายงานมาจากเบราว์เซอร์ จึงเป็นบันทึกว่าหัวเล่นไปถึงปลายทาง ไม่ใช่หลักฐานว่ามีคนนั่งดู ถ้าเรื่องนี้สำคัญ ให้ใช้คู่กับเงื่อนไขตอบคำถามครบ';
+$string['completionwatched_desc'] = 'ดูวิดีโอจนจบ';

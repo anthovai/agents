@@ -14,6 +14,7 @@ function kaivideo_supports($feature) {
         case FEATURE_BACKUP_MOODLE2:
         case FEATURE_GRADE_HAS_GRADE:
         case FEATURE_COMPLETION_TRACKS_VIEWS:
+        case FEATURE_COMPLETION_HAS_RULES:
             return true;
         case FEATURE_GROUPS:
         case FEATURE_GROUPINGS:
@@ -145,6 +146,47 @@ function kaivideo_update_grades($video, $userid = 0) {
 }
 
 /**
+ * What the course cache holds about one of these.
+ *
+ * Without this, the completion checkboxes appear on the form, save happily, and
+ * are then never evaluated: core reads the enabled rules out of the cached
+ * module info, and a module that does not publish them is a module with no
+ * custom rules as far as completion is concerned. The symptom is a rule that
+ * silently does nothing, which is worse than one that visibly fails.
+ *
+ * @param stdClass $coursemodule
+ * @return cached_cm_info|bool
+ */
+function kaivideo_get_coursemodule_info($coursemodule) {
+    global $DB;
+
+    $video = $DB->get_record('kaivideo', ['id' => $coursemodule->instance],
+        'id, name, intro, introformat, completionanswerall, completionwatched');
+    if (!$video) {
+        return false;
+    }
+
+    $info = new cached_cm_info();
+    $info->name = $video->name;
+
+    if ($coursemodule->showdescription) {
+        $info->content = format_module_intro('kaivideo', $video, $coursemodule->id, false);
+    }
+
+    // Only when the activity is set to automatic completion: publishing the
+    // rules otherwise would have core evaluating conditions the teacher chose
+    // to decide by hand.
+    if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        $info->customdata['customcompletionrules']['completionanswerall'] =
+            (int) $video->completionanswerall;
+        $info->customdata['customcompletionrules']['completionwatched'] =
+            (int) $video->completionwatched;
+    }
+
+    return $info;
+}
+
+/**
  * The "Interactive video" entry in the activity's own menu.
  *
  * @param settings_navigation $settings
@@ -154,6 +196,19 @@ function kaivideo_extend_settings_navigation($settings, $node) {
     global $PAGE;
 
     if (!has_capability('mod/kaivideo:edititems', $PAGE->cm->context)) {
+        // Still offer the report: a teacher who may read results but not
+        // rewrite questions is a normal arrangement, and gating the whole
+        // menu on editing hid the report from exactly those people.
+        if (has_capability('mod/kaivideo:viewreport', $PAGE->cm->context)) {
+            $node->add(
+                get_string('report', 'mod_kaivideo'),
+                new moodle_url('/mod/kaivideo/report.php', ['cmid' => $PAGE->cm->id]),
+                navigation_node::TYPE_SETTING,
+                null,
+                'mod_kaivideo_report',
+                new pix_icon('i/report', '')
+            );
+        }
         return;
     }
 
@@ -165,4 +220,15 @@ function kaivideo_extend_settings_navigation($settings, $node) {
         'mod_kaivideo_edit',
         new pix_icon('t/edit', '')
     );
+
+    if (has_capability('mod/kaivideo:viewreport', $PAGE->cm->context)) {
+        $node->add(
+            get_string('report', 'mod_kaivideo'),
+            new moodle_url('/mod/kaivideo/report.php', ['cmid' => $PAGE->cm->id]),
+            navigation_node::TYPE_SETTING,
+            null,
+            'mod_kaivideo_report',
+            new pix_icon('i/report', '')
+        );
+    }
 }

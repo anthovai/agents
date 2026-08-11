@@ -37,4 +37,33 @@ class mod_kaivideo_mod_form extends moodleform_mod {
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
     }
+
+    /**
+     * The completion rules that mean something for a video.
+     *
+     * @return array of element names
+     */
+    public function add_completion_rules() {
+        $mform = $this->_form;
+
+        $mform->addElement('checkbox', 'completionanswerall',
+            get_string('completionanswerall', 'mod_kaivideo'),
+            get_string('completionanswerall_label', 'mod_kaivideo'));
+        $mform->addHelpButton('completionanswerall', 'completionanswerall', 'mod_kaivideo');
+
+        $mform->addElement('checkbox', 'completionwatched',
+            get_string('completionwatched', 'mod_kaivideo'),
+            get_string('completionwatched_label', 'mod_kaivideo'));
+        $mform->addHelpButton('completionwatched', 'completionwatched', 'mod_kaivideo');
+
+        return ['completionanswerall', 'completionwatched'];
+    }
+
+    /**
+     * @param array $data
+     * @return bool
+     */
+    public function completion_rule_enabled($data) {
+        return !empty($data['completionanswerall']) || !empty($data['completionwatched']);
+    }
 }

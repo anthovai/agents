@@ -1,3 +1,3 @@
 sign in and open the enrolment page
 read the sequence the module generated
-twelve generated sequences: {'center>right>left', 'center>left>right'}
+twelve generated sequences: {'center>left>right', 'center>right>left'}
