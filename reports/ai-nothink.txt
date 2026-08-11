@@ -1,0 +1,4 @@
+qwen3:8b, 5 navigation questions
+
+thinking on                correct 3/5   median  30.9s   slowest  38.3s
+thinking off (/no_think)   correct 4/5   median  24.7s   slowest  29.8s

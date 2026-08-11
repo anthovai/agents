@@ -632,3 +632,75 @@ mtrace('  learner    / Learn!2345');
 mtrace('  learner2   / Learn!2345');
 mtrace('  instructor / Teach!2345');
 mtrace('  quiz: ' . $CFG->wwwroot . '/mod/quiz/view.php?id=' . $cm->id);
+
+mtrace('interactive video (ours):');
+// A module's lib.php is not autoloaded — the functions in it are found by name
+// only after Moodle has included the file for that module.
+require_once($CFG->dirroot . '/mod/kaivideo/lib.php');
+// A working example of mod_kaivideo, beside the third-party one, so the two can
+// be compared without switching anything off.
+$kaivideoname = 'วิดีโอแบบมีปฏิสัมพันธ์ (KAISER)';
+$existing = $DB->get_record('kaivideo', ['course' => $course->id, 'name' => $kaivideoname]);
+
+if ($existing) {
+    mtrace("  already present (id {$existing->id})");
+    $kaivideo = $existing;
+    $kaivideocm = get_coursemodule_from_instance('kaivideo', $kaivideo->id);
+} else {
+    $module = $DB->get_record('modules', ['name' => 'kaivideo'], '*', MUST_EXIST);
+    $instance = (object) [
+        'course' => $course->id,
+        'name' => $kaivideoname,
+        'intro' => '<p>วิดีโอที่หยุดถามคำถามระหว่างทาง ต้องตอบก่อนจึงจะเล่นต่อ</p>',
+        'introformat' => FORMAT_HTML,
+        'videourl' => $CFG->wwwroot . '/local/kaiproctor/samples/lesson.mp4',
+        'mustanswer' => 1,
+        'allowreview' => 1,
+        'grade' => 100,
+    ];
+    $instance->id = kaivideo_add_instance($instance);
+
+    $kaivideocm = (object) [
+        'course' => $course->id,
+        'module' => $module->id,
+        'instance' => $instance->id,
+        'section' => 0,
+        'visible' => 1,
+        'completion' => COMPLETION_TRACKING_NONE,
+    ];
+    $kaivideocm->coursemodule = add_course_module($kaivideocm);
+    course_add_cm_to_section($course->id, $kaivideocm->coursemodule, 0);
+
+    $kaivideo = $DB->get_record('kaivideo', ['id' => $instance->id], '*', MUST_EXIST);
+    $kaivideocm = get_coursemodule_from_id('kaivideo', $kaivideocm->coursemodule);
+    mtrace("  created cmid {$kaivideocm->id}");
+}
+
+// Two questions, early enough that a test does not have to watch a whole video
+// to reach the second one.
+$questions = [
+    [
+        'attime' => 3,
+        'questiontext' => 'ระหว่างเรียนบทเรียนที่มีการเฝ้าดู ผู้เรียนต้องทำอย่างไร',
+        'choices' => ['อยู่หน้ากล้องตลอดเวลา', 'ปิดกล้องได้ถ้าเสียงยังดังอยู่',
+            'สลับไปหน้าอื่นได้ตามต้องการ'],
+        'correctchoice' => 0,
+        'feedback' => 'ระบบตรวจว่ามีคนอยู่หน้ากล้องเป็นระยะ',
+    ],
+    [
+        'attime' => 8,
+        'questiontext' => 'ถ้าออกจากหน้าต่างบทเรียน จะเกิดอะไรขึ้น',
+        'choices' => ['ไม่เกิดอะไร', 'ระบบบันทึกเหตุการณ์ไว้'],
+        'correctchoice' => 1,
+        'feedback' => 'ทุกครั้งที่ออกจากหน้าต่างถูกบันทึกเป็นหลักฐาน',
+    ],
+];
+
+if (!$DB->record_exists('kaivideo_item', ['kaivideoid' => $kaivideo->id])) {
+    foreach ($questions as $question) {
+        \mod_kaivideo\timeline::save((int) $kaivideo->id, $question);
+        mtrace("  question at {$question['attime']}s");
+    }
+} else {
+    mtrace('  questions already on the timeline');
+}

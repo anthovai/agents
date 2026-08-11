@@ -367,3 +367,24 @@ def test_a_localised_digit_is_still_a_digit():
 
     assert guard.unsupported_numbers("ได้ ๘ คะแนน", "8 10") == []
     assert guard.unsupported_numbers("ได้ ๙๙ คะแนน", "8 10") == ["99"]
+
+
+def test_a_retry_spends_the_same_budget_not_a_fresh_one():
+    """AI_TIMEOUT bounds a request, not a call.
+
+    It used to bound only the call, so /ask could take two full timeouts when
+    a guard fired — 600 seconds against a 300-second limit — and Moodle's
+    outer limit fired first. What came back was a bare curl timeout instead of
+    the service's own account of what happened, which is precisely the failure
+    the ordered chain of timeouts exists to prevent.
+    """
+    from app import llm
+
+    spend = llm.budget(30)
+    first = spend.remaining()
+    assert first <= 30
+
+    # A second attempt is only started when it could plausibly finish; eight
+    # seconds left buys a timeout instead of an answer.
+    assert llm.budget(30).enough_for_another(20)
+    assert not llm.budget(8).enough_for_another(20)

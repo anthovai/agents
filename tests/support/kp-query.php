@@ -577,6 +577,120 @@ switch ($command) {
         echo "\n";
         break;
 
+    case 'kaivideo-backup-restore':
+        // Round-trip the demo course and report what survived.
+        //
+        // Worth a permanent test because the first version of this module
+        // declared FEATURE_BACKUP_MOODLE2 without the classes that implement
+        // it, and backing up ANY course containing the activity died with
+        // "class not found". Nothing in the module's own behaviour would have
+        // shown that; only running a backup did.
+        require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+        require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+        require_once($CFG->dirroot . '/course/lib.php');
+
+        $source = $DB->get_record('course', ['shortname' => 'KP-DEMO'], '*', MUST_EXIST);
+        $admin = $DB->get_record('user', ['username' => 'admin'], '*', MUST_EXIST);
+
+        $bc = new backup_controller(backup::TYPE_1COURSE, $source->id,
+            backup::FORMAT_MOODLE, backup::INTERACTIVE_NO, backup::MODE_GENERAL,
+            $admin->id);
+        $bc->get_plan()->get_setting('users')->set_value(true);
+        $bc->execute_plan();
+        $results = $bc->get_results();
+        $folder = 'kaivideo-roundtrip';
+        $results['backup_destination']->extract_to_pathname(
+            get_file_packer('application/vnd.moodle.backup'),
+            $CFG->tempdir . '/backup/' . $folder);
+        $bc->destroy();
+
+        $DB->delete_records('course', ['shortname' => 'KP-ROUNDTRIP']);
+        $target = create_course((object) [
+            'fullname' => 'round trip', 'shortname' => 'KP-ROUNDTRIP', 'category' => 1,
+        ]);
+
+        $rc = new restore_controller($folder, $target->id, backup::INTERACTIVE_NO,
+            backup::MODE_GENERAL, $admin->id, backup::TARGET_NEW_COURSE);
+        $rc->execute_precheck();
+        $rc->execute_plan();
+        $rc->destroy();
+
+        $out = ['activities' => 0, 'questions' => 0, 'answers' => 0];
+        foreach ($DB->get_records('kaivideo', ['course' => $target->id]) as $copy) {
+            $out['activities']++;
+            $out['questions'] += $DB->count_records('kaivideo_item',
+                ['kaivideoid' => $copy->id]);
+            $out['answers'] += $DB->count_records_sql(
+                "SELECT COUNT(1) FROM {kaivideo_response} r
+                   JOIN {kaivideo_item} i ON i.id = r.itemid
+                  WHERE i.kaivideoid = ?", [$copy->id]);
+        }
+
+        delete_course($target->id, false);
+        echo json_encode($out, JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'kaivideo-timeline':
+        // kaivideo-timeline <cmid> — the timeline WITH the answers, which is
+        // what a test needs to know which button to press. The player is never
+        // given this; see mod_kaivideo\timeline::for_player.
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[2], 0, false, MUST_EXIST);
+        echo json_encode(\mod_kaivideo\timeline::for_editing((int) $cm->instance),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'kaivideo-reset':
+        // kaivideo-reset <username> <cmid>
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[3], 0, false, MUST_EXIST);
+        $items = $DB->get_fieldset_select('kaivideo_item', 'id', 'kaivideoid = ?',
+            [$cm->instance]);
+        if ($items) {
+            [$insql, $params] = $DB->get_in_or_equal($items, SQL_PARAMS_NAMED);
+            $params['userid'] = $user->id;
+            $DB->delete_records_select('kaivideo_response',
+                "itemid $insql AND userid = :userid", $params);
+        }
+        $DB->delete_records('kaivideo_progress',
+            ['kaivideoid' => $cm->instance, 'userid' => $user->id]);
+        echo "reset {$argv[2]} on cmid {$argv[3]}\n";
+        break;
+
+    case 'kaivideo-state':
+        // kaivideo-state <username> <cmid> — what was recorded, including the
+        // gradebook, so a test can check the mark rather than the intention.
+        require_once($CFG->libdir . '/gradelib.php');
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[3], 0, false, MUST_EXIST);
+        $video = $DB->get_record('kaivideo', ['id' => $cm->instance], '*', MUST_EXIST);
+
+        $summary = \mod_kaivideo\responses::summary((int) $video->id, (int) $user->id);
+        $grades = grade_get_grades($video->course, 'mod', 'kaivideo', $video->id,
+            [$user->id]);
+        $item = $grades->items[0] ?? null;
+
+        echo json_encode([
+            'answered' => $summary['answered'],
+            'correct' => $summary['correct'],
+            'fraction' => $summary['fraction'],
+            'attempts' => $DB->count_records_sql(
+                "SELECT COUNT(1) FROM {kaivideo_response} r
+                   JOIN {kaivideo_item} i ON i.id = r.itemid
+                  WHERE i.kaivideoid = ? AND r.userid = ?",
+                [$video->id, $user->id]),
+            'grade' => $item ? (float) $item->grades[$user->id]->grade : null,
+            'grademax' => $item ? (float) $item->grademax : null,
+            'progress' => $summary['progress'],
+        ], JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'monitored-kinds':
+        echo implode(',', \local_kaiproctor\monitored::SUPPORTED) . "\n";
+        break;
+
     case 'ask-index':
         // Every page the assistant would consider for this learner. The test
         // that matters reads this as one user and checks another user's course

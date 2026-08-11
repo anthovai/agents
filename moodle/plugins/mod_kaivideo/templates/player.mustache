@@ -1,0 +1,57 @@
+{{!
+    The player.
+
+    A real <video> element, not an embed. That is a deliberate constraint: the
+    proctoring adapter in local_kaiproctor already drives a plain <video>, so
+    monitoring an interactive video needed no new code at all — and anything
+    that has to reach a player through postMessage cannot be paused reliably
+    at the moment a question is due.
+}}
+<div class="kaivideo" data-region="kaivideo" data-state="idle">
+
+    {{#noquestions}}
+    <div class="alert alert-info" data-region="noquestions">
+        {{#str}}noquestions, mod_kaivideo{{/str}}
+        {{#canedit}}<a href="{{editurl}}">{{#str}}editquestions, mod_kaivideo{{/str}}</a>{{/canedit}}
+    </div>
+    {{/noquestions}}
+
+    <div class="kaivideo-stage position-relative" data-region="stage">
+        <video data-region="video" class="w-100" controls preload="metadata"
+               src="{{videourl}}"></video>
+
+        {{!
+            Drawn over the video rather than beside it. A question in the
+            margin is a question a learner scrolls past; one that covers the
+            frame is the interruption it is meant to be.
+        }}
+        <div class="kaivideo-question" data-region="question" hidden>
+            <div class="card">
+                <div class="card-body">
+                    <p class="lead" data-region="questiontext"></p>
+                    <div data-region="choices" class="d-grid gap-2"></div>
+
+                    <div data-region="outcome" hidden>
+                        <p data-region="verdict" class="mb-1"></p>
+                        <p data-region="feedback" class="text-muted"></p>
+                        <button type="button" class="btn btn-primary"
+                                data-action="continue">
+                            {{#str}}continue, mod_kaivideo{{/str}}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary"
+                                data-action="retry" hidden>
+                            {{#str}}tryagain, mod_kaivideo{{/str}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="mt-2 text-muted" data-region="summary">
+        {{#str}}questioncount, mod_kaivideo, {{questioncount}}{{/str}}
+        {{#mustanswer}} &middot; {{#str}}mustanswerhint, mod_kaivideo{{/str}}{{/mustanswer}}
+    </p>
+
+    <div class="alert alert-warning" data-region="problem" hidden></div>
+</div>

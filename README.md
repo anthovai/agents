@@ -40,7 +40,8 @@ docker compose up --build
 | ผู้ใช้ สิทธิ์ คอร์ส ข้อสอบ ตัดเกรด รายงาน | Moodle core | GPL-3 |
 | ความยินยอม PDPA + คำขอลบข้อมูล | `tool_policy` + Privacy API (core) | GPL-3 |
 | ล็อกเครื่องระดับ OS | Safe Exam Browser + `quizaccess_seb` (core) | MPL / GPL |
-| **วิดีโอแบบมีปฏิสัมพันธ์** | [`mod_interactivevideo`](https://github.com/sokunthearithmakara/moodle-mod_interactivevideo) | GPL-3 |
+| วิดีโอแบบมีปฏิสัมพันธ์ (ทางเลือก) | [`mod_interactivevideo`](https://github.com/sokunthearithmakara/moodle-mod_interactivevideo) | GPL-3 |
+| **วิดีโอแบบมีปฏิสัมพันธ์ (`mod_kaivideo`)** | เขียนเอง | — |
 | ตรวจจับใบหน้า / embedding | YuNet + SFace (OpenCV Zoo) | MIT / Apache-2.0 |
 | Liveness | MiniFASNet (Silent-Face-Anti-Spoofing) | Apache-2.0 |
 | **Active liveness challenge** | เขียนเอง | — |
@@ -267,3 +268,23 @@ LMS ──POST /summarise──> ai-service ──> Ollama บนเครื่
 > **สิ่งที่ออกจากไซต์เปลี่ยนไป** เดิมมีแต่ชื่อเหตุการณ์และจำนวนครั้ง ตอนนี้มีคะแนน
 > ของผู้ถามด้วย ค่าเริ่มต้นยังเป็นโมเดลบนเครื่องตัวเอง และหน้าคอนโซลเตือนแล้ว
 > ถ้าปลายทางอยู่นอกเครือข่าย
+
+
+## วิดีโอแบบมีปฏิสัมพันธ์ของเราเอง — `mod_kaivideo`
+
+`mod_interactivevideo` ยังติดตั้งอยู่ข้างๆ ไม่ได้ถอด — แต่สิ่งที่มันเป็นไม่ได้คือ **เป็นของเรา**
+ลูกค้าต้องตรวจสอบทั้งสามชิ้นที่ซื้อไป และปลั๊กอินของคนอื่น*อ่านได้*แต่เรา*รับผิดชอบแทนไม่ได้*
+
+ดู [docs/INTERACTIVE-VIDEO.md](docs/INTERACTIVE-VIDEO.md)
+
+แยกส่วนแบบเดียวกับ face recognition: ข้อมูลและการตัดสินอยู่ใน PHP ที่ตรวจได้โดยไม่ต้องมี
+เบราว์เซอร์ ส่วน player เป็นชิ้นเดียวที่ต้องเป็น UI
+
+**เฉลยไม่เคยออกไปที่เบราว์เซอร์ก่อนตอบ** — และมีเทสต์อ่าน HTML ของหน้าจริงเพื่อยืนยัน
+ไม่ใช่อ่าน API เพราะคนที่จะโกงเปิด developer tools
+
+**ลากแถบเวลาข้ามคำถามไม่ได้** คำถามถือว่าถึงกำหนดเมื่อหัวเล่นอยู่ที่หรือเลยจุดนั้นแล้ว
+และยังไม่ได้ตอบ ทำให้เล่นปกติ ลากแถบ และกลับมาเรียนต่อ เป็นกรณีเดียวกันหมด
+
+**การคุมสอบทำงานทันทีโดยไม่ต้องเขียนอะไรเพิ่ม** เพราะ player เป็น `<video>` element จริง
+ซึ่ง attention monitor ขับได้อยู่แล้ว — เป็นเหตุผลที่ตั้งใจไม่ใช้ iframe embed

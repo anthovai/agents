@@ -8,6 +8,7 @@ is what a customer with data-residency rules actually needs it to be.
 from __future__ import annotations
 
 import json
+import time
 
 import httpx
 
@@ -34,9 +35,16 @@ def _headers() -> dict[str, str]:
     return headers
 
 
-def ask(system: str, user: str, model: str | None = None) -> tuple[str, str]:
-    """Return (content, model name that answered)."""
+def ask(system: str, user: str, model: str | None = None,
+        timeout: float | None = None) -> tuple[str, str]:
+    """Return (content, model name that answered).
+
+    `timeout` bounds this one call. Endpoints that may ask twice pass what is
+    left of the request's budget rather than the full limit — see budget()
+    below for why that is not a detail.
+    """
     model = model or config.LLM_MODEL
+    timeout = config.TIMEOUT if timeout is None else timeout
     body = {
         "model": model,
         "messages": [
@@ -50,7 +58,7 @@ def ask(system: str, user: str, model: str | None = None) -> tuple[str, str]:
     try:
         response = httpx.post(
             f"{config.LLM_BASE_URL}/chat/completions",
-            headers=_headers(), json=body, timeout=config.TIMEOUT)
+            headers=_headers(), json=body, timeout=timeout)
     except httpx.TimeoutException as error:
         raise LlmError("timeout", str(error) or "the model did not answer in time")
     except httpx.HTTPError as error:
@@ -111,3 +119,33 @@ def extract_json_array(content: str) -> list:
     except ValueError:
         return []
     return parsed if isinstance(parsed, list) else []
+
+
+class budget:
+    """How much of a request's time is left.
+
+    AI_TIMEOUT bounds one call to the model. It did not bound a *request*,
+    because an answer that trips a guard is asked again — so /ask could take
+    two full timeouts, 600 seconds against a 300-second limit, and Moodle's
+    330-second outer limit fired first. What came back was a bare curl timeout
+    instead of the service's own account of what happened, which is exactly
+    the failure the ordered chain exists to prevent.
+
+    The chain was right; the arithmetic was wrong. A retry has to come out of
+    the same budget, not start a new one.
+    """
+
+    def __init__(self, seconds: float | None = None):
+        self.total = config.TIMEOUT if seconds is None else seconds
+        self.started = time.monotonic()
+
+    def remaining(self) -> float:
+        return max(0.0, self.total - (time.monotonic() - self.started))
+
+    def enough_for_another(self, minimum: float = 20.0) -> bool:
+        """Whether a second attempt could plausibly finish.
+
+        Starting one with eight seconds left buys a timeout instead of an
+        answer, and the caller then has neither the retry nor the first reply.
+        """
+        return self.remaining() >= minimum

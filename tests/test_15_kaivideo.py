@@ -1,0 +1,280 @@
+"""Our own interactive video, driven the way a learner drives it.
+
+Built rather than borrowed because the customer has to be able to audit all
+three pieces they are buying, and a third-party plugin can be read but not
+answered for.
+
+What is worth testing is not that a video plays. It is the three claims the
+activity makes and that a browser is the only place to check:
+
+  - a question the author placed at 00:03 actually stops the video at 00:03;
+  - dragging the seek bar past a question does not get past the question;
+  - the correct answer is not sitting in the page waiting to be read.
+"""
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from conftest import moodle
+
+KAIVIDEO_CMID = 15
+
+
+@pytest.fixture
+def fresh_video():
+    """Clear this learner's answers so each test starts from the first
+    question, and hand back what the timeline actually contains."""
+    moodle("kaivideo-reset", "learner", str(KAIVIDEO_CMID))
+    return json.loads(moodle("kaivideo-timeline", str(KAIVIDEO_CMID)))
+
+
+def open_video(session, username: str = "learner"):
+    session.login(username)
+    session.goto(f"/mod/kaivideo/view.php?id={KAIVIDEO_CMID}")
+    session.beat(1.5)
+
+
+def play(session):
+    """Start playback without needing a real click on the controls."""
+    session.page.evaluate(
+        "() => document.querySelector('[data-region=video]').play()")
+
+
+def wait_for_question(session, timeout: int = 30_000) -> str:
+    session.page.wait_for_selector('[data-region="question"]:not([hidden])',
+                                   timeout=timeout)
+    session.beat(1.5)
+    return session.page.inner_text('[data-region="questiontext"]')
+
+
+# --------------------------------------------------------------------------
+# The learner's path through it
+# --------------------------------------------------------------------------
+
+def test_the_video_stops_where_the_author_put_a_question(session, fresh_video):
+    first = fresh_video[0]
+    session.note(f"a question is placed at {first['attime']}s: {first['questiontext'][:50]}")
+
+    open_video(session)
+    play(session)
+
+    asked = wait_for_question(session)
+    session.note(f"the video stopped and asked: {asked[:60]}")
+
+    assert asked.strip() == first["questiontext"].strip()
+    assert session.page.evaluate(
+        "() => document.querySelector('[data-region=video]').paused"), \
+        "the question is on screen but the video is still playing behind it"
+
+
+def test_a_wrong_answer_does_not_reveal_the_right_one(session, fresh_video):
+    """The activity offers another attempt, so the answer stays hidden.
+
+    Showing the explanation and then offering "try again" makes the second
+    attempt free — it is not another attempt at anything, it is a button that
+    awards a mark. This is checked on what reaches the page, because that is
+    where a learner would read it.
+    """
+    first = fresh_video[0]
+    wrong = 1 if first["correctchoice"] != 1 else 0
+
+    open_video(session)
+    play(session)
+    wait_for_question(session)
+
+    session.note(f"answer wrongly on purpose (choice {wrong})")
+    session.page.query_selector_all('[data-action="choose"]')[wrong].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])',
+                                   timeout=20_000)
+    session.beat(1.5)
+
+    assert session.page.get_attribute('[data-region="kaivideo"]', "data-state") == "wrong"
+    feedback = session.page.inner_text('[data-region="feedback"]').strip()
+    session.note(f"feedback shown after a wrong answer: {feedback or '(none)'}")
+    assert feedback == "", "the explanation was handed over before the retry"
+
+    # And the whole page: the correct answer must not be anywhere in it.
+    correct_text = first["choices"][first["correctchoice"]]
+    outcome = session.page.inner_text('[data-region="outcome"]')
+    assert correct_text not in outcome, "the right answer was printed with the verdict"
+
+    assert session.page.query_selector('[data-action="retry"]').is_visible()
+
+
+def test_answering_correctly_lets_the_video_continue(session, fresh_video):
+    first = fresh_video[0]
+
+    open_video(session)
+    play(session)
+    wait_for_question(session)
+
+    session.note(f"answer correctly (choice {first['correctchoice']})")
+    session.page.query_selector_all('[data-action="choose"]')[first["correctchoice"]].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])',
+                                   timeout=20_000)
+    session.beat(1.5)
+
+    assert session.page.get_attribute('[data-region="kaivideo"]', "data-state") == "correct"
+    # Now the explanation is the point of having asked.
+    session.note(f"feedback: {session.page.inner_text('[data-region=feedback]')[:80]}")
+
+    session.page.click('[data-action="continue"]')
+    session.beat(2)
+
+    assert session.page.query_selector('[data-region="question"][hidden]'), \
+        "the question is still on screen after continuing"
+
+
+def test_seeking_past_a_question_does_not_get_past_it(session, fresh_video):
+    """The rule that makes 'must answer' mean anything.
+
+    Watching for the playhead to cross a timestamp is the obvious
+    implementation and the wrong one: the seek bar goes straight over it. A
+    question is due whenever the playhead is at or beyond it and unanswered,
+    which makes seeking and playing the same case.
+    """
+    assert len(fresh_video) >= 2, "this test needs a second question to skip to"
+    second = fresh_video[1]
+
+    open_video(session)
+    play(session)
+
+    first = fresh_video[0]
+    wait_for_question(session)
+    session.page.query_selector_all('[data-action="choose"]')[first["correctchoice"]].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])', timeout=20_000)
+    session.page.click('[data-action="continue"]')
+    session.beat(1.5)
+
+    session.note(f"drag the playhead well past the question at {second['attime']}s")
+    session.page.evaluate(
+        "() => { document.querySelector('[data-region=video]').currentTime = 30; }")
+
+    asked = wait_for_question(session)
+    session.note(f"it came up anyway: {asked[:60]}")
+    assert asked.strip() == second["questiontext"].strip()
+    assert session.page.evaluate(
+        "() => document.querySelector('[data-region=video]').paused")
+
+
+def test_the_correct_answer_is_not_in_the_page(session, fresh_video):
+    """A player that knows the answer is a player a learner can read.
+
+    The timeline reaches the browser without correct answers in it — checked
+    against the page source rather than the API, because that is what somebody
+    would actually open the developer tools on.
+    """
+    open_video(session)
+
+    content = session.page.content()
+    for item in fresh_video:
+        marker = f'"correctchoice":{item["correctchoice"]}'
+        assert marker not in content.replace(" ", ""), \
+            "the correct answer was shipped to the browser"
+
+    session.note(f"none of the {len(fresh_video)} answers are in the page")
+
+
+# --------------------------------------------------------------------------
+# What it records
+# --------------------------------------------------------------------------
+
+def test_the_grade_is_the_fraction_answered_correctly(session, fresh_video):
+    """One right out of two is half the marks. Unanswered counts as wrong: a
+    learner who skipped half the video has not earned the same mark as one who
+    answered everything."""
+    first = fresh_video[0]
+
+    open_video(session)
+    play(session)
+    wait_for_question(session)
+    session.page.query_selector_all('[data-action="choose"]')[first["correctchoice"]].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])', timeout=20_000)
+    session.beat(2)
+
+    state = json.loads(moodle("kaivideo-state", "learner", str(KAIVIDEO_CMID)))
+    session.note(f"after one correct answer of {len(fresh_video)}: {state}")
+
+    assert state["correct"] == 1
+    assert abs(state["fraction"] - 1 / len(fresh_video)) < 0.001
+    assert abs(state["grade"] - (100 / len(fresh_video))) < 0.01, \
+        f"the gradebook says {state['grade']}"
+
+
+def test_every_attempt_is_kept_not_just_the_last(session, fresh_video):
+    """A teacher asking "did they guess twice and then get it" has to be able
+    to find out, and a table that overwrites cannot answer that."""
+    first = fresh_video[0]
+    wrong = 1 if first["correctchoice"] != 1 else 0
+
+    open_video(session)
+    play(session)
+    wait_for_question(session)
+
+    session.page.query_selector_all('[data-action="choose"]')[wrong].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])', timeout=20_000)
+    session.page.click('[data-action="retry"]')
+    session.beat(1)
+    session.page.query_selector_all('[data-action="choose"]')[first["correctchoice"]].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])', timeout=20_000)
+    session.beat(2)
+
+    state = json.loads(moodle("kaivideo-state", "learner", str(KAIVIDEO_CMID)))
+    session.note(f"attempts recorded: {state['attempts']}, counted correct: {state['correct']}")
+
+    assert state["attempts"] == 2, "the first attempt was overwritten"
+    assert state["correct"] == 1, "the latest answer is not the one that counts"
+
+
+# --------------------------------------------------------------------------
+# Alongside the rest of the system
+# --------------------------------------------------------------------------
+
+def test_it_can_be_proctored_like_any_other_activity(session):
+    """The player is a plain <video> element, so the attention monitor drives
+    it with no adapter at all — which is why this needed no new monitoring
+    code, only permission to be listed."""
+    supported = moodle("monitored-kinds").strip().split(",")
+    session.note(f"activities that can be monitored: {supported}")
+    assert "kaivideo" in [kind.strip() for kind in supported]
+
+    original = moodle("monitored", str(KAIVIDEO_CMID)).strip()
+    try:
+        moodle("set-monitored", str(KAIVIDEO_CMID), "1")
+
+        open_video(session)
+        body = session.page.inner_text("body")
+        session.note("the learner is told before anything starts")
+        assert "คุมสอบ" in body or "เฝ้าดู" in body or "proctor" in body.lower()
+    finally:
+        moodle("set-monitored", str(KAIVIDEO_CMID), original or "0")
+
+
+def test_the_assistant_can_point_a_learner_at_it(session):
+    """It is an ordinary activity, so it appears in the navigation index like
+    any other — no special case anywhere."""
+    moodle("ask-purge-index")
+    ranked = json.loads(moodle("ask-rank", "learner", "วิดีโอแบบมีปฏิสัมพันธ์"))
+
+    urls = [item["url"] for item in ranked]
+    session.note(f"top matches: {[item['title'] for item in ranked[:3]]}")
+    assert any("/mod/kaivideo/view.php" in url for url in urls), \
+        "our interactive video is not findable by the assistant"
+
+
+def test_a_course_holding_one_can_still_be_backed_up_and_restored():
+    """No page, and the most valuable test in this file.
+
+    The first version declared FEATURE_BACKUP_MOODLE2 and shipped none of the
+    classes behind it, so backing up any course containing the activity died
+    with "class not found" — a core feature broken by an activity that
+    otherwise worked perfectly. Nothing in the module's own behaviour showed
+    it; only running a backup did.
+    """
+    result = json.loads(moodle("kaivideo-backup-restore"))
+
+    assert result["activities"] >= 1, "the activity did not survive the round trip"
+    assert result["questions"] >= 2, "the timeline did not come back"
+    assert result["answers"] >= 1, "learner answers were lost in the round trip"

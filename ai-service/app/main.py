@@ -104,15 +104,19 @@ def summarise(body: dict) -> JSONResponse | dict:
     material = "บันทึกการเรียน 1 ครั้ง:\n" + json.dumps(
         facts, ensure_ascii=False, indent=2)
 
+    spend = llm.budget()
+
     try:
-        content, model = llm.ask(prompts.SUMMARISE, material, config.MODEL_SUMMARISE)
+        content, model = llm.ask(prompts.SUMMARISE, material, config.MODEL_SUMMARISE,
+                                 spend.remaining())
         # Ask once more if it reached a verdict; small models do this often
         # enough that one retry is worth the wait, and rare enough that the
-        # wait is usually not incurred.
+        # wait is usually not incurred. The retry comes out of the same budget,
+        # so the request as a whole still finishes inside AI_TIMEOUT.
         verdicts = guard.verdicts_in(content)
-        if verdicts:
+        if verdicts and spend.enough_for_another():
             content, model = llm.ask(prompts.SUMMARISE + guard.RETRY_NOTE, material,
-                                     config.MODEL_SUMMARISE)
+                                     config.MODEL_SUMMARISE, spend.remaining())
             verdicts = guard.verdicts_in(content)
     except llm.LlmError as error:
         return _failed(error.code, error.message)
@@ -193,16 +197,23 @@ def ask(body: dict) -> JSONResponse | dict:
            for fact in (item.get("facts") or {}).values()]
     )
 
+    spend = llm.budget()
+
     try:
-        content, model = llm.ask(prompts.ASK, material, config.MODEL_ASK)
+        content, model = llm.ask(prompts.ASK, material, config.MODEL_ASK,
+                                 spend.remaining())
 
         # One retry, and the note names the fault so the second attempt is
-        # aimed at it rather than being the same request again.
-        if guard.invented_links(content, allowed):
-            content, model = llm.ask(prompts.ASK + guard.LINK_NOTE, material, config.MODEL_ASK)
-        elif guard.unsupported_numbers(content, disclosed):
-            content, model = llm.ask(prompts.ASK + guard.NUMBER_NOTE, material,
-                                     config.MODEL_ASK)
+        # aimed at it rather than being the same request again. It spends what
+        # is left of the budget, not a fresh one: two full timeouts would put
+        # the request past Moodle's outer limit and lose the diagnosis.
+        if spend.enough_for_another():
+            if guard.invented_links(content, allowed):
+                content, model = llm.ask(prompts.ASK + guard.LINK_NOTE, material,
+                                         config.MODEL_ASK, spend.remaining())
+            elif guard.unsupported_numbers(content, disclosed):
+                content, model = llm.ask(prompts.ASK + guard.NUMBER_NOTE, material,
+                                         config.MODEL_ASK, spend.remaining())
     except llm.LlmError as error:
         return _failed(error.code, error.message)
 

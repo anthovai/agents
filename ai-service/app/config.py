@@ -53,7 +53,13 @@ MAX_TOKENS = int(os.environ.get("AI_MAX_TOKENS", 700))
 # Three timeouts sit in a line, and the ordering matters more than any single
 # value:
 #
-#     this  <  Moodle's ai_client::TIMEOUT  <  whatever the browser waits
+#     this  <  Moodle's ai_client::TIMEOUT  <  Apache  <  the browser
+#
+# This bounds the whole request, not one call to the model. A reply that trips
+# a guard is asked again, and the retry spends what is left of the same budget
+# — the first version gave it a fresh one, so /ask could take two full
+# timeouts and Moodle's outer limit fired first, replacing the diagnosis with
+# a bare curl timeout.
 #
 # Reversed, the useful diagnosis — "the model did not answer in time", raised
 # where the model is — is replaced by a curl timeout in Moodle that says

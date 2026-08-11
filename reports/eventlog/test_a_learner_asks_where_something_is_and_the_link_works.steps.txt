@@ -1,4 +1,4 @@
 ask where the interactive video lesson is
-answer shown: บทเรียนวิดีโออยู่ที่ [video] บทเรียนวิดีโอแบบมีปฏิสัมพันธ์ ลิงก์: http://localhost:8080/mod/interactivevideo/view.php?id=11
+answer shown: บทเรียนวิดีโออยู่ที่ [video] บทเรียนวิดีโอแบบมีปฏิสัมพันธ์ (ลิงก์: http://localhost:8080/mod/interactivevideo/view.php?id=11) และ [video] วิดีโอแบบมีปฏิสัมพันธ์ (KAISER) (ลิงก์: http://localhost:8080/
 following the first link: http://localhost:8080/mod/interactivevideo/view.php?id=11
 the link opened a real page

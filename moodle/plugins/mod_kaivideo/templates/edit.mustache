@@ -1,0 +1,41 @@
+{{!
+    The timeline editor.
+
+    The video sits above the form because choosing "ask this at 01:24" needs
+    the frame at 01:24, and a separate tab turns that into arithmetic.
+}}
+<div class="kaivideo-edit" data-region="kaivideo-edit">
+
+    <p><a href="{{viewurl}}">{{#str}}backtovideo, mod_kaivideo{{/str}}</a></p>
+
+    <video class="w-100 mb-3" data-region="preview" controls preload="metadata"
+           src="{{videourl}}"></video>
+
+    <table class="table" data-region="items">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}}attime, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}questiontext, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}correctchoice, mod_kaivideo{{/str}}</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#items}}
+            <tr data-item="{{id}}">
+                <td><code>{{attimelabel}}</code></td>
+                <td>{{questiontext}}</td>
+                <td>{{answer}}</td>
+                <td class="text-nowrap">
+                    <a href="{{editurl}}" data-action="edit">{{#str}}edit{{/str}}</a>
+                    &middot;
+                    <a href="{{deleteurl}}" data-action="delete">{{#str}}delete{{/str}}</a>
+                </td>
+            </tr>
+            {{/items}}
+            {{^items}}
+            <tr><td colspan="4">{{#str}}noquestions, mod_kaivideo{{/str}}</td></tr>
+            {{/items}}
+        </tbody>
+    </table>
+</div>

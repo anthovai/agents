@@ -1,5 +1,5 @@
 sign in and open the lesson
 run the monitor with clips scheduled frequently
-evidence rows: 07:50:15  ctx=14   clip      random_sample                clip-320.webm
-07:50:18  ctx=14   clip      random_sample                clip-321.webm
-07:50:21  ctx=14   clip      random_sample                clip-322.webm
+evidence rows: 11:22:15  ctx=14   clip      random_sample                clip-355.webm
+11:22:18  ctx=14   clip      random_sample                clip-356.webm
+11:22:22  ctx=14   clip      random_sample                clip-357.webm

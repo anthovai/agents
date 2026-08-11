@@ -13,7 +13,10 @@ defined('MOODLE_INTERNAL') || die();
 class monitored {
 
     /** Module types this plugin knows how to watch. */
-    const SUPPORTED = ['interactivevideo', 'h5pactivity', 'page', 'resource', 'url'];
+    // kaivideo is ours and leads the list: its player is a plain <video>
+    // element, which the attention monitor drives with no adapter at all.
+    const SUPPORTED = ['kaivideo', 'interactivevideo', 'h5pactivity', 'page',
+        'resource', 'url'];
 
     public static function is_monitored(int $cmid): bool {
         global $DB;
