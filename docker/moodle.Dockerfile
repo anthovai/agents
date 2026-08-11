@@ -28,6 +28,15 @@ RUN sed -ri 's!/var/www/html!/var/www/html/public!g' \
         /etc/apache2/sites-available/000-default.conf \
         /etc/apache2/apache2.conf
 
+# Apache ships with Timeout 300, which is below the 330 the plugin waits for
+# the AI service. Left alone, Apache cuts the connection first and the learner
+# gets a bare 504 instead of the service's own account of what went wrong.
+#
+# The chain has to widen outwards, or the innermost diagnosis never escapes:
+#
+#     ai-service 300  <  ai_client 330  <  Apache 420  <  the browser
+RUN sed -ri 's/^Timeout [0-9]+/Timeout 420/' /etc/apache2/apache2.conf
+
 # Moodle refuses to install below these values.
 RUN { \
         echo 'max_input_vars = 5000'; \

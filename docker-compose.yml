@@ -73,6 +73,10 @@ services:
       # where qwen2.5 manages 9/15, but fails the summary guardrail. See
       # reports/ai-ask-bench.txt and ai-service/app/config.py.
       AI_MODEL_ASK: ${AI_MODEL_ASK:-qwen3:8b}
+      # Measured, see reports/ai-latency.txt. Long enough that a slow
+      # answer arrives instead of failing; the answer to slowness is a
+      # faster model, not a shorter limit.
+      AI_TIMEOUT: ${AI_TIMEOUT:-300}
       AI_LLM_API_KEY: ${AI_LLM_API_KEY:-}
       AI_API_KEY: ${PROCTOR_API_KEY:-}
     extra_hosts:

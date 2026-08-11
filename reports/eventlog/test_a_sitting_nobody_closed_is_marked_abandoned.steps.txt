@@ -2,4 +2,4 @@ sign in and start the lesson
 the learner's machine goes away without closing anything
 the cleanup task runs
 closed 1 abandoned sessions
-sitting afterwards: [{'id': 379, 'status': 'abandoned', 'reason': 'no_activity', 'attemptid': None, 'timestart': 1786427537, 'timeend': 1786416740, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]
+sitting afterwards: [{'id': 404, 'status': 'abandoned', 'reason': 'no_activity', 'attemptid': None, 'timestart': 1786431634, 'timeend': 1786420837, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]

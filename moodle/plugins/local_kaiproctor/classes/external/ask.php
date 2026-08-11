@@ -27,6 +27,11 @@ class ask extends external_api {
     public static function execute(string $question): array {
         global $USER;
 
+        // A local model can take a minute. Waiting on curl is not charged
+        // against max_execution_time on Linux, but depending on that is
+        // depending on a platform detail nobody reading this would check.
+        \core_php_time_limit::raise(360);
+
         $params = self::validate_parameters(self::execute_parameters(),
             ['question' => $question]);
 

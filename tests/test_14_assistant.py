@@ -25,8 +25,21 @@ import pytest
 from conftest import moodle
 
 
-def model_available() -> bool:
-    return moodle("ai-configured").strip() == "yes"
+@pytest.fixture
+def needs_model(install_support_script):
+    """Skip when no model is reachable — checked at run time, not at import.
+
+    This was a module-level skipif, which pytest evaluates during collection:
+    before any fixture has run, and therefore before the support script has
+    been copied into the container. It passed for months because a previous
+    run had left the file there. Rebuilding the Moodle image deleted it, and
+    the whole file failed to collect.
+
+    Depending on install_support_script is what makes the ordering a fact
+    rather than a hope.
+    """
+    if moodle("ai-configured").strip() != "yes":
+        pytest.skip("no model behind the reviewer service")
 
 
 @pytest.fixture
@@ -53,12 +66,16 @@ def assistant_off():
     moodle("set-setting", "aienabled", original["enabled"] or "0")
 
 
-def ask_on_the_page(session, question: str, timeout: int = 180_000) -> str:
+def ask_on_the_page(session, question: str, timeout: int = 450_000) -> str:
     """Type a question, submit it, and wait for the page to settle.
 
     Returns 'answer' or 'problem' — which of the two regions appeared. Waiting
     for either rather than for one of them is what makes a failure show up as
     "it said the wrong thing" instead of as a timeout with nothing to read.
+
+    The default is the outermost limit in the chain — ai-service 300s, Moodle
+    330s, Apache 420s, this — so a slow answer that does arrive reaches the
+    assertion as an answer rather than as a test timeout.
     """
     session.page.fill('[data-region="question"]', question)
     session.beat(1)
@@ -185,8 +202,7 @@ def test_the_page_says_so_when_the_service_is_down(session, assistant_on):
         moodle("set-setting", "aibaseurl", original["baseurl"])
 
 
-@pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
-def test_a_learner_asks_where_something_is_and_the_link_works(session, assistant_on):
+def test_a_learner_asks_where_something_is_and_the_link_works(needs_model, session, assistant_on):
     """The whole feature, through the browser, ending on the page itself.
 
     Following the link is the point: an answer that reads well and 404s is the
@@ -223,8 +239,7 @@ def test_a_learner_asks_where_something_is_and_the_link_works(session, assistant
     session.note("the link opened a real page")
 
 
-@pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
-def test_every_link_offered_is_one_this_learner_may_open(session, assistant_on):
+def test_every_link_offered_is_one_this_learner_may_open(needs_model, session, assistant_on):
     """Whatever the model writes, the links on screen must all be pages this
     learner was already entitled to open."""
     moodle("ask-purge-index")

@@ -40,9 +40,29 @@ LLM_API_KEY = os.environ.get("AI_LLM_API_KEY", "").strip()
 TEMPERATURE = float(os.environ.get("AI_TEMPERATURE", 0.2))
 MAX_TOKENS = int(os.environ.get("AI_MAX_TOKENS", 700))
 
-# A reviewer is waiting, but not forever. Local models on a laptop GPU are
-# slower than a hosted API, so this is generous by hosted-API standards.
-TIMEOUT = float(os.environ.get("AI_TIMEOUT", 120))
+# Long enough that a request which was going to succeed is never cut off.
+#
+# Measured rather than guessed (reports/ai-latency.txt): qwen3:8b answers in
+# 22-49 seconds warm on this hardware, 35 seconds of that being a cold model
+# load, and a reply that trips a guard is asked again — so the honest worst
+# case is roughly two slow calls plus a load. Under load, when a browser suite
+# and two 8B models are competing for the same laptop, it is several times
+# that; the old 120 was hit exactly there, and the learner got a failure for
+# an answer that was on its way.
+#
+# Three timeouts sit in a line, and the ordering matters more than any single
+# value:
+#
+#     this  <  Moodle's ai_client::TIMEOUT  <  whatever the browser waits
+#
+# Reversed, the useful diagnosis — "the model did not answer in time", raised
+# where the model is — is replaced by a curl timeout in Moodle that says
+# nothing about why.
+#
+# Raising it makes failures slow rather than frequent, which is the right way
+# round but not free: a learner waiting a minute needs the page to look busy,
+# and the real answer to slowness is a faster model, not a shorter limit.
+TIMEOUT = float(os.environ.get("AI_TIMEOUT", 300))
 
 # --------------------------------------------------------------------------
 # Access control

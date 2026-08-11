@@ -17,9 +17,21 @@ import pytest
 from conftest import moodle
 
 
-def model_available() -> bool:
-    """Asked of the reviewer service, not of the on/off switch."""
-    return moodle("ai-configured").strip() == "yes"
+@pytest.fixture
+def needs_model(install_support_script):
+    """Skip when no model is reachable — checked at run time, not at import.
+
+    This was a module-level skipif, which pytest evaluates during collection:
+    before any fixture has run, and therefore before the support script has
+    been copied into the container. It passed for months because a previous
+    run had left the file there. Rebuilding the Moodle image deleted it, and
+    the whole file failed to collect.
+
+    Depending on install_support_script is what makes the ordering a fact
+    rather than a hope.
+    """
+    if moodle("ai-configured").strip() != "yes":
+        pytest.skip("no model behind the reviewer service")
 
 
 def test_ai_is_off_until_somebody_turns_it_on(session):
@@ -129,8 +141,7 @@ def test_the_model_is_told_not_to_accuse_anybody(session):
         assert guardrail in prompt, f"the instruction '{guardrail}' is gone"
 
 
-@pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
-def test_a_summary_comes_back_when_a_model_is_behind_the_service(session, clean_learner):
+def test_a_summary_comes_back_when_a_model_is_behind_the_service(needs_model, session, clean_learner):
     """The whole chain: platform -> reviewer service -> model.
 
     Left switched off outside this test, because the shipped default being

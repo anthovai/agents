@@ -23,6 +23,10 @@ class summarise_session extends external_api {
     public static function execute(int $sessionid): array {
         global $DB, $USER;
 
+        // Same reason as the assistant: the model is allowed to be slow,
+        // so the request has to be allowed to wait for it.
+        \core_php_time_limit::raise(360);
+
         $params = self::validate_parameters(self::execute_parameters(),
             ['sessionid' => $sessionid]);
 

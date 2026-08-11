@@ -22,9 +22,13 @@ defined('MOODLE_INTERNAL') || die();
 
 class ai_client {
 
-    /** A reviewer is waiting for this, but not forever. A model on local
-     *  hardware is slower than a hosted one, so this is not tight. */
-    const TIMEOUT = 150;
+    /** Deliberately longer than the service's own limit.
+     *
+     *  The service times out at AI_TIMEOUT and reports which model failed and
+     *  how; if this fired first, that diagnosis would be replaced by a bare
+     *  curl timeout that says nothing. So the outer limit gives the inner one
+     *  room to finish and answer properly. See ai-service/app/config.py. */
+    const TIMEOUT = 330;
 
     /** The payload shape this plugin speaks. The service checks it, and
      *  still accepts 1.0 — but declaring the version actually being sent is
