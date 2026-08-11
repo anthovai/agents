@@ -1,5 +1,0 @@
-sign in and open the lesson
-run the monitor with a very short confirmation interval
-wait for the confirmation prompt
-prompt shown: {'title': 'ยืนยันว่ายังเรียนอยู่', 'button': 'ยืนยัน', 'blocking': 'false'}
-the learner confirms

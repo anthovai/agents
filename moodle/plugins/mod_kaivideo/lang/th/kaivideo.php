@@ -85,3 +85,10 @@ $string['completionwatched'] = 'ดูจนจบ';
 $string['completionwatched_label'] = 'ผู้เรียนต้องดูวิดีโอจนจบ';
 $string['completionwatched_help'] = 'การดูจนจบรายงานมาจากเบราว์เซอร์ จึงเป็นบันทึกว่าหัวเล่นไปถึงปลายทาง ไม่ใช่หลักฐานว่ามีคนนั่งดู ถ้าเรื่องนี้สำคัญ ให้ใช้คู่กับเงื่อนไขตอบคำถามครบ';
 $string['completionwatched_desc'] = 'ดูวิดีโอจนจบ';
+
+// Controls.
+$string['play'] = 'เล่น';
+$string['pause'] = 'หยุด';
+$string['back10'] = 'ถอย 10 วิ';
+$string['error:playerfailed'] = 'โหลดวิดีโอไม่สำเร็จ ตรวจการเชื่อมต่อแล้วรีโหลดหน้านี้';
+$string['error:notplayable'] = 'ที่อยู่นี้เบราว์เซอร์เล่นไม่ได้ ให้ใช้ลิงก์ YouTube หรือลิงก์ตรงไปยังไฟล์ MP4 หรือ WebM';

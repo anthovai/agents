@@ -62,8 +62,8 @@ $string['enrol:title'] = 'Enrol your face';
 $string['enrol:intro'] = 'Your identity is confirmed by camera during monitored lessons. Follow the on-screen instructions: look straight at the camera, then turn your head as asked.';
 $string['enrol:start'] = 'Start';
 $string['enrol:success'] = 'Your face has been enrolled.';
-$string['enrol:failed'] = 'Your face could not be enrolled. Make sure the room is well lit and only you are in frame, then try again.';
-$string['enrol:timeout'] = 'You did not complete the movement in time. Try again, moving slowly.';
+$string['enrol:failed'] = 'Your face could not be enrolled. Try again, and if it keeps failing tell whoever runs the course.';
+$string['enrol:timeout'] = 'You did not complete the movement in time. Try again, turning your head slowly.';
 $string['enrol:replacing'] = 'You have already enrolled a face. Completing this will replace it.';
 $string['enrol:existing'] = 'Face enrolled on {$a}.';
 
@@ -286,3 +286,11 @@ $string['ai:offpremises'] = 'The model endpoint is outside your network. Learner
 $string['ai:brokenwhileon'] = 'AI assistance is on, but no model is answering. Every attempt will fail until this is fixed.';
 $string['ai:note'] = 'The service never receives an image, a clip, a face measurement or a name; it refuses payloads that carry them. A learner\'s own marks are sent only when that learner asks about them, and never anybody else\'s. Nothing it returns decides anything.';
 $string['ai:settingslink'] = 'Plugin settings';
+
+
+// Why an enrolment attempt did not work, specifically.
+$string['enrol:noface'] = 'The camera could not find your face. Sit facing it, with nothing covering your face, and try again.';
+$string['enrol:toosmall'] = 'Your face is too small in the picture. Move closer to the camera and try again.';
+$string['enrol:multiplefaces'] = 'More than one face is in the picture. Make sure only you are in frame — a photograph or screen behind you counts too.';
+$string['enrol:spoof'] = 'The camera could not confirm a live person. Enrol using your own camera, looking straight at it, rather than holding up a photograph or another screen.';
+$string['hint:toosmall'] = 'Move closer to the camera.';

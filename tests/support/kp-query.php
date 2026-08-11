@@ -691,6 +691,26 @@ switch ($command) {
         echo "\n";
         break;
 
+    case 'kaivideo-cmid':
+        // kaivideo-cmid <file|youtube> — look the activity up rather than
+        // hard-coding a course-module id, which changes whenever the demo
+        // course is reseeded in a different order.
+        $wanted = $argv[2] ?? 'file';
+        foreach ($DB->get_records('kaivideo', [], 'id ASC') as $candidate) {
+            $describe = \mod_kaivideo\source::describe($candidate->videourl);
+            if ($describe['provider'] === $wanted) {
+                $cm = get_coursemodule_from_instance('kaivideo', $candidate->id);
+                echo $cm->id . "\n";
+                exit(0);
+            }
+        }
+        fwrite(STDERR, "no kaivideo with a {$wanted} source" . PHP_EOL);
+        exit(1);
+
+    case 'kaivideo-playable':
+        echo \mod_kaivideo\source::is_playable($argv[2] ?? '') ? "yes\n" : "no\n";
+        break;
+
     case 'kaivideo-timeline':
         // kaivideo-timeline <cmid> — the timeline WITH the answers, which is
         // what a test needs to know which button to press. The player is never

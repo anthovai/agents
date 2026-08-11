@@ -1,20 +1,27 @@
 // The interactive part of an interactive video.
 //
-// The whole module is about one decision: when is a question due? Watching for
+// The whole module turns on one decision: when is a question due? Watching for
 // the playhead to *cross* a timestamp is the obvious answer and the wrong one,
 // because a learner can drag the seek bar straight past it. So a question is
 // due whenever the playhead is at or beyond it and it has not been answered —
-// which makes seeking, resuming and ordinary playback the same case, and
-// leaves no route around a question that "must be answered".
+// which makes seeking, resuming and ordinary playback the same case, and leaves
+// no route around a question that must be answered.
+//
+// That rule is why the controls below are ours rather than the player's. With
+// YouTube's own controls, a learner can seek and resume from inside the iframe
+// where nothing here can intervene, and "the video will not continue past an
+// unanswered question" would stop being true.
 //
 // Nothing here decides whether an answer was right. The timeline arrives
 // without correct answers in it; the server says what happened, afterwards.
 define([
     'core/ajax',
-    'core/str'
-], function(Ajax, Str) {
+    'core/str',
+    'mod_kaivideo/backend'
+], function(Ajax, Str, Backend) {
 
-    /** Close enough to "now" — timeupdate fires about four times a second. */
+    /** Close enough to "now" — the playhead is sampled about four times a
+     *  second by either backend. */
     var EPSILON = 0.25;
 
     /** How often to tell the server where we are. Often enough to be useful
@@ -28,7 +35,6 @@ define([
             return;
         }
 
-        this.video = this.root.querySelector('[data-region="video"]');
         this.panel = this.root.querySelector('[data-region="question"]');
         this.answered = {};
         this.current = null;
@@ -38,7 +44,15 @@ define([
             this.answered[row.itemid] = row;
         }.bind(this));
 
-        this.attach();
+        var self = this;
+        Backend.create(config, this.root).then(function(backend) {
+            self.backend = backend;
+            self.attach();
+            self.root.setAttribute('data-state', 'ready');
+            return backend;
+        }).catch(function() {
+            self.fail('error:playerfailed');
+        });
     };
 
     /**
@@ -50,7 +64,7 @@ define([
      * @return {Object|null}
      */
     Player.prototype.due = function() {
-        var now = this.video.currentTime + EPSILON;
+        var now = this.backend.currentTime() + EPSILON;
         var timeline = this.config.timeline || [];
 
         for (var i = 0; i < timeline.length; i++) {
@@ -65,48 +79,58 @@ define([
     Player.prototype.attach = function() {
         var self = this;
 
-        this.video.addEventListener('timeupdate', function() {
+        this.backend.onTick(function() {
             self.check();
             self.maybeReport();
         });
 
-        // Covers the seek bar and the resume jump: both change currentTime
-        // without any playing having happened.
-        this.video.addEventListener('seeked', function() {
-            self.check();
-        });
-
-        this.video.addEventListener('play', function() {
-            // A question that is due must not be playable past. Pausing on
-            // play looks abrupt, and is the point.
+        this.backend.onPlayAttempt(function() {
+            // A question that is due must not be playable past.
             if (self.config.mustanswer && self.due()) {
                 self.check();
             }
         });
 
-        this.video.addEventListener('ended', function() {
+        this.backend.onEnded(function() {
             self.report(true);
+        });
+
+        this.control('play', function() {
+            self.backend.play();
+        });
+        this.control('pause', function() {
+            self.backend.pause();
+        });
+        this.control('back', function() {
+            self.backend.seek(Math.max(0, self.backend.currentTime() - 10));
+            self.check();
         });
 
         this.panel.querySelector('[data-action="continue"]')
             .addEventListener('click', function() {
                 self.dismiss();
             });
-
         this.panel.querySelector('[data-action="retry"]')
             .addEventListener('click', function() {
                 self.show(self.current);
             });
 
-        if (this.config.resumeat > 5 && this.config.resumeat < this.video.duration) {
-            this.video.currentTime = this.config.resumeat;
-        } else if (this.config.resumeat > 5) {
-            // duration is not known until metadata loads.
-            this.video.addEventListener('loadedmetadata', function() {
-                if (self.config.resumeat < self.video.duration) {
-                    self.video.currentTime = self.config.resumeat;
-                }
-            }, {once: true});
+        // Forward only: seeking back to re-watch is fine, but a control that
+        // jumps ahead is a control for skipping questions, and there is no
+        // reason to build one.
+        if (this.config.resumeat > 5) {
+            this.backend.seek(this.config.resumeat);
+        }
+    };
+
+    /**
+     * @param {String} action data-action of the button
+     * @param {Function} handler
+     */
+    Player.prototype.control = function(action, handler) {
+        var button = this.root.querySelector('[data-action="' + action + '"]');
+        if (button) {
+            button.addEventListener('click', handler);
         }
     };
 
@@ -116,7 +140,7 @@ define([
         }
         var item = this.due();
         if (item) {
-            this.video.pause();
+            this.backend.pause();
             this.show(item);
         }
     };
@@ -168,9 +192,7 @@ define([
         }).catch(function(error) {
             // The answer did not reach the server, so it did not happen. Let
             // them try again rather than recording nothing and moving on.
-            var problem = self.root.querySelector('[data-region="problem"]');
-            problem.textContent = (error && error.message) || 'error';
-            problem.hidden = false;
+            self.fail(null, (error && error.message) || null);
             Array.prototype.forEach.call(choices.querySelectorAll('button'),
                 function(button) {
                     button.disabled = false;
@@ -198,12 +220,13 @@ define([
         return Str.get_string(result.correct ? 'correct' : 'wrong', 'mod_kaivideo')
             .then(function(text) {
                 verdict.textContent = text;
-                verdict.className = result.correct ? 'mb-1 text-success' : 'mb-1 text-danger';
+                verdict.className = result.correct
+                    ? 'mb-1 fw-bold text-success' : 'mb-1 fw-bold text-danger';
                 outcome.hidden = false;
                 return text;
             }).catch(function() {
                 outcome.hidden = false;
-                return '';
+                return null;
             }).then(function() {
                 return self;
             });
@@ -217,16 +240,33 @@ define([
         // Another question may be due at the same moment, or the learner may
         // have seeked past several. check() finds the next one; if there is
         // none, play resumes.
-        var next = this.due();
-        if (next) {
+        if (this.due()) {
             this.check();
             return;
         }
-        this.video.play().catch(function() {
-            // Autoplay refused after an interaction is unusual but harmless:
-            // the controls are right there.
-            return null;
-        });
+        this.backend.play();
+    };
+
+    /**
+     * @param {String|null} stringkey
+     * @param {String|null} literal
+     */
+    Player.prototype.fail = function(stringkey, literal) {
+        var problem = this.root.querySelector('[data-region="problem"]');
+        var show = function(text) {
+            problem.textContent = text;
+            problem.hidden = false;
+        };
+
+        if (literal) {
+            show(literal);
+            return;
+        }
+        Str.get_string(stringkey || 'error:playerfailed', 'mod_kaivideo')
+            .then(show).catch(function() {
+                show('error');
+                return null;
+            });
     };
 
     Player.prototype.maybeReport = function() {
@@ -243,7 +283,7 @@ define([
             methodname: 'mod_kaivideo_record_progress',
             args: {
                 cmid: this.config.cmid,
-                seconds: this.video.currentTime,
+                seconds: this.backend.currentTime(),
                 finished: !!finished
             }
         }])[0].catch(function() {

@@ -1,3 +1,0 @@
-sign in and open the lesson page
-switch lockdown on and try to select text
-result: {'selectionAllowed': False, 'dragAllowed': False, 'userSelect': 'none'}

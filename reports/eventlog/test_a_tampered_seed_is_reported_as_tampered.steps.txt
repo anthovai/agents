@@ -1,4 +1,0 @@
-rewrite the stored seed to a value nobody's identifiers give
-after tampering: seed=424242 expected=885221601
-open the evidence report as the instructor
-open the draw details

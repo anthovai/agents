@@ -85,3 +85,10 @@ $string['completionwatched'] = 'Reach the end';
 $string['completionwatched_label'] = 'Learner must reach the end of the video';
 $string['completionwatched_help'] = 'Reaching the end is reported by the browser, so it is a record of the playhead getting there rather than proof somebody watched. Pair it with answering the questions if that matters.';
 $string['completionwatched_desc'] = 'Reach the end of the video';
+
+// Controls.
+$string['play'] = 'Play';
+$string['pause'] = 'Pause';
+$string['back10'] = 'Back 10s';
+$string['error:playerfailed'] = 'The video could not be loaded. Check your connection and reload the page.';
+$string['error:notplayable'] = 'That address is not something the browser can play. Use a YouTube link, or a direct link to an MP4 or WebM file.';

@@ -1,2 +1,0 @@
-what would be disclosed: [{"title": "ข้อสอบทดสอบระบบคุมสอบ", "kind": "quiz", "facts": {"attemptsused": 0, "grade": 8, "gradeoutof": 10, "gradepercent": 80, "passmark": 6, "passed": true}}, {"title": "ข้อสอบความเสี่ยงสูง (SEB)", "kind": "quiz", "facts": {"attemptsused": 0, "notattempted": true}}, {"title": "ข้อสอบสุ่มตามระดั
-learner2's mark is absent from learner's payload

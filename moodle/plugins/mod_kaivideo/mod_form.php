@@ -39,6 +39,25 @@ class mod_kaivideo_mod_form extends moodleform_mod {
     }
 
     /**
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        // The commonest authoring mistake is pasting a page that contains a
+        // video rather than the video. Caught here, because otherwise it
+        // appears to the learner as an empty player with nothing to explain it.
+        if (!empty($data['videourl'])
+                && !\mod_kaivideo\source::is_playable($data['videourl'])) {
+            $errors['videourl'] = get_string('error:notplayable', 'mod_kaivideo');
+        }
+
+        return $errors;
+    }
+
+    /**
      * The completion rules that mean something for a video.
      *
      * @return array of element names

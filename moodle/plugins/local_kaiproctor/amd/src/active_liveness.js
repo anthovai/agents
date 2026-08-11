@@ -101,7 +101,14 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
                 total: self.steps.length
             });
 
-            var state = {passed: false, lastYaw: null, lastLive: null, blob: null};
+            // lastHint is what the learner was being told when the step ran
+            // out. The final message is built from it, because "make sure the
+            // room is well lit" was being shown for every cause — including a
+            // face the detector had refused for its confidence score, which is
+            // nothing to do with the light and sends the learner to fix the
+            // wrong thing.
+            var state = {passed: false, lastYaw: null, lastLive: null, blob: null,
+                lastHint: null};
 
             var poll = function() {
                 if (state.passed || Date.now() - stepStart >= self.stepTimeoutMs) {
@@ -117,6 +124,7 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
                         return Promise.resolve({
                             ok: false,
                             reason: 'timeout_' + step,
+                            blockedBy: state.lastHint,
                             challenge: {
                                 sequence: self.steps,
                                 steps: record,
@@ -136,13 +144,23 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
                     return Api.analyze(blob);
                 }).then(function(response) {
                     if (!response.ok || !response.present) {
-                        self.onProgress({phase: 'hint', pose: step, hint: 'noface'});
+                        // Which of the two, because they need opposite actions:
+                        // one means get in front of the camera, the other means
+                        // move closer to it.
+                        var hint = response.reason === 'face_too_small'
+                            ? 'toosmall' : 'noface';
+                        state.lastHint = hint;
+                        self.onProgress({phase: 'hint', pose: step, hint: hint});
                         return self._sleep(self.pollMs);
                     }
                     if (response.warning === 'multiple_faces') {
+                        state.lastHint = 'multiplefaces';
                         self.onProgress({phase: 'hint', pose: step, hint: 'multiplefaces'});
                         return self._sleep(self.pollMs);
                     }
+                    // Seen a face this poll, so nothing is blocking except the
+                    // movement itself; anything set earlier is stale.
+                    state.lastHint = null;
 
                     state.lastYaw = response.yaw;
                     state.lastLive = response.livenessscore;
@@ -158,6 +176,7 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
                             state.passed = true;
                             return Promise.resolve();
                         }
+                        state.lastHint = 'spoof';
                         self.onProgress({phase: 'hint', pose: step, hint: 'spoof'});
                     }
                     return self._sleep(self.pollMs);

@@ -56,8 +56,52 @@ INTERACTIVE_VIDEO_CMID = int(os.environ.get("KP_IV_CMID", "11"))
 # Talking to Moodle
 # --------------------------------------------------------------------------
 
+_prepared = False
+
+
+def _prepare_container() -> None:
+    """Put the support files in place, once per process.
+
+    This used to happen only in a fixture, so anything running at collection
+    time — a module-level constant, a skipif — called into a container nobody
+    had prepared. It passed for months because a previous run left the files
+    behind, and broke the first time an image was rebuilt. Doing it from
+    moodle() makes the ordering a property of the call instead of a property of
+    which fixtures a test happened to ask for.
+    """
+    global _prepared
+    if _prepared:
+        return
+    _prepared = True
+
+    env = {**os.environ, "MSYS_NO_PATHCONV": "1"}
+    support = Path("tests") / "support"
+
+    for name in ["kp-query.php", "ask-questions.json"]:
+        subprocess.run(
+            ["docker", "compose", "cp", str(support / name),
+             f"moodle:/var/www/html/{name}"],
+            cwd=PROJECT_ROOT, capture_output=True, text=True, env=env, check=True)
+
+    for command in [
+        # purge_caches does not touch the component map, and it is stale
+        # whenever a class file has been added to a plugin without the
+        # plugin's version changing — which then fails as "class not found".
+        ["rm", "-f", "/var/moodledata/cache/core_component.php"],
+        # AMD modules are served from a bundle keyed on the JS revision, so an
+        # edited module keeps being served in its old form until this runs. The
+        # symptom is "No define call for <module>", which says nothing about
+        # the edit that caused it.
+        ["php", "/var/www/html/admin/cli/purge_caches.php"],
+    ]:
+        subprocess.run(["docker", "compose", "exec", "-T", "moodle", *command],
+                       cwd=PROJECT_ROOT, capture_output=True, text=True,
+                       env=env, check=False)
+
+
 def moodle(*args: str) -> str:
     """Run tests/support/kp-query.php inside the Moodle container."""
+    _prepare_container()
     result = subprocess.run(
         ["docker", "compose", "exec", "-T", "moodle",
          "php", "/var/www/html/kp-query.php", *args],
@@ -73,13 +117,13 @@ def moodle(*args: str) -> str:
 
 @pytest.fixture(scope="session", autouse=True)
 def install_support_script():
-    """Put the support CLI, and the sample exam pack, in the containers."""
-    subprocess.run(
-        ["docker", "compose", "cp", str(Path("tests") / "support" / "kp-query.php"),
-         "moodle:/var/www/html/kp-query.php"],
-        cwd=PROJECT_ROOT, capture_output=True, text=True,
-        env={**os.environ, "MSYS_NO_PATHCONV": "1"}, check=True,
-    )
+    """Put the support CLI, and the sample exam pack, in the containers.
+
+    The copying lives in _prepare_container so that anything calling moodle()
+    gets it whether or not it asked for this fixture. What remains here is the
+    fixture other fixtures depend on to express ordering, and the exam pack.
+    """
+    _prepare_container()
 
     # The labelled question set the retrieval assertions score against; it
     # lives beside the support script because both are read inside the

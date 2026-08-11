@@ -1,6 +1,6 @@
 # ผลการทดสอบระบบคุมสอบบน Moodle
 
-รันเมื่อ **2026-08-11 14:27 UTC**
+รันเมื่อ **2026-08-11 16:31 UTC**
 · Moodle **5.1.5+ (Build: 20260807)**
 · face-service **yunet+sface** (โมเดล 4 ตัว, liveness พร้อม)
 · เกณฑ์ผ่านที่ใช้ตอนทดสอบ **0.363**
@@ -10,9 +10,9 @@
 
 | | จำนวน |
 |---|---|
-| ผ่าน | **107** |
+| ผ่าน | **109** |
 | ไม่ผ่าน | 1 |
-| เวลาที่ใช้ | 1809.7 วินาที |
+| เวลาที่ใช้ | 1887.8 วินาที |
 
 ## ไฟล์หลักฐานในโฟลเดอร์นี้
 
@@ -20,8 +20,8 @@
 |---|---|
 | `junit.xml` | ผลรายเทสต์แบบมาตรฐาน เปิดใน CI หรือ IDE ได้ |
 | `pytest-output.txt` | log การรันเต็ม |
-| `video/<ชื่อเทสต์>.webm` | วิดีโอการรันแต่ละเทสต์ (84 ไฟล์) หน่วงจังหวะไว้ให้ดูทัน |
-| `screenshots/<ชื่อเทสต์>.png` | ภาพหน้าจอเต็มหน้าตอนจบแต่ละเทสต์ (99 ไฟล์) |
+| `video/<ชื่อเทสต์>.webm` | วิดีโอการรันแต่ละเทสต์ (85 ไฟล์) หน่วงจังหวะไว้ให้ดูทัน |
+| `screenshots/<ชื่อเทสต์>.png` | ภาพหน้าจอเต็มหน้าตอนจบแต่ละเทสต์ (100 ไฟล์) |
 | `eventlog/<ชื่อเทสต์>.txt` | audit log ที่ระบบบันทึกไว้ในเทสต์นั้น (110 ไฟล์) |
 | `eventlog/<ชื่อเทสต์>.steps.txt` | ลำดับขั้นที่เทสต์เดิน อ่านคู่กับวิดีโอ |
 
@@ -55,125 +55,123 @@
 
 | เทสต์ | ผล | วินาที |
 |---|---|---|
-| `test_face_service_is_up_with_every_model_loaded` | ผ่าน | 4.0 |
+| `test_face_service_is_up_with_every_model_loaded` | ผ่าน | 3.4 |
 | `test_both_plugins_are_installed` | ผ่าน | 0.0 |
 | `test_all_web_services_are_registered` | ผ่าน | 0.0 |
 | `test_pdpa_policy_is_the_site_policy_handler` | ผ่าน | 0.0 |
-| `test_site_loads` | ผ่าน | 4.6 |
-| `test_face_service_is_not_reachable_from_the_browser` | ผ่าน | 2.8 |
-| `test_nothing_is_reachable_before_consent_is_given` | ผ่าน | 14.1 |
-| `test_enrolment_becomes_reachable_once_consent_is_given` | ผ่าน | 20.2 |
-| `test_consent_document_states_what_is_collected` | ผ่าน | 13.9 |
+| `test_site_loads` | ผ่าน | 9.7 |
+| `test_face_service_is_not_reachable_from_the_browser` | ผ่าน | 3.1 |
+| `test_nothing_is_reachable_before_consent_is_given` | ผ่าน | 13.3 |
+| `test_enrolment_becomes_reachable_once_consent_is_given` | ผ่าน | 18.4 |
+| `test_consent_document_states_what_is_collected` | ผ่าน | 13.7 |
 | `test_consent_is_compulsory_not_optional` | ผ่าน | 9.9 |
-| `test_learner_can_see_their_own_consent_record` | ผ่าน | 14.0 |
-| `test_enrol_page_explains_what_will_happen` | ผ่าน | 12.0 |
-| `test_challenge_asks_for_a_randomised_sequence` | ผ่าน | 11.7 |
-| `test_enrolment_is_refused_when_no_face_is_visible` | ผ่าน | 30.4 |
-| `test_the_page_reports_a_camera_that_will_not_start` | ผ่าน | 13.3 |
-| `test_lesson_page_offers_the_video_and_a_camera_preview` | ผ่าน | 11.3 |
-| `test_leaving_the_window_pauses_the_video_and_is_recorded` | ผ่าน | 16.8 |
-| `test_a_violation_captures_evidence` | ผ่าน | 18.4 |
-| `test_presence_check_runs_on_its_interval_and_pauses_the_lesson` | ผ่าน | 21.5 |
-| `test_identity_check_runs_on_its_own_interval` | ผ่าน | 25.6 |
-| `test_a_random_clip_is_recorded_and_stored` | ผ่าน | 26.2 |
-| `test_the_learner_is_asked_to_confirm_they_are_still_there` | ผ่าน | 19.3 |
-| `test_lockdown_blocks_and_reports_every_browser_exit` | ผ่าน | 18.5 |
-| `test_text_selection_and_dragging_are_suppressed` | ผ่าน | 11.7 |
-| `test_an_unknown_signal_is_refused_by_the_server` | ผ่าน | 11.6 |
-| `test_quiz_announces_that_it_is_proctored` | ผ่าน | 11.0 |
-| `test_a_learner_with_no_enrolled_face_cannot_start` | ผ่าน | 12.5 |
-| `test_the_preflight_check_asks_for_the_camera` | ผ่าน | 14.8 |
-| `test_a_forged_client_marker_does_not_open_the_attempt` | ผ่าน | 16.3 |
-| `test_a_server_written_pass_opens_the_attempt` | ผ่าน | 17.5 |
-| `test_monitoring_runs_during_the_attempt` | ผ่าน | 25.5 |
-| `test_answers_can_be_submitted_and_graded` | ผ่าน | 30.0 |
-| `test_the_report_shows_checks_evidence_and_signals` | ผ่าน | 23.6 |
-| `test_the_report_records_the_threshold_that_was_in_force` | ผ่าน | 18.1 |
-| `test_one_learner_cannot_read_another_learners_evidence` | ผ่าน | 31.4 |
-| `test_expired_evidence_is_purged` | ผ่าน | 18.9 |
-| `test_privacy_api_deletes_the_face_on_erasure` | ผ่าน | 21.2 |
+| `test_learner_can_see_their_own_consent_record` | ผ่าน | 13.0 |
+| `test_enrol_page_explains_what_will_happen` | ผ่าน | 10.4 |
+| `test_challenge_asks_for_a_randomised_sequence` | ผ่าน | 10.5 |
+| `test_enrolment_is_refused_when_no_face_is_visible` | **ไม่ผ่าน** | 28.1 |
+| `test_the_page_reports_a_camera_that_will_not_start` | ผ่าน | 12.6 |
+| `test_lesson_page_offers_the_video_and_a_camera_preview` | ผ่าน | 10.5 |
+| `test_leaving_the_window_pauses_the_video_and_is_recorded` | ผ่าน | 16.7 |
+| `test_a_violation_captures_evidence` | ผ่าน | 18.7 |
+| `test_presence_check_runs_on_its_interval_and_pauses_the_lesson` | ผ่าน | 21.1 |
+| `test_identity_check_runs_on_its_own_interval` | ผ่าน | 25.1 |
+| `test_a_random_clip_is_recorded_and_stored` | ผ่าน | 29.2 |
+| `test_the_learner_is_asked_to_confirm_they_are_still_there` | ผ่าน | 19.4 |
+| `test_lockdown_blocks_and_reports_every_browser_exit` | ผ่าน | 16.8 |
+| `test_text_selection_and_dragging_are_suppressed` | ผ่าน | 11.3 |
+| `test_an_unknown_signal_is_refused_by_the_server` | ผ่าน | 11.4 |
+| `test_quiz_announces_that_it_is_proctored` | ผ่าน | 12.1 |
+| `test_a_learner_with_no_enrolled_face_cannot_start` | ผ่าน | 12.4 |
+| `test_the_preflight_check_asks_for_the_camera` | ผ่าน | 14.5 |
+| `test_a_forged_client_marker_does_not_open_the_attempt` | ผ่าน | 17.2 |
+| `test_a_server_written_pass_opens_the_attempt` | ผ่าน | 17.4 |
+| `test_monitoring_runs_during_the_attempt` | ผ่าน | 25.7 |
+| `test_answers_can_be_submitted_and_graded` | ผ่าน | 32.1 |
+| `test_the_report_shows_checks_evidence_and_signals` | ผ่าน | 22.7 |
+| `test_the_report_records_the_threshold_that_was_in_force` | ผ่าน | 17.6 |
+| `test_one_learner_cannot_read_another_learners_evidence` | ผ่าน | 31.3 |
+| `test_expired_evidence_is_purged` | ผ่าน | 18.1 |
+| `test_privacy_api_deletes_the_face_on_erasure` | ผ่าน | 20.3 |
 | `test_seb_is_configured_with_a_real_config_key` | ผ่าน | 1.1 |
-| `test_an_ordinary_browser_cannot_start_the_seb_quiz` | ผ่าน | 14.3 |
-| `test_the_seb_config_file_is_downloadable_by_the_learner` | ผ่าน | 13.8 |
-| `test_both_rules_describe_themselves_to_the_learner` | ผ่าน | 15.2 |
-| `test_the_activity_says_it_is_proctored_before_anything_starts` | ผ่าน | 14.1 |
-| `test_monitoring_starts_when_the_learner_begins` | ผ่าน | 17.9 |
-| `test_the_video_player_is_found_through_its_published_interface` | ผ่าน | 17.4 |
-| `test_leaving_the_activity_window_is_recorded` | ผ่าน | 20.4 |
-| `test_staff_viewing_the_activity_are_not_monitored` | ผ่าน | 11.0 |
-| `test_staff_can_turn_proctoring_off_and_on` | ผ่าน | 16.8 |
-| `test_an_unmonitored_activity_is_left_alone` | ผ่าน | 20.5 |
-| `test_starting_a_lesson_opens_one_sitting` | ผ่าน | 14.0 |
-| `test_reloading_does_not_start_a_second_sitting` | ผ่าน | 19.0 |
-| `test_the_rules_in_force_are_recorded_on_the_sitting` | ผ่าน | 14.1 |
-| `test_changing_the_settings_does_not_rewrite_a_finished_sitting` | ผ่าน | 16.4 |
-| `test_a_terminated_sitting_records_why` | ผ่าน | 17.3 |
-| `test_a_late_completion_cannot_launder_a_terminated_sitting` | ผ่าน | 19.2 |
-| `test_a_client_cannot_mark_a_sitting_abandoned` | ผ่าน | 13.4 |
+| `test_an_ordinary_browser_cannot_start_the_seb_quiz` | ผ่าน | 13.5 |
+| `test_the_seb_config_file_is_downloadable_by_the_learner` | ผ่าน | 13.6 |
+| `test_both_rules_describe_themselves_to_the_learner` | ผ่าน | 13.6 |
+| `test_the_activity_says_it_is_proctored_before_anything_starts` | ผ่าน | 13.7 |
+| `test_monitoring_starts_when_the_learner_begins` | ผ่าน | 19.2 |
+| `test_the_video_player_is_found_through_its_published_interface` | ผ่าน | 20.0 |
+| `test_leaving_the_activity_window_is_recorded` | ผ่าน | 19.1 |
+| `test_staff_viewing_the_activity_are_not_monitored` | ผ่าน | 11.7 |
+| `test_staff_can_turn_proctoring_off_and_on` | ผ่าน | 19.4 |
+| `test_an_unmonitored_activity_is_left_alone` | ผ่าน | 22.9 |
+| `test_starting_a_lesson_opens_one_sitting` | ผ่าน | 14.3 |
+| `test_reloading_does_not_start_a_second_sitting` | ผ่าน | 19.5 |
+| `test_the_rules_in_force_are_recorded_on_the_sitting` | ผ่าน | 15.1 |
+| `test_changing_the_settings_does_not_rewrite_a_finished_sitting` | ผ่าน | 17.0 |
+| `test_a_terminated_sitting_records_why` | ผ่าน | 17.4 |
+| `test_a_late_completion_cannot_launder_a_terminated_sitting` | ผ่าน | 19.0 |
+| `test_a_client_cannot_mark_a_sitting_abandoned` | ผ่าน | 14.5 |
 | `test_a_sitting_nobody_closed_is_marked_abandoned` | ผ่าน | 14.8 |
-| `test_checks_and_evidence_are_filed_under_the_sitting` | ผ่าน | 18.5 |
-| `test_the_report_groups_everything_by_sitting` | ผ่าน | 24.6 |
-| `test_an_exam_attempt_is_its_own_sitting` | ผ่าน | 21.6 |
-| `test_the_parser_reads_a_thai_exam_pack` | ผ่าน | 1.2 |
-| `test_difficulty_is_spread_across_the_pack` | ผ่าน | 1.0 |
-| `test_a_file_that_is_not_an_exam_pack_is_refused` | ผ่าน | 1.1 |
-| `test_importing_puts_the_questions_in_the_bank_with_difficulty_tags` | ผ่าน | 2.7 |
-| `test_the_stats_page_reports_the_service_and_the_evidence` | ผ่าน | 13.2 |
-| `test_the_stats_page_says_when_the_face_service_is_unreachable` | ผ่าน | 13.2 |
-| `test_the_stats_page_warns_when_retention_is_not_being_enforced` | ผ่าน | 19.3 |
-| `test_the_same_learner_and_attempt_always_get_the_same_paper` | ผ่าน | 2.1 |
-| `test_a_second_attempt_gets_a_different_paper` | ผ่าน | 2.5 |
-| `test_two_learners_sitting_the_same_exam_get_different_papers` | ผ่าน | 2.8 |
-| `test_the_seed_is_only_a_function_of_the_identifiers` | ผ่าน | 2.5 |
-| `test_the_recorded_draw_is_checked_against_the_identifiers` | ผ่าน | 16.8 |
-| `test_a_tampered_seed_is_reported_as_tampered` | ผ่าน | 15.7 |
-| `test_ai_is_off_until_somebody_turns_it_on` | ผ่าน | 1.2 |
-| `test_what_gets_sent_contains_no_biometric_data` | ผ่าน | 18.8 |
-| `test_the_summary_is_labelled_as_a_draft_not_a_finding` | ผ่าน | 20.9 |
-| `test_a_service_that_is_not_there_fails_visibly` | ผ่าน | 5.9 |
-| `test_the_model_is_told_not_to_accuse_anybody` | ผ่าน | 1.1 |
-| `test_a_summary_comes_back_when_a_model_is_behind_the_service` | ผ่าน | 37.6 |
-| `test_the_assistant_is_off_until_somebody_turns_it_on` | ผ่าน | 13.4 |
-| `test_an_empty_question_does_nothing` | ผ่าน | 16.4 |
-| `test_a_question_the_site_cannot_answer_is_refused_on_the_page` | ผ่าน | 17.1 |
+| `test_checks_and_evidence_are_filed_under_the_sitting` | ผ่าน | 18.8 |
+| `test_the_report_groups_everything_by_sitting` | ผ่าน | 25.3 |
+| `test_an_exam_attempt_is_its_own_sitting` | ผ่าน | 22.7 |
+| `test_the_parser_reads_a_thai_exam_pack` | ผ่าน | 2.5 |
+| `test_difficulty_is_spread_across_the_pack` | ผ่าน | 1.5 |
+| `test_a_file_that_is_not_an_exam_pack_is_refused` | ผ่าน | 1.4 |
+| `test_importing_puts_the_questions_in_the_bank_with_difficulty_tags` | ผ่าน | 3.9 |
+| `test_the_stats_page_reports_the_service_and_the_evidence` | ผ่าน | 13.6 |
+| `test_the_stats_page_says_when_the_face_service_is_unreachable` | ผ่าน | 14.3 |
+| `test_the_stats_page_warns_when_retention_is_not_being_enforced` | ผ่าน | 20.6 |
+| `test_the_same_learner_and_attempt_always_get_the_same_paper` | ผ่าน | 2.6 |
+| `test_a_second_attempt_gets_a_different_paper` | ผ่าน | 2.8 |
+| `test_two_learners_sitting_the_same_exam_get_different_papers` | ผ่าน | 2.3 |
+| `test_the_seed_is_only_a_function_of_the_identifiers` | ผ่าน | 2.2 |
+| `test_the_recorded_draw_is_checked_against_the_identifiers` | ผ่าน | 18.3 |
+| `test_a_tampered_seed_is_reported_as_tampered` | ผ่าน | 16.1 |
+| `test_ai_is_off_until_somebody_turns_it_on` | ผ่าน | 1.1 |
+| `test_what_gets_sent_contains_no_biometric_data` | ผ่าน | 17.8 |
+| `test_the_summary_is_labelled_as_a_draft_not_a_finding` | ผ่าน | 21.0 |
+| `test_a_service_that_is_not_there_fails_visibly` | ผ่าน | 4.9 |
+| `test_the_model_is_told_not_to_accuse_anybody` | ผ่าน | 1.0 |
+| `test_a_summary_comes_back_when_a_model_is_behind_the_service` | ผ่าน | 42.7 |
+| `test_the_assistant_is_off_until_somebody_turns_it_on` | ผ่าน | 13.9 |
+| `test_an_empty_question_does_nothing` | ผ่าน | 16.3 |
+| `test_a_question_the_site_cannot_answer_is_refused_on_the_page` | ผ่าน | 17.2 |
 | `test_another_learners_course_cannot_be_found_by_name` | ผ่าน | 19.8 |
-| `test_the_page_says_so_when_the_service_is_down` | ผ่าน | 20.5 |
-| `test_a_learner_asks_where_something_is_and_the_link_works` | **ไม่ผ่าน** | 132.2 |
-| `test_every_link_offered_is_one_this_learner_may_open` | ผ่าน | 48.2 |
-| `test_an_administrator_can_switch_it_on_and_off_from_the_console` | ผ่าน | 20.1 |
-| `test_the_console_shows_which_model_answers_and_where_it_runs` | ผ่าน | 11.6 |
-| `test_a_learner_cannot_reach_the_console` | ผ่าน | 10.0 |
-| `test_the_shipped_threshold_still_earns_its_number` | ผ่าน | 2.5 |
-| `test_retrieval_finds_the_right_page_without_a_model` | ผ่าน | 1.8 |
-| `test_a_vendor_endpoint_is_not_mistaken_for_your_own_hardware` | ผ่าน | 3.6 |
-| `test_a_learner_is_told_their_own_mark` | ผ่าน | 59.6 |
-| `test_pass_or_fail_is_reported_as_the_gradebook_has_it` | ผ่าน | 56.6 |
-| `test_the_assistant_will_not_do_arithmetic_on_a_mark` | ผ่าน | 73.0 |
-| `test_only_the_asking_learners_record_is_ever_sent` | ผ่าน | 6.0 |
-| `test_the_video_stops_where_the_author_put_a_question` | ผ่าน | 16.9 |
-| `test_a_wrong_answer_does_not_reveal_the_right_one` | ผ่าน | 18.5 |
-| `test_answering_correctly_lets_the_video_continue` | ผ่าน | 21.3 |
+| `test_the_page_says_so_when_the_service_is_down` | ผ่าน | 19.7 |
+| `test_a_learner_asks_where_something_is_and_the_link_works` | ผ่าน | 130.1 |
+| `test_every_link_offered_is_one_this_learner_may_open` | ผ่าน | 57.9 |
+| `test_an_administrator_can_switch_it_on_and_off_from_the_console` | ผ่าน | 20.7 |
+| `test_the_console_shows_which_model_answers_and_where_it_runs` | ผ่าน | 13.2 |
+| `test_a_learner_cannot_reach_the_console` | ผ่าน | 11.5 |
+| `test_the_shipped_threshold_still_earns_its_number` | ผ่าน | 2.2 |
+| `test_retrieval_finds_the_right_page_without_a_model` | ผ่าน | 2.1 |
+| `test_a_vendor_endpoint_is_not_mistaken_for_your_own_hardware` | ผ่าน | 2.3 |
+| `test_a_learner_is_told_their_own_mark` | ผ่าน | 55.6 |
+| `test_pass_or_fail_is_reported_as_the_gradebook_has_it` | ผ่าน | 51.8 |
+| `test_the_assistant_will_not_do_arithmetic_on_a_mark` | ผ่าน | 89.2 |
+| `test_only_the_asking_learners_record_is_ever_sent` | ผ่าน | 6.9 |
+| `test_the_video_stops_where_the_author_put_a_question` | ผ่าน | 18.8 |
+| `test_a_wrong_answer_does_not_reveal_the_right_one` | ผ่าน | 19.7 |
+| `test_answering_correctly_lets_the_video_continue` | ผ่าน | 21.5 |
 | `test_seeking_past_a_question_does_not_get_past_it` | ผ่าน | 21.1 |
-| `test_the_correct_answer_is_not_in_the_page` | ผ่าน | 11.6 |
-| `test_the_grade_is_the_fraction_answered_correctly` | ผ่าน | 20.1 |
-| `test_every_attempt_is_kept_not_just_the_last` | ผ่าน | 22.6 |
-| `test_it_can_be_proctored_like_any_other_activity` | ผ่าน | 12.4 |
-| `test_the_assistant_can_point_a_learner_at_it` | ผ่าน | 1.7 |
-| `test_a_course_holding_one_can_still_be_backed_up_and_restored` | ผ่าน | 10.9 |
-| `test_the_report_names_the_question_the_class_got_wrong` | ผ่าน | 14.8 |
-| `test_a_learner_cannot_open_the_report` | ผ่าน | 10.1 |
-| `test_completion_counts_answering_every_question` | ผ่าน | 6.5 |
+| `test_the_correct_answer_is_not_in_the_page` | ผ่าน | 12.8 |
+| `test_the_grade_is_the_fraction_answered_correctly` | ผ่าน | 20.2 |
+| `test_every_attempt_is_kept_not_just_the_last` | ผ่าน | 23.1 |
+| `test_it_can_be_proctored_like_any_other_activity` | ผ่าน | 14.4 |
+| `test_the_assistant_can_point_a_learner_at_it` | ผ่าน | 2.0 |
+| `test_a_course_holding_one_can_still_be_backed_up_and_restored` | ผ่าน | 13.0 |
+| `test_the_report_names_the_question_the_class_got_wrong` | ผ่าน | 15.3 |
+| `test_a_learner_cannot_open_the_report` | ผ่าน | 10.2 |
+| `test_completion_counts_answering_every_question` | ผ่าน | 6.6 |
+| `test_a_youtube_video_plays_and_still_stops_for_a_question` | ผ่าน | 24.2 |
+| `test_an_address_nothing_can_play_is_refused_when_it_is_typed` | ผ่าน | 4.2 |
 
 ## รายละเอียดที่ไม่ผ่าน
 
-### `test_a_learner_asks_where_something_is_and_the_link_works`
+### `test_enrolment_is_refused_when_no_face_is_visible`
 
 ```
-AssertionError: expected an answer, got: the model produced figures it was not given: 1, 3
-assert 'problem' == 'answer'
-  
-  - answer
-  + problem
+AssertionError: assert ('ไม่สำเร็จ' in 'กล้องหาใบหน้าไม่พบ นั่งหันหน้าเข้ากล้อง อย่าให้มีอะไรปิดหน้า แล้วลองใหม่' or 'ไม่ทัน' in 'กล้องหาใบหน้าไม่พบ นั่งหันหน้าเข้ากล้อง อย่าให้มีอะไรปิดหน้า แล้วลองใหม่')
 ```
 
 ## ที่เทสต์อัตโนมัติทำแทนไม่ได้ ต้องตรวจด้วยมือ

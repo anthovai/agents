@@ -1,13 +1,14 @@
 {{!
     The player.
 
-    A real <video> element, not an embed. That is a deliberate constraint: the
-    proctoring adapter in local_kaiproctor already drives a plain <video>, so
-    monitoring an interactive video needed no new code at all — and anything
-    that has to reach a player through postMessage cannot be paused reliably
-    at the moment a question is due.
+    The controls are ours, not the backend's. With YouTube's own controls a
+    learner can seek and resume from inside the iframe, where nothing in this
+    module can intervene, and "the video will not continue past an unanswered
+    question" would stop being true. A file could keep its native controls, but
+    two different-looking players in one activity type is its own problem.
 }}
-<div class="kaivideo" data-region="kaivideo" data-state="idle">
+<div class="kaivideo" data-region="kaivideo" data-state="loading"
+     data-provider="{{provider}}">
 
     {{#noquestions}}
     <div class="alert alert-info" data-region="noquestions">
@@ -16,19 +17,30 @@
     </div>
     {{/noquestions}}
 
-    <div class="kaivideo-stage position-relative" data-region="stage">
-        <video data-region="video" class="w-100" controls preload="metadata"
+    <div class="kaivideo-stage position-relative bg-dark" data-region="stage">
+        {{#isfile}}
+        <video data-region="video" class="w-100 d-block" preload="metadata"
                src="{{videourl}}"></video>
+        {{/isfile}}
+        {{^isfile}}
+        {{! Replaced by the iframe once YouTube's API has loaded. }}
+        <div class="ratio ratio-16x9">
+            <div data-region="youtube"></div>
+        </div>
+        {{/isfile}}
 
         {{!
-            Drawn over the video rather than beside it. A question in the
-            margin is a question a learner scrolls past; one that covers the
-            frame is the interruption it is meant to be.
+            Drawn over the video rather than beside it. A question in the margin
+            is a question a learner scrolls past; one that covers the frame is
+            the interruption it is meant to be.
         }}
-        <div class="kaivideo-question" data-region="question" hidden>
-            <div class="card">
+        <div class="kaivideo-question position-absolute top-0 start-0 w-100 h-100
+                    d-flex align-items-center justify-content-center p-3"
+             style="background: rgba(0, 0, 0, 0.75);"
+             data-region="question" hidden>
+            <div class="card shadow" style="max-width: 34rem; width: 100%;">
                 <div class="card-body">
-                    <p class="lead" data-region="questiontext"></p>
+                    <p class="lead mb-3" data-region="questiontext"></p>
                     <div data-region="choices" class="d-grid gap-2"></div>
 
                     <div data-region="outcome" hidden>
@@ -48,10 +60,23 @@
         </div>
     </div>
 
-    <p class="mt-2 text-muted" data-region="summary">
-        {{#str}}questioncount, mod_kaivideo, {{questioncount}}{{/str}}
-        {{#mustanswer}} &middot; {{#str}}mustanswerhint, mod_kaivideo{{/str}}{{/mustanswer}}
-    </p>
+    <div class="d-flex align-items-center gap-2 mt-2" data-region="controls">
+        <button type="button" class="btn btn-primary" data-action="play">
+            {{#str}}play, mod_kaivideo{{/str}}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-action="pause">
+            {{#str}}pause, mod_kaivideo{{/str}}
+        </button>
+        {{! Back only. A control that jumps forward is a control for skipping
+            questions, so there is not one. }}
+        <button type="button" class="btn btn-outline-secondary" data-action="back">
+            {{#str}}back10, mod_kaivideo{{/str}}
+        </button>
+        <span class="text-muted ms-auto" data-region="summary">
+            {{#str}}questioncount, mod_kaivideo, {{questioncount}}{{/str}}
+            {{#mustanswer}} &middot; {{#str}}mustanswerhint, mod_kaivideo{{/str}}{{/mustanswer}}
+        </span>
+    </div>
 
-    <div class="alert alert-warning" data-region="problem" hidden></div>
+    <div class="alert alert-warning mt-2" data-region="problem" hidden></div>
 </div>

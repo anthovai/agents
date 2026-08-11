@@ -90,8 +90,13 @@ if ($form->is_cancelled()) {
 
 echo $OUTPUT->header();
 
+$source = \mod_kaivideo\source::describe($video->videourl);
+
 echo $OUTPUT->render_from_template('mod_kaivideo/edit', [
     'videourl' => $video->videourl,
+    'isfile' => ($source['provider'] === \mod_kaivideo\source::FILE),
+    'youtubeembed' => $source['videoid'] === '' ? ''
+        : 'https://www.youtube.com/embed/' . $source['videoid'],
     'items' => array_map(static function($item) use ($cmid, $url) {
         $item['editurl'] = (new moodle_url($url, ['edit' => $item['id']]))->out(false);
         $item['deleteurl'] = (new moodle_url($url,

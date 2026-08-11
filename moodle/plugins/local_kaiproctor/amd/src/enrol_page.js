@@ -76,10 +76,24 @@ define([
                                 return message;
                             });
                     }
-                    // A timeout names the pose that was not reached, so the
-                    // learner knows which movement to retry.
-                    var key = (result.reason || '').indexOf('timeout_') === 0
-                        ? 'enrol:timeout' : 'enrol:failed';
+                    // Say what was actually in the way.
+                    //
+                    // This used to be one of two messages, and the general one
+                    // told the learner the room might be too dark — for every
+                    // cause, including causes that have nothing to do with
+                    // light. A message that misattributes the reason is worse
+                    // than a vague one: it sends somebody to turn lamps on
+                    // while the real problem is that they are sitting too far
+                    // from the camera.
+                    var blocked = {
+                        noface: 'enrol:noface',
+                        toosmall: 'enrol:toosmall',
+                        multiplefaces: 'enrol:multiplefaces',
+                        spoof: 'enrol:spoof'
+                    };
+                    var key = blocked[result.blockedBy]
+                        || ((result.reason || '').indexOf('timeout_') === 0
+                            ? 'enrol:timeout' : 'enrol:failed');
                     return Str.get_string(key, 'local_kaiproctor').then(function(message) {
                         setStatus(message, 'danger');
                         startButton.disabled = false;

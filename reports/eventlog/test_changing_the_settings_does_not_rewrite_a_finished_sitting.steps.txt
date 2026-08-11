@@ -1,4 +1,0 @@
-sign in and run a lesson under the current rules
-identity check interval at the time: 10
-an administrator later changes the interval
-the sitting still records: 10

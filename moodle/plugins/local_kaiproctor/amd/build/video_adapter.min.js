@@ -111,6 +111,13 @@ define([], function() {
                     return;
                 }
 
+                // mod_kaivideo publishes the same contract, so a YouTube
+                // lesson of ours is watchable without this file knowing what
+                // YouTube is.
+                if (window.KAIVIDEO) {
+                    resolve(new InteractivePlayerAdapter(window.KAIVIDEO, host));
+                    return;
+                }
                 if (window.IVPLAYER) {
                     var host = document.querySelector('#interactivevideo-container, #video-wrapper')
                         || document.body;

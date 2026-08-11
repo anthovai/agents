@@ -1,0 +1,31 @@
+YuNet confidence floor
+13 photographs, 9 subject faces, 29 bystanders and false positives
+size floor held at 80px throughout
+
+subject faces score 0.313 to 0.951
+everything else scores 0.306 to 0.932
+
+floor   subjects accepted   others let through
+ 0.60       7 / 9             22
+ 0.70       7 / 9             22
+ 0.75       7 / 9             20
+ 0.80       7 / 9             19
+ 0.85       7 / 9             15
+ 0.88       7 / 9             11
+ 0.90       5 / 9             9
+ 0.92       5 / 9             6
+
+NO FLOOR ACCEPTS EVERY SUBJECT FACE.
+
+Which means the labelling here is too crude to pick a number: 'largest face in
+the photograph' catches blurred bystanders in press shots as well as subjects.
+Do not read a threshold off this table. What it does establish is the range that
+genuine, sharp, large faces occupy, and that 0.90 cuts through the middle of it.
+
+
+0.90 accepted only 5/9 of these faces, and the learner was told to turn a light on.
+
+Measured on public-domain press portraits, not on webcam frames from
+the people who will use this. A webcam frame is noisier and dimmer than
+a press photograph, so if anything this floor is still on the high side.
+Re-run it against real enrolment frames when there are some.

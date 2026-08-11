@@ -74,7 +74,18 @@ def test_enrolment_is_refused_when_no_face_is_visible(session, clean_learner, ev
 
     status = session.page.inner_text('[data-region="status"]')
     session.note(f"status shown to the learner: {status}")
-    assert "ไม่สำเร็จ" in status or "ไม่ทัน" in status
+
+    # Two things about the wording, and the second one is the point.
+    #
+    # It has to name the cause: the camera could not find a face. It used to
+    # say "make sure the room is well lit", for this and for every other
+    # cause — including a face the detector had refused on its confidence
+    # score, which has nothing to do with the light. A message that
+    # misattributes the reason is worse than a vague one, because it sends
+    # somebody to turn lamps on while the real problem is somewhere else.
+    assert "ใบหน้า" in status, "the message does not say what was wrong"
+    assert "แสง" not in status, \
+        "the message is blaming the lighting again, which nothing here measures"
 
     # Nothing may be stored for a challenge that was never passed.
     assert moodle("count", "face", "learner") == "0", (

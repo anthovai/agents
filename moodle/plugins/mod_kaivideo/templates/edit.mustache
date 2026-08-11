@@ -8,8 +8,20 @@
 
     <p><a href="{{viewurl}}">{{#str}}backtovideo, mod_kaivideo{{/str}}</a></p>
 
+    {{! Whichever backend it is: an author choosing "ask this at 01:24" needs
+        the frame at 01:24, and the native controls are wanted here — this page
+        is for scrubbing around, not for taking the lesson. }}
+    {{#isfile}}
     <video class="w-100 mb-3" data-region="preview" controls preload="metadata"
            src="{{videourl}}"></video>
+    {{/isfile}}
+    {{^isfile}}
+    <div class="ratio ratio-16x9 mb-3">
+        <iframe data-region="preview" src="{{youtubeembed}}" title="preview"
+                allow="accelerometer; encrypted-media; picture-in-picture"
+                allowfullscreen></iframe>
+    </div>
+    {{/isfile}}
 
     <table class="table" data-region="items">
         <thead>

@@ -19,7 +19,16 @@ import pytest
 
 from conftest import moodle
 
-KAIVIDEO_CMID = 15
+def cmid_for(provider: str) -> int:
+    """Look the activity up instead of hard-coding an id.
+
+    A course-module id changes whenever the demo course is reseeded in a
+    different order, and a test pinned to 15 fails for that reason alone.
+    """
+    return int(moodle("kaivideo-cmid", provider).strip())
+
+
+KAIVIDEO_CMID = cmid_for("file")
 
 
 @pytest.fixture
@@ -355,3 +364,74 @@ def test_completion_counts_answering_every_question():
     finally:
         moodle("kaivideo-set-completion", str(KAIVIDEO_CMID), "0", "0")
 
+
+# --------------------------------------------------------------------------
+# The other backend
+# --------------------------------------------------------------------------
+
+def test_a_youtube_video_plays_and_still_stops_for_a_question(session):
+    """The same guarantee across a postMessage boundary.
+
+    YouTube's own controls are switched off, because with them on a learner can
+    seek and resume inside the iframe where nothing in the module can intervene
+    — and "the video will not continue past an unanswered question" would stop
+    being something we can say. Ours are the only controls, and the due-question
+    rule is unchanged.
+
+    Skipped when YouTube is unreachable: on a sealed network this cannot work,
+    and pretending otherwise would be a test that lies about the environment.
+    """
+    cmid = cmid_for("youtube")
+    timeline = json.loads(moodle("kaivideo-timeline", str(cmid)))
+    moodle("kaivideo-reset", "learner", str(cmid))
+
+    session.login("learner")
+    session.goto(f"/mod/kaivideo/view.php?id={cmid}")
+    session.beat(4)
+
+    root = session.page.query_selector('[data-region="kaivideo"]')
+    assert root.get_attribute("data-provider") == "youtube"
+
+    if root.get_attribute("data-state") != "ready":
+        pytest.skip("the YouTube player did not load — no route to youtube.com")
+
+    session.note("the iframe loaded and published the shared player interface")
+    assert session.page.query_selector("iframe"), "no iframe was created"
+    assert session.page.evaluate("() => !!window.KAIVIDEO"), \
+        "the proctoring monitor would have nothing to watch"
+
+    # No native controls to press: ours are the only ones.
+    session.note("press our own Play")
+    session.page.click('[data-action="play"]')
+
+    session.page.wait_for_selector('[data-region="question"]:not([hidden])',
+                                   timeout=60_000)
+    session.beat(2)
+
+    asked = session.page.inner_text('[data-region="questiontext"]')
+    session.note(f"stopped at {timeline[0]['attime']}s and asked: {asked[:50]}")
+    assert asked.strip() == timeline[0]["questiontext"].strip()
+    assert session.page.evaluate("() => window.KAIVIDEO.isPaused()"), \
+        "the question is up but YouTube is still playing behind it"
+
+    session.page.query_selector_all('[data-action="choose"]')[
+        timeline[0]["correctchoice"]].click()
+    session.page.wait_for_selector('[data-region="outcome"]:not([hidden])',
+                                   timeout=20_000)
+    session.beat(1.5)
+    assert session.page.get_attribute('[data-region="kaivideo"]', "data-state") == "correct"
+
+
+def test_an_address_nothing_can_play_is_refused_when_it_is_typed():
+    """The commonest authoring mistake is pasting a page that contains a video
+    rather than the video. Caught at the form, because otherwise it reaches the
+    learner as an empty player with nothing to explain it."""
+    for good in ["https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+                 "https://youtu.be/aqz-KE-bpKQ",
+                 "https://example.test/lesson.mp4"]:
+        assert moodle("kaivideo-playable", good).strip() == "yes", good
+
+    for bad in ["https://example.test/watch/lesson",
+                "https://vimeo.com/123456789",
+                "not a url"]:
+        assert moodle("kaivideo-playable", bad).strip() == "no", bad

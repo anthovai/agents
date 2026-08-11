@@ -704,3 +704,48 @@ if (!$DB->record_exists('kaivideo_item', ['kaivideoid' => $kaivideo->id])) {
 } else {
     mtrace('  questions already on the timeline');
 }
+
+mtrace('interactive video (YouTube backend):');
+// The second backend, seeded so it is exercised rather than assumed. Big Buck
+// Bunny, Blender Foundation, Creative Commons — a video we are allowed to point
+// at, which matters even in a demo.
+$ytname = 'วิดีโอ YouTube (KAISER)';
+$ytvideo = $DB->get_record('kaivideo', ['course' => $course->id, 'name' => $ytname]);
+
+if ($ytvideo) {
+    $ytcm = get_coursemodule_from_instance('kaivideo', $ytvideo->id);
+    mtrace("  already present (cmid {$ytcm->id})");
+} else {
+    $module = $DB->get_record('modules', ['name' => 'kaivideo'], '*', MUST_EXIST);
+    $instance = (object) [
+        'course' => $course->id,
+        'name' => $ytname,
+        'intro' => '<p>วิดีโอจาก YouTube ที่หยุดถามคำถามระหว่างทาง</p>',
+        'introformat' => FORMAT_HTML,
+        'videourl' => 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+        'mustanswer' => 1,
+        'allowreview' => 1,
+        'grade' => 100,
+    ];
+    $instance->id = kaivideo_add_instance($instance);
+
+    $ytcm = (object) [
+        'course' => $course->id,
+        'module' => $module->id,
+        'instance' => $instance->id,
+        'section' => 0,
+        'visible' => 1,
+        'completion' => COMPLETION_TRACKING_NONE,
+    ];
+    $ytcm->coursemodule = add_course_module($ytcm);
+    course_add_cm_to_section($course->id, $ytcm->coursemodule, 0);
+
+    \mod_kaivideo\timeline::save((int) $instance->id, [
+        'attime' => 4,
+        'questiontext' => 'วิดีโอนี้เล่นผ่านอะไร',
+        'choices' => ['YouTube', 'ไฟล์ในเครื่อง'],
+        'correctchoice' => 0,
+        'feedback' => 'เล่นผ่าน iframe ของ YouTube ด้วย IFrame API',
+    ]);
+    mtrace("  created cmid {$ytcm->coursemodule}");
+}

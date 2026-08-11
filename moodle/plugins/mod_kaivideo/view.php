@@ -33,8 +33,12 @@ foreach (\mod_kaivideo\responses::latest((int) $video->id, (int) $USER->id) as $
         'correct' => $answer['correct']];
 }
 
+$source = \mod_kaivideo\source::describe($video->videourl);
+
 $PAGE->requires->js_call_amd('mod_kaivideo/player', 'init', [[
     'cmid' => (int) $cm->id,
+    'provider' => $source['provider'],
+    'videoid' => $source['videoid'],
     'timeline' => $timeline,
     'answered' => $answered,
     'mustanswer' => (bool) $video->mustanswer,
@@ -50,6 +54,8 @@ if (trim($video->intro) !== '') {
 
 echo $OUTPUT->render_from_template('mod_kaivideo/player', [
     'videourl' => $video->videourl,
+    'provider' => $source['provider'],
+    'isfile' => ($source['provider'] === \mod_kaivideo\source::FILE),
     'questioncount' => count($timeline),
     'mustanswer' => (bool) $video->mustanswer,
     'canedit' => $canedit,
