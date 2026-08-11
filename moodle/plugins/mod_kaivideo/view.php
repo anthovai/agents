@@ -48,9 +48,8 @@ $PAGE->requires->js_call_amd('mod_kaivideo/player', 'init', [[
 
 echo $OUTPUT->header();
 
-if (trim($video->intro) !== '') {
-    echo $OUTPUT->box(format_module_intro('kaivideo', $video, $cm->id), 'generalbox mod_introbox');
-}
+// The description is not printed here. Moodle's activity header already
+// renders it, and printing it again put the same paragraph on the page twice.
 
 echo $OUTPUT->render_from_template('mod_kaivideo/player', [
     'videourl' => $video->videourl,

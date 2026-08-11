@@ -1,0 +1,4 @@
+sign in and open the attempt
+the learner interacts, which starts the camera and the monitor
+camera preview injected into the exam page: True
+the learner leaves the exam window

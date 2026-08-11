@@ -1,0 +1,3 @@
+sign in and open the lesson
+run the monitor with a two-second presence interval
+lesson paused after the learner could not be seen: True

@@ -1,0 +1,3 @@
+sign in as the learner
+open the interactive video
+banner: กิจกรรมนี้มีระบบคุมสอบ คลิกหรือกดปุ่มใดก็ได้เพื่อเริ่ม ระบบจะใช้กล้องยืนยันว่าคุณอยู่หน้าจอ

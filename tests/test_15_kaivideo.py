@@ -62,6 +62,22 @@ def wait_for_question(session, timeout: int = 30_000) -> str:
 # The learner's path through it
 # --------------------------------------------------------------------------
 
+def test_no_question_is_on_screen_before_one_is_due(session, fresh_video):
+    """The panel must be invisible, not merely marked hidden.
+
+    It carried Bootstrap's d-flex, whose display rule beats the [hidden]
+    attribute, so an empty white card sat in the middle of the video from the
+    moment the page loaded. Every test passed throughout: they matched
+    :not([hidden]), which was true of the attribute while the thing was plainly
+    on screen. Asserting what the browser paints is the only version of this
+    check that was ever worth having.
+    """
+    open_video(session)
+
+    assert not session.page.is_visible('[data-region="question"]'),         "the question panel is on screen before any question is due"
+    session.note("nothing is covering the video on arrival")
+
+
 def test_the_video_stops_where_the_author_put_a_question(session, fresh_video):
     first = fresh_video[0]
     session.note(f"a question is placed at {first['attime']}s: {first['questiontext'][:50]}")

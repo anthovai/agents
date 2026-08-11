@@ -1,0 +1,9 @@
+# audit trail for learner
+18:21:07  ctx=1    monitor_started        videotime=0     {"strict":false,"verify_minutes":0,"presence_minutes":0,"clips_per_hour":3600}
+18:21:09  ctx=1    clip_started           videotime=0     {"seconds":2}
+18:21:12  ctx=1    clip_uploaded          videotime=0     {"evidenceid":410}
+18:21:13  ctx=1    clip_started           videotime=0     {"seconds":2}
+18:21:16  ctx=1    clip_uploaded          videotime=0     {"evidenceid":411}
+18:21:18  ctx=1    monitor_stopped        videotime=0     []
+18:21:18  ctx=1    clip_started           videotime=0     {"seconds":2}
+18:21:18  ctx=1    clip_uploaded          videotime=0     {"evidenceid":412}

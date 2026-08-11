@@ -1,0 +1,4 @@
+sign in as an administrator
+open the statistics page
+the retention period in force is shown
+configured retention: 180 days

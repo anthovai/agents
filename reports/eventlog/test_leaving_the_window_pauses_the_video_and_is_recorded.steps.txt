@@ -1,0 +1,6 @@
+sign in and open the monitored lesson
+start the lesson under monitoring
+video playing after start: True
+the learner switches away from the lesson window
+after leaving the window: {'paused': True, 'overlay': True, 'blocking': 'true', 'title': 'การอบรมถูกยุติ', 'message': 'ออกจากหน้าต่างเรียน'}
+audit trail written to reports/eventlog

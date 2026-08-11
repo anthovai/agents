@@ -1,0 +1,2 @@
+send something that is not a question pack
+response: {'ok': False, 'error': {'code': 'bad_pdf', 'message': 'ไฟล์ไม่ใช่ PDF'}}

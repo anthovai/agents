@@ -17,10 +17,23 @@
     </div>
     {{/noquestions}}
 
-    <div class="kaivideo-stage position-relative bg-dark" data-region="stage">
+    {{!
+        Sized rather than left to fill whatever it likes. A <video> with no
+        poster renders as its intrinsic box on a black background, which came
+        out as a screen-high black rectangle with a small white square in the
+        middle of it before anybody pressed play.
+    }}
+    <div class="kaivideo-stage position-relative bg-dark mx-auto"
+         style="max-width: 56rem;" data-region="stage">
+        {{! Both backends get the same 16:9 frame. Without it the file player
+            has no shape until metadata arrives, and what a learner sees on
+            arrival is a tall black rectangle with a small white box floating
+            in it. }}
         {{#isfile}}
-        <video data-region="video" class="w-100 d-block" preload="metadata"
-               src="{{videourl}}"></video>
+        <div class="ratio ratio-16x9">
+            <video data-region="video" preload="metadata" src="{{videourl}}"
+                   style="object-fit: contain;"></video>
+        </div>
         {{/isfile}}
         {{^isfile}}
         {{! Replaced by the iframe once YouTube's API has loaded. }}
@@ -34,10 +47,21 @@
             is a question a learner scrolls past; one that covers the frame is
             the interruption it is meant to be.
         }}
-        <div class="kaivideo-question position-absolute top-0 start-0 w-100 h-100
-                    d-flex align-items-center justify-content-center p-3"
+        {{!
+            The element carrying `hidden` must not also carry a class that sets
+            display. `d-flex` was on this div, and Bootstrap's rule beat the
+            [hidden] attribute — so the panel was on screen from the moment the
+            page loaded, as an empty white card floating in the middle of the
+            video. The centring moved inside; nothing styles display out here.
+
+            The tests did not catch it because they matched :not([hidden]),
+            which was true of the attribute while the panel was plainly visible.
+        }}
+        <div class="kaivideo-question position-absolute top-0 start-0 w-100 h-100"
              style="background: rgba(0, 0, 0, 0.75);"
              data-region="question" hidden>
+            <div class="d-flex align-items-center justify-content-center
+                        w-100 h-100 p-3">
             <div class="card shadow" style="max-width: 34rem; width: 100%;">
                 <div class="card-body">
                     <p class="lead mb-3" data-region="questiontext"></p>
@@ -57,10 +81,12 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
     </div>
 
-    <div class="d-flex align-items-center gap-2 mt-2" data-region="controls">
+    <div class="d-flex align-items-center gap-2 mt-2 mx-auto"
+         style="max-width: 56rem;" data-region="controls">
         <button type="button" class="btn btn-primary" data-action="play">
             {{#str}}play, mod_kaivideo{{/str}}
         </button>
@@ -72,9 +98,10 @@
         <button type="button" class="btn btn-outline-secondary" data-action="back">
             {{#str}}back10, mod_kaivideo{{/str}}
         </button>
-        <span class="text-muted ms-auto" data-region="summary">
+        {{! Short. The sentence that used to sit here explained the rule in
+            full, next to the buttons, on every frame of every viewing. }}
+        <span class="small text-muted ms-auto" data-region="summary">
             {{#str}}questioncount, mod_kaivideo, {{questioncount}}{{/str}}
-            {{#mustanswer}} &middot; {{#str}}mustanswerhint, mod_kaivideo{{/str}}{{/mustanswer}}
         </span>
     </div>
 

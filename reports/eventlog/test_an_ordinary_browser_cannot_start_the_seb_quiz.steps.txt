@@ -1,0 +1,3 @@
+sign in as an enrolled learner
+open the high-stakes quiz in an ordinary browser
+the quiz refuses to start

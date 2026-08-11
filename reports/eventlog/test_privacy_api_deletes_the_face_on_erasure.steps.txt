@@ -1,0 +1,3 @@
+generate checks and evidence for the learner
+run the plugin's own Privacy API provider, as an approved erasure would
+privacy deletion run for learner

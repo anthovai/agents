@@ -1,0 +1,9 @@
+sign in and open the attempt
+answer all three questions correctly
+expected answers: ['ใบหน้า', 'บันทึกเหตุการณ์ไว้เป็นหลักฐาน', 'กันการใช้ภาพถ่ายหรือวิดีโอแทนคนจริง']
+go to the attempt summary
+submit all and finish
+confirm the submission
+wait for the graded review page
+the attempt was graded server-side
+stored grade: {'state': 'finished', 'sumgrades': 3, 'maxgrades': 3}

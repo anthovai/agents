@@ -16,7 +16,12 @@ require_login();
 $context = context_user::instance($USER->id);
 
 $PAGE->set_url(new moodle_url('/local/kaiproctor/lesson.php'));
-$PAGE->set_context($context);
+// The capability is checked against the learner's own user context above —
+// enrolling a face is something you do for yourself. The *page* context is the
+// site, because setting it to the user context makes Boost decorate the page
+// with a profile header: the learner's avatar and a "message" link, on a tool
+// page that has nothing to do with either.
+$PAGE->set_context(context_system::instance());
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('lesson:title', 'local_kaiproctor'));
 $PAGE->set_heading(get_string('lesson:title', 'local_kaiproctor'));
