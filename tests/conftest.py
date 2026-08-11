@@ -236,10 +236,21 @@ def session(browser, request, install_support_script):
     except Exception as error:  # noqa: BLE001 - artefacts must never fail a test
         print(f"screenshot failed for {test_name}: {error}")
 
+    # A test that never opened a page records a few kilobytes of blank white,
+    # which is not evidence of anything and makes the useful recordings harder
+    # to find. Measurements that assert against the database rather than the
+    # screen are legitimate; keeping a video of them is not.
+    opened_a_page = page.url not in ("", "about:blank")
+
     video = page.video
     context.close()  # finalises the video file
 
-    if video:
+    if video and not opened_a_page:
+        try:
+            Path(video.path()).unlink(missing_ok=True)
+        except Exception as error:  # noqa: BLE001
+            print(f"could not discard the blank video for {test_name}: {error}")
+    elif video:
         try:
             source = Path(video.path())
             target = VIDEO_DIR / f"{test_name}.webm"

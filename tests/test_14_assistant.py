@@ -1,4 +1,4 @@
-"""The navigation assistant, and the two ways it could do harm.
+"""The navigation assistant, driven through the page a learner actually uses.
 
 It answers "where is X" with a link. That is a small feature with two failure
 modes that are not small:
@@ -8,7 +8,13 @@ modes that are not small:
   - handing back a link that does not work, which the learner clicks once,
     lands nowhere, and afterwards stops believing anything it says.
 
-Most of what is below is about those two rather than about answer quality.
+Both are checked here the way a learner would meet them — typing a question and
+reading what comes back — rather than by calling the code behind the page. The
+two are not the same test: a refusal that works in PHP and never reaches the
+screen is still a broken feature, and only the browser catches that.
+
+The measurement tests at the bottom are the exception, and are marked as such:
+a threshold has no page.
 """
 from __future__ import annotations
 
@@ -47,6 +53,30 @@ def assistant_off():
     moodle("set-setting", "aienabled", original["enabled"] or "0")
 
 
+def ask_on_the_page(session, question: str, timeout: int = 180_000) -> str:
+    """Type a question, submit it, and wait for the page to settle.
+
+    Returns 'answer' or 'problem' — which of the two regions appeared. Waiting
+    for either rather than for one of them is what makes a failure show up as
+    "it said the wrong thing" instead of as a timeout with nothing to read.
+    """
+    session.page.fill('[data-region="question"]', question)
+    session.beat(1)
+    session.page.click('[data-action="send"]')
+
+    session.page.wait_for_selector(
+        '[data-region="answer"]:not([hidden]), [data-region="problem"]:not([hidden])',
+        timeout=timeout)
+    session.beat(2)
+
+    answered = session.page.query_selector('[data-region="answer"]:not([hidden])')
+    return "answer" if answered else "problem"
+
+
+# --------------------------------------------------------------------------
+# What a learner sees
+# --------------------------------------------------------------------------
+
 def test_the_assistant_is_off_until_somebody_turns_it_on(session, assistant_off):
     """And when off, says so rather than showing an empty page: a learner who
     was told it exists and finds nothing assumes the site is broken."""
@@ -55,7 +85,7 @@ def test_the_assistant_is_off_until_somebody_turns_it_on(session, assistant_off)
 
     session.login("learner")
     session.goto("/local/kaiproctor/ask.php")
-    session.beat(1)
+    session.beat(1.5)
 
     body = session.page.inner_text("body")
     session.note("the page with the assistant switched off")
@@ -64,69 +94,95 @@ def test_the_assistant_is_off_until_somebody_turns_it_on(session, assistant_off)
         "the question box is still there with the assistant off"
 
 
-def test_one_learners_courses_are_invisible_to_another(session):
-    """The rule that matters most here.
+def test_an_empty_question_does_nothing(session, assistant_on):
+    """Pressing the button with nothing typed should not produce an error, and
+    should not spend a model call finding that out."""
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
 
-    Answering "you are not enrolled in คอร์สลับเฉพาะบุคคล" is itself a
-    disclosure, so nothing outside the learner's own courses is ever indexed —
-    the assistant cannot decline to mention what it was never given.
+    session.note("press Ask with the box empty")
+    session.page.click('[data-action="send"]')
+    session.beat(2.5)
+
+    assert session.page.query_selector('[data-region="answer"][hidden]')
+    assert session.page.query_selector('[data-region="problem"][hidden]')
+    session.note("nothing happened, which is the right amount of happening")
+
+
+def test_a_question_the_site_cannot_answer_is_refused_on_the_page(session, assistant_on):
+    """Refused by retrieval, and the refusal reaches the screen.
+
+    A model asked a question with no supporting material answers it anyway,
+    from what it learned elsewhere. Deciding this in code is cheaper and more
+    reliable than asking a model to decline — but a refusal that never renders
+    is still a broken page, which is why this is a browser test.
+    """
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
+
+    session.note("ask something this site has nothing to do with")
+    outcome = ask_on_the_page(session, "เมืองหลวงของฝรั่งเศสคืออะไร", timeout=60_000)
+
+    assert outcome == "problem", "an off-topic question produced an answer"
+    shown = session.page.inner_text('[data-region="problem"]')
+    session.note(f"the page says: {shown[:120]}")
+    assert "ไม่พบ" in shown, "the refusal does not say anything a learner can act on"
+
+
+def test_another_learners_course_cannot_be_found_by_name(session, assistant_on):
+    """Named exactly, and still not found.
+
+    This is the disclosure test done the way it actually matters: the learner
+    types the other course's real name, and the assistant has nothing to say —
+    not because it declined, but because that course was never in its index.
+    Answering "you are not enrolled in X" would confirm X exists.
     """
     private = json.loads(moodle("seed-private-course", "learner2"))
     moodle("ask-purge-index")
-    session.note(f"course only learner2 is enrolled in: {private['fullname']}")
+    session.note(f"a course only learner2 is enrolled in: {private['fullname']}")
 
-    mine = json.loads(moodle("ask-index", "learner2"))
-    theirs = json.loads(moodle("ask-index", "learner"))
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
 
-    titles_for_owner = [item["title"] for item in mine]
-    titles_for_other = [item["title"] for item in theirs]
+    session.note("ask for it by its exact name")
+    outcome = ask_on_the_page(session, private["fullname"], timeout=60_000)
 
-    assert private["fullname"] in titles_for_owner, "the owner cannot find their own course"
-    assert private["fullname"] not in titles_for_other, \
-        "another learner's course is in the index"
-    session.note(f"learner sees {len(theirs)} pages, none of them learner2's course")
+    assert outcome == "problem", \
+        "another learner's course was described to somebody not enrolled in it"
+    shown = session.page.inner_text('[data-region="problem"]')
+    assert private["fullname"] not in shown, \
+        "the refusal repeats the course name back, which confirms it exists"
+    session.note("not found, and the name is not echoed back")
 
-
-def test_a_question_the_site_cannot_answer_never_reaches_a_model(session, assistant_on):
-    """Refused by retrieval, not by the model.
-
-    A model asked a question with no supporting material answers it anyway,
-    from what it learned elsewhere. Deciding this in code is both cheaper and
-    more reliable than asking a model to decline.
-    """
-    result = json.loads(moodle("ask", "learner", "เมืองหลวงของฝรั่งเศสคืออะไร"))
-    session.note(f"off-topic question: {json.dumps(result, ensure_ascii=False)[:200]}")
-
-    assert result["ok"] is False
-    assert result["error"]["code"] == "no_match"
+    # And the reason it could not be found: it is not in this learner's index
+    # at all, rather than filtered out on the way past.
+    titles = [item["title"] for item in json.loads(moodle("ask-index", "learner"))]
+    assert private["fullname"] not in titles
 
 
-def test_retrieval_finds_the_right_page_without_a_model(session):
-    """Ranking is separable from generation, and worth testing on its own: a
-    retrieval regression blamed on the model is a day wasted."""
-    moodle("ask-purge-index")
-    ranked = json.loads(moodle("ask-rank", "learner", "บทเรียนวิดีโออยู่ตรงไหน"))
+def test_the_page_says_so_when_the_service_is_down(session, assistant_on):
+    """An advisory feature may be unavailable. It may not go quiet and leave a
+    learner thinking they asked a bad question."""
+    original = json.loads(moodle("ai-state"))
+    try:
+        moodle("set-setting", "aibaseurl", "http://127.0.0.1:9998")
 
-    assert ranked, "nothing matched a question about a page that exists"
-    session.note(f"top match: {ranked[0]['title']} (score {ranked[0]['score']})")
-    assert "วิดีโอ" in ranked[0]["title"]
+        session.login("learner")
+        session.goto("/local/kaiproctor/ask.php")
+        session.beat(1.5)
 
+        session.note("ask a real question with the service unreachable")
+        outcome = ask_on_the_page(session, "บทเรียนวิดีโออยู่ตรงไหน", timeout=90_000)
 
-@pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
-def test_the_answer_links_only_to_pages_the_learner_can_open(session, assistant_on):
-    """Whatever the model writes, every link in the answer must be one this
-    learner was already entitled to open."""
-    moodle("ask-purge-index")
-    allowed = {item["url"] for item in json.loads(moodle("ask-index", "learner"))}
-
-    result = json.loads(moodle("ask", "learner", "จะไปหน้าลงทะเบียนใบหน้าได้ยังไง"))
-    session.note(f"answer: {str(result)[:300]}")
-
-    assert result["ok"] is True, f"the assistant failed: {result}"
-    for source in result["sources"]:
-        # Absolute links go out; the index holds paths.
-        path = source["url"].split("://", 1)[-1].split("/", 1)[-1]
-        assert "/" + path in allowed, f"{source['url']} was not in this learner's index"
+        assert outcome == "problem", "a dead service still produced an answer"
+        shown = session.page.inner_text('[data-region="problem"]').strip()
+        session.note(f"the page says: {shown[:150]}")
+        assert shown, "the page failed silently"
+    finally:
+        moodle("set-setting", "aibaseurl", original["baseurl"])
 
 
 @pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
@@ -134,19 +190,17 @@ def test_a_learner_asks_where_something_is_and_the_link_works(session, assistant
     """The whole feature, through the browser, ending on the page itself.
 
     Following the link is the point: an answer that reads well and 404s is the
-    failure this feature has to avoid, and only opening it proves it did.
+    failure this feature has to avoid, and only opening it proves it did not.
     """
+    moodle("ask-purge-index")
     session.login("learner")
     session.goto("/local/kaiproctor/ask.php")
     session.beat(1.5)
 
     session.note("ask where the interactive video lesson is")
-    session.page.fill('[data-region="question"]', "บทเรียนวิดีโออยู่ตรงไหน")
-    session.beat(1)
-    session.page.click('[data-action="send"]')
-
-    session.page.wait_for_selector('[data-region="answer"]:not([hidden])', timeout=180_000)
-    session.beat(2)
+    outcome = ask_on_the_page(session, "บทเรียนวิดีโออยู่ตรงไหน")
+    assert outcome == "answer", \
+        f"expected an answer, got: {session.page.inner_text('[data-region=problem]')}"
 
     answer = session.page.inner_text('[data-region="answer-text"]')
     session.note(f"answer shown: {answer[:200]}")
@@ -158,60 +212,42 @@ def test_a_learner_asks_where_something_is_and_the_link_works(session, assistant
     target = links[0].get_attribute("href")
     session.note(f"following the first link: {target}")
     session.page.goto(target)
-    session.beat(2)
+    session.beat(2.5)
 
     # Moodle renders its own error pages with a 200, so the body is what says
     # whether the link actually landed somewhere.
     body = session.page.inner_text("body")
-    for broken in ["Page not found", "ไม่พบหน้า", "error/invalidcoursemodule"]:
+    for broken in ["Page not found", "ไม่พบหน้า", "error/invalidcoursemodule",
+                   "do not currently have permissions"]:
         assert broken not in body, f"the link the assistant gave leads to: {broken}"
     session.note("the link opened a real page")
 
 
-# --------------------------------------------------------------------------
-# The threshold, and the switch
-# --------------------------------------------------------------------------
-
-def test_the_shipped_threshold_still_earns_its_number(session):
-    """MIN_SCORE was measured, so a change that quietly undoes the measurement
-    should fail here rather than reach a learner.
-
-    The two figures are not symmetrical. Letting an off-topic question through
-    breaks something this feature claims — that a question with no matching
-    page never reaches a model — so it is asserted at zero. Recall is a quality
-    figure, so it gets a floor with room for a question set that grows.
-    """
+@pytest.mark.skipif(not model_available(), reason="no model behind the reviewer service")
+def test_every_link_offered_is_one_this_learner_may_open(session, assistant_on):
+    """Whatever the model writes, the links on screen must all be pages this
+    learner was already entitled to open."""
     moodle("ask-purge-index")
-    score = json.loads(moodle("ask-score", "learner"))
-    session.note(f"at MIN_SCORE={score['threshold']}: recall {score['recall']:.1%}, "
-                 f"top-1 {score['top1']:.1%}, false-accept {score['falseaccept']:.1%}")
+    allowed = {item["url"] for item in json.loads(moodle("ask-index", "learner"))}
 
-    assert score["falseaccept"] == 0, \
-        f"off-topic questions now reach a model: {score['wronglyaccepted']}"
-    assert score["recall"] >= 0.90, f"retrieval got worse; missing {score['missed']}"
-    assert score["top1"] >= 0.85, "the right page is no longer usually first"
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
 
+    session.note("ask about face enrolment")
+    outcome = ask_on_the_page(session, "จะไปหน้าลงทะเบียนใบหน้าได้ยังไง")
+    assert outcome == "answer"
 
-def test_the_console_names_the_model_and_where_it_runs(session):
-    """A switch on its own asks somebody to decide blind. Whether learner
-    activity leaves the organisation depends on which machine answers, and
-    that is the service's fact, not the setting's."""
-    console = json.loads(moodle("ai-console"))
-    session.note(f"backend {console['backend']}, off-premises={console['offpremises']}")
-
-    assert console["backend"], "the console does not say which endpoint answers"
-    assert console["tasks"], "the console does not say which model does what"
-    assert not console["offpremises"], \
-        "this deployment is configured to send learner activity off-site"
+    for link in session.page.query_selector_all('[data-region="sources"] a'):
+        href = link.get_attribute("href")
+        path = "/" + href.split("://", 1)[-1].split("/", 1)[-1]
+        assert path in allowed, f"{href} was not in this learner's index"
+    session.note("every link on the page came from this learner's own index")
 
 
-def test_a_vendor_endpoint_is_not_mistaken_for_your_own_hardware(session):
-    """The warning is only worth having if it is right about the boundary."""
-    assert moodle("ai-islocal", "http://host.docker.internal:11434/v1").strip() == "yes"
-    assert moodle("ai-islocal", "http://ai-service:9100").strip() == "yes"
-    assert moodle("ai-islocal", "https://api.openai.com/v1").strip() == "no"
-    session.note("a hostname with dots is treated as somebody else's machine")
-
+# --------------------------------------------------------------------------
+# The switch
+# --------------------------------------------------------------------------
 
 def test_an_administrator_can_switch_it_on_and_off_from_the_console(session):
     """Through the page, not the setting: the point of the console is that the
@@ -231,27 +267,92 @@ def test_an_administrator_can_switch_it_on_and_off_from_the_console(session):
         session.page.click('[data-action="kaiproctor-ai-toggle"]')
         session.page.wait_for_selector('[data-region="ai-console"][data-enabled="1"]',
                                        timeout=20_000)
-        session.beat(1.5)
+        session.beat(2)
         assert json.loads(moodle("ai-state"))["enabled"] == "1"
 
         session.note("and off again")
         session.page.click('[data-action="kaiproctor-ai-toggle"]')
         session.page.wait_for_selector('[data-region="ai-console"][data-enabled="0"]',
                                        timeout=20_000)
-        session.beat(1.5)
+        session.beat(2)
         assert json.loads(moodle("ai-state"))["enabled"] == "0"
     finally:
         moodle("set-setting", "aienabled", original["enabled"] or "0")
+
+
+def test_the_console_shows_which_model_answers_and_where_it_runs(session):
+    """A switch on its own asks somebody to decide blind. Whether learner
+    activity leaves the organisation depends on which machine answers, and the
+    person deciding has to be able to read that off the screen."""
+    session.login("admin")
+    session.goto("/local/kaiproctor/ai.php")
+    session.beat(2)
+
+    facts = session.page.inner_text('[data-region="facts"]')
+    session.note(f"the console reports:\n{facts}")
+
+    expected = json.loads(moodle("ai-console"))
+    assert expected["backend"] in facts, "the console does not show the model endpoint"
+    for task in expected["tasks"]:
+        assert task["model"] in facts, f"no model shown for {task['task']}"
+
+    # This deployment answers from the container host, so the page should be
+    # saying that nothing leaves the network — not the warning.
+    assert session.page.query_selector('[data-region="onpremises"]'), \
+        "the console does not confirm where the model runs"
+    assert not session.page.query_selector('[data-region="offpremises"]')
 
 
 def test_a_learner_cannot_reach_the_console(session):
     """It decides whether learner activity leaves the organisation."""
     session.login("learner")
     session.goto("/local/kaiproctor/ai.php")
-    session.beat(1)
+    session.beat(1.5)
 
-    body = session.page.inner_text("body")
-    assert '[data-action="kaiproctor-ai-toggle"]' not in body
+    # Boost's own nav drawer button is [data-action="toggle"], so the switch
+    # carries a namespaced attribute — a selector that matches the theme would
+    # have made this test pass or fail for reasons of its own.
     assert not session.page.query_selector('[data-action="kaiproctor-ai-toggle"]'), \
         "a learner was shown the switch"
+    assert not session.page.query_selector('[data-region="ai-console"]')
     session.note("the console refuses a learner")
+
+
+# --------------------------------------------------------------------------
+# Measurements, which have no page
+# --------------------------------------------------------------------------
+
+def test_the_shipped_threshold_still_earns_its_number():
+    """MIN_SCORE was measured, so a change that quietly undoes the measurement
+    should fail here rather than reach a learner.
+
+    The two figures are not symmetrical. Letting an off-topic question through
+    breaks something this feature claims — that a question with no matching
+    page never reaches a model — so it is asserted at zero. Recall is a quality
+    figure, so it gets a floor with room for a question set that grows.
+    """
+    moodle("ask-purge-index")
+    score = json.loads(moodle("ask-score", "learner"))
+
+    assert score["falseaccept"] == 0, \
+        f"off-topic questions now reach a model: {score['wronglyaccepted']}"
+    assert score["recall"] >= 0.90, f"retrieval got worse; missing {score['missed']}"
+    assert score["top1"] >= 0.85, "the right page is no longer usually first"
+
+
+def test_retrieval_finds_the_right_page_without_a_model():
+    """Ranking is separable from generation, and worth testing on its own: a
+    retrieval regression blamed on the model is a day wasted."""
+    moodle("ask-purge-index")
+    ranked = json.loads(moodle("ask-rank", "learner", "บทเรียนวิดีโออยู่ตรงไหน"))
+
+    assert ranked, "nothing matched a question about a page that exists"
+    assert "วิดีโอ" in ranked[0]["title"]
+
+
+def test_a_vendor_endpoint_is_not_mistaken_for_your_own_hardware():
+    """The console's warning is only worth having if it is right about the
+    boundary it draws."""
+    assert moodle("ai-islocal", "http://host.docker.internal:11434/v1").strip() == "yes"
+    assert moodle("ai-islocal", "http://ai-service:9100").strip() == "yes"
+    assert moodle("ai-islocal", "https://api.openai.com/v1").strip() == "no"

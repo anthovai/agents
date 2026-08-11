@@ -1,1 +1,0 @@
-backend http://host.docker.internal:11434/v1, off-premises=False

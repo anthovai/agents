@@ -1,1 +1,1 @@
-learner: [26, 75, 71]  learner2: [19, 28, 72]
+learner: [20, 70, 65]  learner2: [49, 45, 72]

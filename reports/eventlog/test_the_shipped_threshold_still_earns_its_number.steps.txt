@@ -1,1 +1,0 @@
-at MIN_SCORE=0.14: recall 94.7%, top-1 89.5%, false-accept 0.0%
