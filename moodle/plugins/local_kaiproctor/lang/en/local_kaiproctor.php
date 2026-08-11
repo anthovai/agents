@@ -254,14 +254,14 @@ $string['ai:nofindings'] = 'Nothing looked damaged.';
 
 // The navigation assistant.
 $string['ask:title'] = 'Ask about this site';
-$string['ask:intro'] = 'Ask where something is and you will get the link. It only knows the pages you can already open, and it will say so when it cannot find one.';
-$string['ask:placeholder'] = 'e.g. where is the safety lesson?';
+$string['ask:intro'] = 'Ask where something is and you will get the link. It can also tell you your own marks and attempts. It only knows the pages you can already open, and it will say so when it cannot find one.';
+$string['ask:placeholder'] = 'e.g. where is the safety lesson? / did I pass?';
 $string['ask:send'] = 'Ask';
 $string['ask:thinking'] = 'Looking...';
 $string['ask:nomatch'] = 'Nothing on this site matches that. Try naming the course or the activity.';
 $string['ask:notavailable'] = 'The assistant is switched off.';
 $string['ask:sources'] = 'Pages this came from';
-$string['ask:note'] = 'Answers are built only from pages you can open. It cannot see your grades or your results, and it does not decide anything.';
+$string['ask:note'] = 'Answers are built only from pages you can open, and from your own record on them. It cannot see anybody else\'s results, it never works a figure out for itself, and it does not decide anything.';
 $string['ask:page:enrol'] = 'Enrol your face';
 $string['ask:page:enrol_desc'] = 'Register your face before a monitored lesson or exam.';
 $string['ask:page:lesson'] = 'Monitored lesson';
@@ -282,7 +282,7 @@ $string['ai:task:summarise'] = 'Model for sitting summaries';
 $string['ai:task:ask'] = 'Model for the navigation assistant';
 $string['ai:task:questions'] = 'Model for proof-reading imported questions';
 $string['ai:onpremises'] = 'The model runs on infrastructure you control. No learner activity leaves your network.';
-$string['ai:offpremises'] = 'The model endpoint is outside your network. Learner activity — event names and counts, never images or face measurements — will be sent to it. Check this is covered by your consent document and your data processing agreements before switching it on.';
+$string['ai:offpremises'] = 'The model endpoint is outside your network. Learner activity — event names and counts, and a learner\'s own marks and attempts when they ask about them, but never images or face measurements — will be sent to it. Check this is covered by your consent document and your data processing agreements before switching it on.';
 $string['ai:brokenwhileon'] = 'AI assistance is on, but no model is answering. Every attempt will fail until this is fixed.';
-$string['ai:note'] = 'The service never receives an image, a clip, a face measurement or a name; it refuses payloads that carry them. Nothing it returns decides anything.';
+$string['ai:note'] = 'The service never receives an image, a clip, a face measurement or a name; it refuses payloads that carry them. A learner\'s own marks are sent only when that learner asks about them, and never anybody else\'s. Nothing it returns decides anything.';
 $string['ai:settingslink'] = 'Plugin settings';

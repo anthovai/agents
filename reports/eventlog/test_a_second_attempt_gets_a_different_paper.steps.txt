@@ -1,1 +1,1 @@
-attempt 1: [20, 70, 65]  attempt 2: [56, 76, 72]
+attempt 1: [49, 15, 30]  attempt 2: [38, 45, 24]

@@ -1,0 +1,2 @@
+ask for the mark on the proctored quiz
+answer shown: ข้อสอบทดสอบระบบคุมสอบมีคะแนนเต็ม 10 คะแนน คุณได้รับ 8 คะแนน คิดเป็นร้อยละ 80 ลิงก์ข้อสอบ: http://localhost:8080/mod/quiz/view.php?id=8

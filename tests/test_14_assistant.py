@@ -356,3 +356,109 @@ def test_a_vendor_endpoint_is_not_mistaken_for_your_own_hardware():
     assert moodle("ai-islocal", "http://host.docker.internal:11434/v1").strip() == "yes"
     assert moodle("ai-islocal", "http://ai-service:9100").strip() == "yes"
     assert moodle("ai-islocal", "https://api.openai.com/v1").strip() == "no"
+
+
+# --------------------------------------------------------------------------
+# Exams and marks
+# --------------------------------------------------------------------------
+
+@pytest.fixture
+def a_graded_quiz():
+    """Put a known mark in the gradebook so the answers can be checked.
+
+    Written through grade_update, so what the assistant reads is the same
+    gradebook the learner sees on the grade report. Returns the figures the
+    answer is allowed to contain.
+    """
+    moodle("seed-grade", "learner", "8", "8")
+    moodle("set-passmark", "8", "6")
+    moodle("ask-purge-index")
+    return {"grade": "8", "outof": "10", "percent": "80", "passmark": "6"}
+
+
+def test_a_learner_is_told_their_own_mark(session, assistant_on, a_graded_quiz):
+    """The feature, from the box on the page."""
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
+
+    session.note("ask for the mark on the proctored quiz")
+    outcome = ask_on_the_page(session, "ข้อสอบทดสอบระบบคุมสอบได้กี่คะแนน")
+    assert outcome == "answer", \
+        f"no answer: {session.page.inner_text('[data-region=problem]')}"
+
+    answer = session.page.inner_text('[data-region="answer-text"]')
+    session.note(f"answer shown: {answer}")
+    assert a_graded_quiz["grade"] in answer, "the mark is not in the answer"
+    assert a_graded_quiz["outof"] in answer, "the answer does not say out of what"
+
+
+def test_pass_or_fail_is_reported_as_the_gradebook_has_it(session, assistant_on,
+                                                          a_graded_quiz):
+    """Reporting a pass is not the same act as the reviewer deciding whether
+    somebody cheated. The pass mark is a rule a teacher set and the gradebook
+    already applied; repeating its answer is reporting, not judging."""
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
+
+    session.note("ask whether they passed")
+    outcome = ask_on_the_page(session, "ฉันสอบผ่านไหม")
+    assert outcome == "answer"
+
+    answer = session.page.inner_text('[data-region="answer-text"]')
+    session.note(f"answer shown: {answer}")
+    assert "ผ่าน" in answer, "the answer does not say whether they passed"
+
+
+def test_the_assistant_will_not_do_arithmetic_on_a_mark(session, assistant_on,
+                                                        a_graded_quiz):
+    """8 out of 10, asked how many marks short of full: the answer is two, and
+    the assistant must not be the one to work that out.
+
+    Not pedantry. A figure a model calculated cannot be traced back to the
+    gradebook, and it is the figure a learner quotes in a complaint. Either it
+    declines, or the service drops the answer — both are acceptable; producing
+    an unsourced number is not.
+    """
+    session.login("learner")
+    session.goto("/local/kaiproctor/ask.php")
+    session.beat(1.5)
+
+    session.note("invite it to subtract")
+    outcome = ask_on_the_page(
+        session, "ข้อสอบทดสอบระบบคุมสอบ ผมขาดอีกกี่คะแนนถึงจะได้เต็ม")
+
+    if outcome == "problem":
+        shown = session.page.inner_text('[data-region="problem"]')
+        session.note(f"the service refused the answer: {shown[:150]}")
+        return
+
+    answer = session.page.inner_text('[data-region="answer-text"]')
+    session.note(f"answer shown: {answer}")
+    # Whatever it said, every figure in it has to be one it was given.
+    supplied = set(a_graded_quiz.values())
+    import re
+    prose = re.sub(r"https?://\S+", " ", answer)
+    for number in re.findall(r"\d+", prose):
+        assert number in supplied, f"{number} was worked out, not supplied"
+
+
+def test_only_the_asking_learners_record_is_ever_sent(session, a_graded_quiz):
+    """Checked on the payload rather than on the prose: the model cannot
+    disclose what it was never given, and this is the place that holds."""
+    facts = json.loads(moodle("ask-facts", "learner", "ฉันสอบผ่านไหม"))
+    session.note(f"what would be disclosed: {json.dumps(facts, ensure_ascii=False)[:300]}")
+
+    flat = json.dumps(facts, ensure_ascii=False).lower()
+    for forbidden in ["classaverage", "cohort", "otherlearner", "email",
+                      "username", "firstname", "userid"]:
+        assert forbidden not in flat, f"the payload carries {forbidden}"
+
+    # learner2 has their own mark on the same quiz; it must be nowhere here.
+    moodle("seed-grade", "learner2", "8", "3")
+    moodle("ask-purge-index")
+    again = json.dumps(json.loads(moodle("ask-facts", "learner", "ฉันสอบผ่านไหม")))
+    assert '"grade": 3' not in again and '"grade":3' not in again, \
+        "another learner's mark reached the payload"
+    session.note("learner2's mark is absent from learner's payload")

@@ -1,5 +1,5 @@
 sign in and open the lesson
 run the monitor with a three-second identity interval and presence off
-check rows written server-side: 05:26:29  ctx=14   identity   absent         sim=NULL     live=NULL     threshold='0.3630'
-05:26:32  ctx=14   identity   absent         sim=NULL     live=NULL     threshold='0.3630'
-05:26:35  ctx=14   identity   absent         sim=NULL     live=NULL     threshold='0.3630'
+check rows written server-side: 06:41:51  ctx=14   identity   absent         sim=NULL     live=NULL     threshold='0.3630'
+06:41:54  ctx=14   identity   absent         sim=NULL     live=NULL     threshold='0.3630'
+06:41:57  ctx=14   identity   absent         sim=NULL     live=NULL     threshold='0.3630'

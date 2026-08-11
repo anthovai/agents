@@ -18,6 +18,32 @@ from fastapi.responses import JSONResponse
 
 from . import config, contract, guard, llm, prompts
 
+# Thai labels for the learner's own record.
+#
+# The model copies what it is shown, so what it is shown has to be a phrase a
+# learner would recognise. Field names in an answer are a schema leaking
+# through the product.
+FACT_LABELS = {
+    "opens": "เปิดให้สอบ",
+    "closes": "ปิดรับ",
+    "timelimitminutes": "เวลาทำข้อสอบ (นาที)",
+    "attemptsallowed": "จำนวนครั้งที่สอบได้",
+    "attemptsused": "สอบไปแล้ว (ครั้ง)",
+    "grade": "คะแนนที่ได้",
+    "gradeoutof": "คะแนนเต็ม",
+    "gradepercent": "คิดเป็นร้อยละ",
+    "passmark": "เกณฑ์ผ่าน",
+    "passed": "ผลการตัดสิน",
+    "notattempted": "สถานะ",
+}
+
+# Booleans read as prose or they read as "True", which is neither Thai nor an
+# answer. Written out here so the model has the finished words to copy.
+FACT_BOOLEANS = {
+    "passed": {True: "ผ่านเกณฑ์", False: "ยังไม่ผ่านเกณฑ์"},
+    "notattempted": {True: "ยังไม่ได้ทำข้อสอบนี้", False: ""},
+}
+
 app = FastAPI(title="KAISER Proctor AI reviewer", version=config.SERVICE_VERSION)
 
 
@@ -134,21 +160,60 @@ def ask(body: dict) -> JSONResponse | dict:
         return _failed("no_context",
                        "no pages were supplied, so there is nothing to answer from", 422)
 
-    pages = "\n".join(
-        f"{n + 1}. [{item['kind']}] {item['title']}\n   ลิงก์: {item['url']}"
-        + (f"\n   {item['summary']}" if item["summary"] else "")
-        for n, item in enumerate(asked["context"])
-    )
+    def describe(index: int, item: dict) -> str:
+        lines = [f"{index + 1}. [{item['kind']}] {item['title']}",
+                 f"   ลิงก์: {item['url']}"]
+        if item["summary"]:
+            lines.append(f"   {item['summary']}")
+        # The learner's own record, one fact per line and already finished —
+        # every percentage was computed by the caller, so the model has no
+        # reason to do arithmetic and no excuse for having done any.
+        #
+        # Labelled in the language of the answer rather than by field name:
+        # a model handed "gradeoutof: 10" copies that string into its reply,
+        # and a learner should not have to read our schema.
+        for key, fact in (item.get("facts") or {}).items():
+            if isinstance(fact, bool):
+                fact = FACT_BOOLEANS[key][fact]
+            lines.append(f"   {FACT_LABELS.get(key, key)}: {fact}")
+        return "\n".join(lines)
+
+    pages = "\n".join(describe(n, item) for n, item in enumerate(asked["context"]))
     material = f"คำถามของผู้เรียน:\n{asked['question']}\n\nหน้าที่ผู้เรียนเปิดได้:\n{pages}"
 
     allowed = [item["url"] for item in asked["context"]]
 
+    # What the model may put a number to: the figures it was handed, plus any
+    # the learner typed themselves. Deliberately not the rendered page list —
+    # that is numbered, and its links carry ids, and both would license
+    # arithmetic by accident.
+    disclosed = " ".join(
+        [asked["question"]]
+        + [f"{fact}" for item in asked["context"]
+           for fact in (item.get("facts") or {}).values()]
+    )
+
     try:
         content, model = llm.ask(prompts.ASK, material, config.MODEL_ASK)
+
+        # One retry, and the note names the fault so the second attempt is
+        # aimed at it rather than being the same request again.
         if guard.invented_links(content, allowed):
             content, model = llm.ask(prompts.ASK + guard.LINK_NOTE, material, config.MODEL_ASK)
+        elif guard.unsupported_numbers(content, disclosed):
+            content, model = llm.ask(prompts.ASK + guard.NUMBER_NOTE, material,
+                                     config.MODEL_ASK)
     except llm.LlmError as error:
         return _failed(error.code, error.message)
+
+    made_up = guard.unsupported_numbers(content, disclosed)
+    if made_up:
+        # A figure the model worked out itself cannot be traced to the
+        # gradebook, and a learner will quote it in a complaint. Dropping the
+        # answer is the cheaper outcome.
+        return _failed("unsupported_number",
+                       "the model produced figures it was not given: "
+                       + ", ".join(made_up), 502)
 
     invented = guard.invented_links(content, allowed)
     if invented:

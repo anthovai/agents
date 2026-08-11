@@ -285,7 +285,13 @@ def test_the_navigation_guardrails_are_published():
     for guardrail in [
         "Answer only from the list",
         "Copy any link you give exactly as it appears in the list",
-        "Never state or guess a grade",
+        # Grades may now be reported, which makes these the load-bearing ones:
+        # the figure has to be the gradebook's, and reporting it must not turn
+        # into an opinion about it.
+        "copy every number exactly as it appears",
+        "Do not add numbers up, convert them, or work out a percentage",
+        "Do not say a mark is good or bad",
+        "Everything you are given is about the person asking",
     ]:
         assert guardrail in ask_prompt, f"the instruction '{guardrail}' is gone"
 
@@ -296,3 +302,68 @@ def test_a_caller_on_the_previous_contract_still_works():
     response = client.post("/summarise", json={"contract": "1.0", "sitting": a_sitting()})
 
     assert response.json().get("error", {}).get("code") != "contract_mismatch"
+
+
+# --------------------------------------------------------------------------
+# The learner's own record
+# --------------------------------------------------------------------------
+
+def test_only_the_asking_learners_own_facts_have_a_field():
+    """There is no key for another learner, no key for a cohort average and no
+    key for a name. An assistant that can describe one learner to another is a
+    different and much worse product, and the contract is where that is
+    settled rather than in a prompt."""
+    for smuggled in [{"classaverage": 62}, {"otherlearner": "somchai"},
+                     {"cohortrank": 3}, {"name": "..."}]:
+        with pytest.raises(contract.ContractError) as caught:
+            contract.ask({"question": "ผมได้เท่าไหร่",
+                          "context": [a_page(facts=smuggled)]})
+        assert "not part of the contract" in caught.value.problem
+
+
+def test_a_grade_that_was_supplied_survives_intact():
+    asked = contract.ask({"question": "ผมได้เท่าไหร่", "context": [
+        a_page(facts={"grade": 8, "gradeoutof": 10, "gradepercent": 80,
+                      "passmark": 6, "passed": True})]})
+
+    assert asked["context"][0]["facts"]["gradepercent"] == 80
+    assert asked["context"][0]["facts"]["passed"] is True
+
+
+def test_a_page_without_a_record_simply_has_none():
+    """Most pages are not exams. Absent is not an error."""
+    assert contract.ask({"question": "อยู่ไหน",
+                         "context": [a_page()]})["context"][0]["facts"] == {}
+
+
+def test_a_figure_the_model_worked_out_itself_is_caught():
+    """The reason this is enforced and not merely instructed: a number a model
+    calculated cannot be traced back to the gradebook, and a learner will
+    quote it in a complaint."""
+    from app import guard
+    disclosed = "8 10 80 6"
+
+    assert guard.unsupported_numbers("คุณได้ 8 จาก 10 (80%) เกณฑ์ผ่าน 6", disclosed) == []
+    # 10 - 8. Arithmetic, however reasonable.
+    assert guard.unsupported_numbers("ขาดอีก 2 คะแนนถึงจะเต็ม", disclosed) == ["2"]
+
+
+def test_ids_inside_a_link_are_not_mistaken_for_arithmetic():
+    """The first version of the number check compared against the whole
+    rendered prompt, which numbers its list and carries ids in its URLs — so
+    "1" through "8" counted as supplied and real arithmetic went through. Now
+    it compares against the disclosed figures, and links are stripped from the
+    answer because their ids are the link guard's business."""
+    from app import guard
+
+    assert guard.unsupported_numbers(
+        "ดูที่ http://x/mod/quiz/view.php?id=13", "8 10") == []
+
+
+def test_a_localised_digit_is_still_a_digit():
+    """A model that helpfully writes ๘๐ instead of 80 must not slip past a
+    check that only knows Arabic numerals."""
+    from app import guard
+
+    assert guard.unsupported_numbers("ได้ ๘ คะแนน", "8 10") == []
+    assert guard.unsupported_numbers("ได้ ๙๙ คะแนน", "8 10") == ["99"]

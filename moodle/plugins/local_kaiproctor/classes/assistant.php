@@ -38,8 +38,12 @@ class assistant {
      *  admits one in ten only approximates it.
      *
      *  Recompute against questions real learners typed before relying on it:
-     *  19 questions cannot resolve better than about 5 percentage points. */
-    const MIN_SCORE = 0.14;
+     *  25 questions cannot resolve better than about 4 percentage points.
+     *
+     *  Re-measured when grades were added: questions about a result often name
+     *  no page at all ("ยังสอบได้อีกกี่ครั้ง"), so the words for a result now
+     *  reach the quizzes, and the threshold moved from 0.14 to 0.10. */
+    const MIN_SCORE = 0.10;
 
     public static function is_available(): bool {
         return ai_client::is_configured();
@@ -66,18 +70,78 @@ class assistant {
 
         $context = [];
         foreach (array_slice($ranked, 0, self::CONTEXT_SIZE) as $item) {
+            // Fetched now rather than read from the cached index: somebody who
+            // has just finished a quiz must not be told last week's mark.
+            // Only for the few pages an answer will actually use, and only
+            // ever for the person asking.
+            $facts = self::facts_for($item, $userid);
+            if ($facts) {
+                $item['facts'] = $facts;
+            }
+
             // Absolute links, because the answer is prose the learner reads and
             // may copy elsewhere; a bare path stops working the moment it
             // leaves the page.
             $item['url'] = $CFG->wwwroot . $item['url'];
-            // Scoring detail, not something the model has any use for. The
-            // contract would refuse both fields; dropping them here keeps the
-            // refusal for genuine mistakes.
-            unset($item['score'], $item['keywords']);
+            // Scoring and lookup detail, not something the model has any use
+            // for. The contract would refuse these fields; dropping them here
+            // keeps that refusal meaning a genuine mistake.
+            unset($item['score'], $item['keywords'], $item['cmid'], $item['courseid']);
             $context[] = $item;
         }
 
         return ai_client::call('/ask', ['question' => $question, 'context' => $context]);
+    }
+
+    /**
+     * The learner's own record for one page, when there is one to have.
+     *
+     * Quizzes only, for now: a grade and an attempt count are what people ask
+     * about. Nothing here reads another user's row — $userid is the person who
+     * typed the question, and it is the only user id that reaches the
+     * gradebook.
+     *
+     * @param array $item an index entry
+     * @param int $userid the person asking
+     * @return array|null
+     */
+    protected static function facts_for(array $item, int $userid): ?array {
+        if (($item['kind'] ?? '') !== 'quiz' || empty($item['cmid'])) {
+            return null;
+        }
+
+        try {
+            $modinfo = get_fast_modinfo((int) $item['courseid'], $userid);
+            $cm = $modinfo->get_cm((int) $item['cmid']);
+        } catch (\moodle_exception $error) {
+            // The activity moved or vanished since the index was cached. A
+            // navigation answer without the grade attached is still useful,
+            // and better than a page that fails because of a stale cache.
+            return null;
+        }
+
+        // Second check, cheap and worth it: uservisible was true when the
+        // index was built, which is not the same as now.
+        if (!$cm->uservisible) {
+            return null;
+        }
+
+        return learner_facts::for_quiz($cm, $userid);
+    }
+
+    /**
+     * The same lookup, reachable from the test-support CLI.
+     *
+     * A named seam rather than making facts_for() public: what is disclosed to
+     * the model is worth a test, and the alternative is widening the real API
+     * so a test can reach it.
+     *
+     * @param array $item
+     * @param int $userid
+     * @return array|null
+     */
+    public static function facts_for_testing(array $item, int $userid): ?array {
+        return self::facts_for($item, $userid);
     }
 
     /**

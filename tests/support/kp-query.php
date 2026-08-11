@@ -526,6 +526,57 @@ switch ($command) {
         echo \local_kaiproctor\ai_console::is_local($argv[2]) ? "yes\n" : "no\n";
         break;
 
+    case 'seed-grade':
+        // seed-grade <username> <cmid> <grade> — put a mark in the gradebook
+        // without sitting the exam.
+        //
+        // Written through grade_update rather than by inserting a row, so what
+        // the assistant reads is the same gradebook the learner sees on the
+        // grade report. An assistant that disagrees with the grade report is
+        // worse than one that says nothing.
+        require_once($CFG->libdir . '/gradelib.php');
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[3], 0, false, MUST_EXIST);
+        $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
+
+        grade_update('mod/quiz', $cm->course, 'mod', 'quiz', $quiz->id, 0, [
+            'userid' => $user->id,
+            'rawgrade' => (float) $argv[4],
+        ]);
+        echo "graded {$argv[2]} {$argv[4]}/{$quiz->grade} on cmid {$argv[3]}\n";
+        break;
+
+    case 'set-passmark':
+        // set-passmark <cmid> <mark> — the teacher's rule, which the gradebook
+        // applies. The assistant reports its answer; it does not decide it.
+        require_once($CFG->libdir . '/gradelib.php');
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);
+        $item = \grade_item::fetch(['itemtype' => 'mod', 'itemmodule' => 'quiz',
+            'iteminstance' => $cm->instance, 'courseid' => $cm->course]);
+        $item->gradepass = (float) $argv[3];
+        $item->update();
+        echo "pass mark {$argv[3]} on cmid {$argv[2]}\n";
+        break;
+
+    case 'ask-facts':
+        // ask-facts <username> <question> — exactly the payload that would go
+        // to the model, so a test can read what is disclosed without a model
+        // being involved.
+        $user = kp_user($argv[2]);
+        $ranked = \local_kaiproctor\assistant::rank($argv[3] ?? '',
+            \local_kaiproctor\site_index::for_user((int) $user->id));
+        $out = [];
+        foreach (array_slice($ranked, 0, \local_kaiproctor\assistant::CONTEXT_SIZE) as $item) {
+            $out[] = [
+                'title' => $item['title'],
+                'kind' => $item['kind'],
+                'facts' => \local_kaiproctor\assistant::facts_for_testing($item, (int) $user->id),
+            ];
+        }
+        echo json_encode($out, JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
     case 'ask-index':
         // Every page the assistant would consider for this learner. The test
         // that matters reads this as one user and checks another user's course

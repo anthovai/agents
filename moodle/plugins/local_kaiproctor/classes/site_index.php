@@ -107,6 +107,12 @@ class site_index {
                     'kind' => $kind,
                     'summary' => format_string($course->fullname),
                     'keywords' => self::keywords($kind),
+                    // Kept so grades can be looked up later for the handful of
+                    // pages an answer actually uses. They are deliberately not
+                    // stored here: this index is cached, and a learner who has
+                    // just finished a quiz must not be told last week's mark.
+                    'cmid' => (int) $cm->id,
+                    'courseid' => (int) $course->id,
                 ];
             }
         }
@@ -129,7 +135,7 @@ class site_index {
         return [
             'course' => 'คอร์ส หลักสูตร วิชา รายวิชา course',
             'section' => 'บท หัวข้อ ตอน section',
-            'quiz' => 'ข้อสอบ แบบทดสอบ สอบ ทดสอบ quiz exam',
+            'quiz' => 'ข้อสอบ แบบทดสอบ สอบ ทดสอบ คะแนน ผลสอบ ผ่าน เกณฑ์ ครั้ง quiz exam grade score',
             'lesson' => 'บทเรียน เรียน lesson',
             'video' => 'วิดีโอ คลิป หนัง วีดีโอ video',
             'resource' => 'ไฟล์ เอกสาร ดาวน์โหลด file document',

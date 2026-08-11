@@ -228,6 +228,22 @@ _ALLOWED_KINDS = {
     "resource", "tool",
 }
 
+# What may be said about the asking learner's own record.
+#
+# Enumerated rather than shape-checked, unlike the policy snapshot: policy keys
+# differ between platforms and are settings, while these are somebody's exam
+# results. A field that appears here is a field somebody decided to disclose.
+#
+# Everything is about the person asking. There is no key for another learner,
+# no key for a cohort average, and no key for a name — an assistant that can
+# describe one learner to another is a different and much worse product.
+_ALLOWED_FACTS = {
+    "opens", "closes", "timelimitminutes",
+    "attemptsallowed", "attemptsused",
+    "grade", "gradeoutof", "gradepercent",
+    "passmark", "passed", "notattempted",
+}
+
 
 def ask(payload: Any) -> dict[str, Any]:
     """Validate a navigation question and the pages offered as context."""
@@ -253,7 +269,7 @@ def ask(payload: Any) -> dict[str, Any]:
         where = f"ask.context[{index}]"
         if not isinstance(item, dict):
             raise ContractError(where, "must be an object")
-        unknown = sorted(set(item) - {"title", "url", "kind", "summary"})
+        unknown = sorted(set(item) - {"title", "url", "kind", "summary", "facts"})
         if unknown:
             raise ContractError(f"{where}.{unknown[0]}", "is not part of the contract")
 
@@ -271,6 +287,36 @@ def ask(payload: Any) -> dict[str, Any]:
             "url": url,
             "kind": kind,
             "summary": _text(item.get("summary") or "", f"{where}.summary", MAX_SUMMARY),
+            "facts": _facts(item.get("facts"), f"{where}.facts"),
         })
 
     return {"question": question, "context": out}
+
+
+def _facts(value: Any, path: str) -> dict[str, Any]:
+    """The asking learner's own record for one page.
+
+    Values are scalars the caller has already finished computing — including
+    any percentage. The model is never asked to do arithmetic on somebody's
+    result, because a figure it worked out itself is a figure nobody can trace
+    back to the gradebook.
+    """
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ContractError(path, "must be an object")
+
+    unknown = sorted(set(value) - _ALLOWED_FACTS)
+    if unknown:
+        raise ContractError(f"{path}.{unknown[0]}", "is not part of the contract")
+
+    out: dict[str, Any] = {}
+    for key, fact in value.items():
+        where = f"{path}.{key}"
+        if isinstance(fact, bool) or isinstance(fact, (int, float)):
+            out[key] = fact
+        elif isinstance(fact, str):
+            out[key] = _text(fact, where, 60)
+        else:
+            raise ContractError(where, "must be a number, boolean or short string")
+    return out
