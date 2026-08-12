@@ -294,3 +294,6 @@ $string['enrol:toosmall'] = 'Your face is too small in the picture. Move closer 
 $string['enrol:multiplefaces'] = 'More than one face is in the picture. Make sure only you are in frame — a photograph or screen behind you counts too.';
 $string['enrol:spoof'] = 'The camera could not confirm a live person. Enrol using your own camera, looking straight at it, rather than holding up a photograph or another screen.';
 $string['hint:toosmall'] = 'Move closer to the camera.';
+// The assistant's launcher, on every page.
+$string['ask:icon'] = '?';
+$string['ask:openfull'] = 'Open the full page';

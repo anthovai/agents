@@ -1,3 +1,3 @@
 generate a sitting
 model behind the service: qwen2.5:7b-instruct at http://host.docker.internal:11434/v1
-summary: {'ok': True, 'summary': 'การสอบมีเวลาทั้งหมด 0 นาที โดยไม่มีเหตุการณ์หรือข้อมูลผิดปกติที่บันทึกไว้ ผู้ตรวจสอบไม่จำเป็นต้องให้ความสนใจเพิ่มเติมเนื่องจากไม่มีข้อมูลที่น่าสงสัย.', 'model': 'qwen2.5:7b-instruct', 'contract': '1.1', 'reviewed': {'status': 'active', 'reason': None, 'minutes': None, 'checks': [], 'events': {'monitor_started': 1}, 'evidence': [], 'policy': {'presenceminutes': 2, 'verifymi
+summary: {'ok': True, 'summary': 'การสอบมีความยาวไม่เกิน 2 นาที โดยไม่มีเหตุการณ์หรือข้อมูลผิดปกติใดๆ ให้พิจารณา ผู้ตรวจสอบอาจไม่จำเป็นต้องทำการวิเคราะห์เพิ่มเติม เนื่องจากไม่มีข้อมูลที่ชัดเจนเกี่ยวกับพฤติกรรมที่ผิดปกติหรือการละเมิดนโยบาย.', 'model': 'qwen2.5:7b-instruct', 'contract': '1.1', 'reviewed': {'status': 'active', 'reason': None, 'minutes': None, 'checks': [], 'events': {'monitor_started': 1}, 'e

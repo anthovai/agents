@@ -1,2 +1,2 @@
 invite it to subtract
-answer shown: คะแนนเต็มคือ 10 คะแนน และคุณได้ 8 คะแนน ดังนั
+the service refused the answer: the model produced figures it was not given: 2

@@ -1,3 +1,3 @@
 sign in and start the lesson
 reload and start again
-sittings after reload: [{'id': 525, 'status': 'active', 'reason': None, 'attemptid': None, 'timestart': 1786469488, 'timeend': None, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]
+sittings after reload: [{'id': 575, 'status': 'active', 'reason': None, 'attemptid': None, 'timestart': 1786523687, 'timeend': None, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]

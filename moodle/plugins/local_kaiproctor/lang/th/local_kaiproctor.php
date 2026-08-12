@@ -278,3 +278,6 @@ $string['enrol:toosmall'] = 'ใบหน้าเล็กเกินไปใ
 $string['enrol:multiplefaces'] = 'มีใบหน้ามากกว่าหนึ่งในภาพ ให้มีคุณอยู่คนเดียวในกรอบ — ภาพถ่ายหรือจอที่อยู่ด้านหลังก็นับด้วย';
 $string['enrol:spoof'] = 'ยืนยันไม่ได้ว่าเป็นคนจริง ให้ลงทะเบียนด้วยกล้องของคุณเองและมองตรงเข้ากล้อง ไม่ใช่ถือภาพถ่ายหรือจออื่นมาส่อง';
 $string['hint:toosmall'] = 'ขยับเข้าใกล้กล้อง';
+// The assistant's launcher, on every page.
+$string['ask:icon'] = '?';
+$string['ask:openfull'] = 'เปิดหน้าเต็ม';

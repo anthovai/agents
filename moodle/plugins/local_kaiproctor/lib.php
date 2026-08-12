@@ -3,56 +3,14 @@
 //
 // Without these the pages exist but are only reachable by typing a URL, which
 // is not a usable enrolment flow for a learner.
+//
+// The attention monitor used to be started from local_kaiproctor_before_footer()
+// here. It now lives in classes/hooks.php: once a component registers a callback
+// on before_footer_html_generation, Moodle stops calling that component's legacy
+// before_footer function — so adding the assistant's launcher silently switched
+// monitoring off, and three tests caught it.
 
 defined('MOODLE_INTERNAL') || die();
-
-/**
- * Attach the attention monitor to any activity that has been flagged as
- * monitored.
- *
- * This is the whole integration with mod_interactivevideo: that plugin does
- * the interactive video, we do the watching, and neither knows about the
- * other's internals. Nothing here is specific to it — flag a page, a URL or
- * an H5P activity and the same thing happens.
- */
-function local_kaiproctor_before_footer() {
-    global $PAGE, $USER;
-
-    if (!isloggedin() || isguestuser() || CLI_SCRIPT) {
-        return;
-    }
-
-    $cm = $PAGE->cm;
-    if (!$cm || !\local_kaiproctor\monitored::is_supported($cm->modname)) {
-        return;
-    }
-
-    // Only the learner's own view is monitored. A teacher opening the activity
-    // to check it is not sitting an assessment.
-    if (has_capability('moodle/course:manageactivities', $PAGE->context)) {
-        return;
-    }
-
-    if (!\local_kaiproctor\monitored::is_monitored($cm->id)) {
-        return;
-    }
-
-    $PAGE->requires->js_call_amd('local_kaiproctor/monitor_activity', 'init', [[
-        'contextid' => $PAGE->context->id,
-        'enrolled' => \local_kaiproctor\enrolment::has_enrolled($USER->id),
-        'returnurl' => (new moodle_url('/course/view.php', ['id' => $cm->course]))->out(false),
-        'strictlockdown' => (bool) get_config('local_kaiproctor', 'strictlockdown'),
-        'blurallowance' => (int) get_config('local_kaiproctor', 'blurallowance'),
-        'presenceminutes' => (float) get_config('local_kaiproctor', 'presenceminutes'),
-        'verifyminutes' => (float) get_config('local_kaiproctor', 'verifyminutes'),
-        'clickconfirmminutes' => (float) get_config('local_kaiproctor', 'clickconfirmminutes'),
-        'clickconfirmgracesec' => (float) get_config('local_kaiproctor', 'clickconfirmgracesec'),
-        'mouseidleminutes' => (float) get_config('local_kaiproctor', 'mouseidleminutes'),
-        'randomclipsperhour' => (float) get_config('local_kaiproctor', 'randomclipsperhour'),
-        'clipseconds' => (float) get_config('local_kaiproctor', 'clipseconds'),
-        'desktopnotification' => (bool) get_config('local_kaiproctor', 'desktopnotification'),
-    ]]);
-}
 
 /**
  * Offer staff a "monitor this activity" link on activities we can watch.
@@ -166,18 +124,8 @@ function local_kaiproctor_extend_navigation(global_navigation $navigation) {
         new pix_icon('i/user', '')
     );
 
-    // Only when it is switched on. A menu item that leads to "this is turned
-    // off" teaches people to stop reading the menu.
-    if (\local_kaiproctor\assistant::is_available()) {
-        $node->add(
-            get_string('ask:title', 'local_kaiproctor'),
-            new moodle_url('/local/kaiproctor/ask.php'),
-            navigation_node::TYPE_CUSTOM,
-            null,
-            'local_kaiproctor_ask',
-            new pix_icon('i/questions', '')
-        );
-    }
+    // No menu entry for the assistant. It has a launcher on every page now, and
+    // a menu item pointing at the same thing is a second door to one room.
 
     // The lesson page is only offered once a video exists to play.
     if (trim((string) get_config('local_kaiproctor', 'lessonvideourl')) !== '') {

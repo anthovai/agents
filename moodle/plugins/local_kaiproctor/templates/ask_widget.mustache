@@ -1,0 +1,60 @@
+{{!
+    The assistant, as a button on every page.
+
+    Deliberately small and closed by default. It sits above Moodle's own help
+    button rather than on top of it, and it is the only thing this plugin puts
+    on pages it does not own — a plugin that decorates every page in a site
+    has to earn each pixel.
+}}
+<div class="kaiproctor-assistant" data-region="assistant-widget" data-open="0">
+
+    <button type="button" class="btn btn-primary rounded-circle shadow"
+            data-action="assistant-toggle"
+            style="position: fixed; right: 1.25rem; bottom: 5rem; z-index: 1040;
+                   width: 3rem; height: 3rem; padding: 0;"
+            aria-expanded="false"
+            aria-controls="kaiproctor-assistant-panel"
+            title="{{#str}}ask:title, local_kaiproctor{{/str}}">
+        <span aria-hidden="true">{{#str}}ask:icon, local_kaiproctor{{/str}}</span>
+        <span class="sr-only">{{#str}}ask:title, local_kaiproctor{{/str}}</span>
+    </button>
+
+    <div id="kaiproctor-assistant-panel" class="card shadow"
+         data-region="assistant-panel"
+         style="position: fixed; right: 1.25rem; bottom: 9.5rem; z-index: 1040;
+                width: min(22rem, calc(100vw - 2.5rem)); max-height: 70vh;
+                display: flex; flex-direction: column;"
+         hidden>
+
+        <div class="card-header d-flex align-items-center justify-content-between py-2">
+            <strong class="small">{{#str}}ask:title, local_kaiproctor{{/str}}</strong>
+            <button type="button" class="btn btn-sm btn-link p-0"
+                    data-action="assistant-close"
+                    aria-label="{{#str}}closebuttontitle{{/str}}">&times;</button>
+        </div>
+
+        <div class="card-body py-2" data-region="conversation"
+             style="overflow-y: auto;">
+            <p class="small text-muted mb-0" data-region="intro">
+                {{#str}}ask:intro, local_kaiproctor{{/str}}
+            </p>
+        </div>
+
+        <div class="card-footer py-2">
+            <form data-action="assistant-form" class="d-flex gap-1">
+                <label class="sr-only" for="kaiproctor-assistant-input">
+                    {{#str}}ask:title, local_kaiproctor{{/str}}
+                </label>
+                <input type="text" class="form-control form-control-sm"
+                       id="kaiproctor-assistant-input" data-region="question"
+                       autocomplete="off"
+                       placeholder="{{#str}}ask:placeholder, local_kaiproctor{{/str}}">
+                <button type="submit" class="btn btn-sm btn-primary"
+                        data-action="assistant-send">
+                    {{#str}}ask:send, local_kaiproctor{{/str}}
+                </button>
+            </form>
+            <a href="{{fullpageurl}}" class="small">{{#str}}ask:openfull, local_kaiproctor{{/str}}</a>
+        </div>
+    </div>
+</div>

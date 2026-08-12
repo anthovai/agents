@@ -477,3 +477,44 @@ def test_only_the_asking_learners_record_is_ever_sent(session, a_graded_quiz):
     assert '"grade": 3' not in again and '"grade":3' not in again, \
         "another learner's mark reached the payload"
     session.note("learner2's mark is absent from learner's payload")
+
+
+# --------------------------------------------------------------------------
+# The launcher, on every page
+# --------------------------------------------------------------------------
+
+def test_the_assistant_can_be_opened_from_any_page(session, assistant_on):
+    """A learner who cannot find something is already on the wrong page.
+
+    Sending them to a separate page to ask is asking them to navigate their way
+    out of a navigation problem, so the assistant opens in place.
+    """
+    session.login("learner")
+    session.goto("/course/view.php?id=2")
+    session.beat(1.5)
+
+    assert session.page.query_selector('[data-action="assistant-toggle"]'), \
+        "no way to open the assistant from a course page"
+    assert not session.page.is_visible('[data-region="assistant-panel"]'), \
+        "the panel is open before anybody asked for it"
+
+    session.note("open it from the course page")
+    session.page.click('[data-action="assistant-toggle"]')
+    session.beat(1.5)
+    assert session.page.is_visible('[data-region="assistant-panel"]')
+
+    session.note("close it again")
+    session.page.click('[data-action="assistant-close"]')
+    session.beat(1)
+    assert not session.page.is_visible('[data-region="assistant-panel"]')
+
+
+def test_the_launcher_is_absent_when_the_assistant_is_off(session, assistant_off):
+    """It is on every page in the site, so it has to disappear completely when
+    switched off rather than open onto an apology."""
+    session.login("learner")
+    session.goto("/course/view.php?id=2")
+    session.beat(1.5)
+
+    assert not session.page.query_selector('[data-action="assistant-toggle"]'), \
+        "the launcher is on the page with the assistant switched off"
