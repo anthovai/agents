@@ -103,13 +103,6 @@ if ($hassiteconfig) {
         1
     ));
 
-    $settings->add(new admin_setting_configtext(
-        'local_kaiproctor/lessonvideourl',
-        get_string('settings:lessonvideourl', 'local_kaiproctor'),
-        get_string('settings:lessonvideourl_desc', 'local_kaiproctor'),
-        '',
-        PARAM_URL
-    ));
 
     $settings->add(new admin_setting_heading(
         'local_kaiproctor/ai',
@@ -128,7 +121,7 @@ if ($hassiteconfig) {
         'local_kaiproctor/aibaseurl',
         get_string('settings:aibaseurl', 'local_kaiproctor'),
         get_string('settings:aibaseurl_desc', 'local_kaiproctor'),
-        'http://llm-gateway:4000/v1',
+        'http://ai-service:9100',
         PARAM_URL
     ));
 

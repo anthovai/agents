@@ -691,6 +691,27 @@ switch ($command) {
         echo "\n";
         break;
 
+    case 'cm-context-id':
+        // cm-context-id <cmid> — any module, unlike 'context-id' which only
+        // knows about quizzes. A sitting on a monitored activity is recorded
+        // in that activity's context, so that is where its report lives.
+        echo context_module::instance((int) $argv[2])->id . "
+";
+        break;
+
+    case 'kaivideo-cmid-monitored':
+        // The activity the proctoring tests use: a video with monitoring
+        // switched on and no questions of its own.
+        foreach ($DB->get_records('kaivideo', [], 'id ASC') as $candidate) {
+            $cm = get_coursemodule_from_instance('kaivideo', $candidate->id);
+            if ($cm && \local_kaiproctor\monitored::is_monitored((int) $cm->id)) {
+                echo $cm->id . "\n";
+                exit(0);
+            }
+        }
+        fwrite(STDERR, 'no monitored kaivideo activity' . PHP_EOL);
+        exit(1);
+
     case 'kaivideo-cmid':
         // kaivideo-cmid <file|youtube> — look the activity up rather than
         // hard-coding a course-module id, which changes whenever the demo

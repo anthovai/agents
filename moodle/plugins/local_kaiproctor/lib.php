@@ -127,18 +127,6 @@ function local_kaiproctor_extend_navigation(global_navigation $navigation) {
     // No menu entry for the assistant. It has a launcher on every page now, and
     // a menu item pointing at the same thing is a second door to one room.
 
-    // The lesson page is only offered once a video exists to play.
-    if (trim((string) get_config('local_kaiproctor', 'lessonvideourl')) !== '') {
-        $node->add(
-            get_string('lesson:title', 'local_kaiproctor'),
-            new moodle_url('/local/kaiproctor/lesson.php'),
-            navigation_node::TYPE_CUSTOM,
-            null,
-            'local_kaiproctor_lesson',
-            new pix_icon('i/course', '')
-        );
-    }
-
     if (has_capability('local/kaiproctor:manage', context_system::instance())) {
         $node->add(
             get_string('stats:title', 'local_kaiproctor'),

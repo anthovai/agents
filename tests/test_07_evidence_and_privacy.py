@@ -5,17 +5,21 @@ everybody else, and gone when its retention expires.
 """
 from __future__ import annotations
 
-from conftest import moodle
+from conftest import moodle, open_monitored
 
 
-def _capture_some_evidence(session) -> None:
-    """Leave a violation photograph behind on the lesson page."""
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=20_000)
+def _capture_some_evidence(session) -> int:
+    """Leave a violation photograph behind, and say where it was left.
+
+    The report is per-context. A sitting on a monitored activity belongs to
+    that activity's context, not to the learner's user context — which is
+    where the old standalone lesson page put it.
+    """
+    cmid = open_monitored(session)
     session.beat(1.5)
     session.page.evaluate("() => window.dispatchEvent(new Event('blur'))")
     session.beat(3)
+    return cmid
 
 
 def test_the_report_shows_checks_evidence_and_signals(session, clean_learner):
@@ -24,9 +28,9 @@ def test_the_report_shows_checks_evidence_and_signals(session, clean_learner):
 
     session.note("sign in as the learner and generate some evidence")
     session.login("learner")
-    _capture_some_evidence(session)
+    cmid = _capture_some_evidence(session)
 
-    context_id = moodle("user-context-id", "learner")
+    context_id = moodle("cm-context-id", str(cmid)).strip()
     user_id = moodle("user-id", "learner")
 
     session.note("the learner opens their own evidence report")
@@ -34,7 +38,10 @@ def test_the_report_shows_checks_evidence_and_signals(session, clean_learner):
     session.beat(2)
 
     text = session.body_text()
-    assert "หลักฐานการคุมสอบ" in text
+    # The report's own content, not the page heading. In a module context the
+    # theme puts the course name in the heading, so asserting on that was
+    # testing Boost rather than this page.
+    assert "ผลตรวจตัวตนและการมีตัวตน" in text, "the checks table is missing"
     assert "สัญญาณการเฝ้าดู" in text
     assert "window_blur" in text
     # The image itself has to render, not just a row saying one exists.
@@ -70,8 +77,8 @@ def test_one_learner_cannot_read_another_learners_evidence(session, clean_learne
 
     session.note("generate evidence as the first learner")
     session.login("learner")
-    _capture_some_evidence(session)
-    victim_context = moodle("user-context-id", "learner")
+    victim_context = moodle("cm-context-id",
+                            str(_capture_some_evidence(session))).strip()
     victim_id = moodle("user-id", "learner")
     session.logout()
 

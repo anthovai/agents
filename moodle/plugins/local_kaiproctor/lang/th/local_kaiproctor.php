@@ -53,8 +53,6 @@ $string['settings:strictlockdown'] = 'โหมดเข้มงวด';
 $string['settings:strictlockdown_desc'] = 'ยุติการอบรมเมื่อละเมิดนโยบาย แทนการหยุดวิดีโอแล้วให้เรียนต่อ';
 $string['settings:desktopnotification'] = 'แจ้งเตือนระดับระบบ';
 $string['settings:desktopnotification_desc'] = 'เด้งการแจ้งเตือนของระบบปฏิบัติการเมื่อผู้เรียนออกจากหน้าเรียน';
-$string['settings:lessonvideourl'] = 'URL วิดีโอบทเรียน';
-$string['settings:lessonvideourl_desc'] = 'วิดีโอที่เล่นในหน้าเรียนแบบมีระบบเฝ้าดู';
 
 $string['enrol:title'] = 'ลงทะเบียนใบหน้า';
 $string['enrol:intro'] = 'ระบบจะยืนยันตัวตนผ่านกล้องระหว่างเรียน ทำตามคำสั่งบนหน้าจอ: มองตรงเข้ากล้อง แล้วหันหน้าตามที่ระบบบอก';
@@ -65,11 +63,6 @@ $string['enrol:timeout'] = 'หันหน้าไม่ทันเวลา 
 $string['enrol:replacing'] = 'คุณลงทะเบียนใบหน้าไว้แล้ว การทำรายการนี้จะแทนที่ของเดิม';
 $string['enrol:existing'] = 'ลงทะเบียนใบหน้าเมื่อ {$a}';
 
-$string['lesson:title'] = 'หน้าเรียนแบบมีระบบเฝ้าดู';
-$string['lesson:start'] = 'เริ่มเรียน';
-$string['lesson:monitoring'] = 'ระบบกำลังเฝ้าดู กรุณาอยู่หน้ากล้องและอย่าออกจากหน้าต่างนี้';
-$string['lesson:notenrolled'] = 'คุณยังไม่ได้ลงทะเบียนใบหน้า ระบบจึงปิดการตรวจตัวตนไว้ แต่ยังตรวจการมีตัวตนอยู่';
-$string['lesson:novideo'] = 'ยังไม่ได้ตั้งค่าวิดีโอบทเรียน ผู้ดูแลระบบต้องกำหนด URL วิดีโอในการตั้งค่าปลั๊กอิน';
 
 $string['hint:noface'] = 'ขยับให้เห็นใบหน้าชัดๆ';
 $string['hint:multiplefaces'] = 'ให้มีใบหน้าเดียวในกรอบ';
@@ -248,8 +241,6 @@ $string['ask:sources'] = 'หน้าที่ใช้ตอบ';
 $string['ask:note'] = 'ตอบจากหน้าที่คุณเปิดได้ และจากผลของคุณเองบนหน้าเหล่านั้นเท่านั้น มองไม่เห็นผลของคนอื่น ไม่คิดเลขเอง และไม่ตัดสินอะไรทั้งสิ้น';
 $string['ask:page:enrol'] = 'ลงทะเบียนใบหน้า';
 $string['ask:page:enrol_desc'] = 'ลงทะเบียนใบหน้าก่อนเข้าบทเรียนหรือสอบที่มีการเฝ้าดู';
-$string['ask:page:lesson'] = 'บทเรียนที่มีการเฝ้าดู';
-$string['ask:page:lesson_desc'] = 'หน้าบทเรียนที่ตรวจว่าคุณอยู่หน้าจอระหว่างเรียน';
 
 // The AI console.
 $string['ai:console'] = 'ผู้ช่วย AI';

@@ -48,13 +48,6 @@ class site_index {
                 'summary' => get_string('ask:page:enrol_desc', 'local_kaiproctor'),
                 'keywords' => self::keywords('tool'),
             ],
-            [
-                'title' => get_string('ask:page:lesson', 'local_kaiproctor'),
-                'url' => '/local/kaiproctor/lesson.php',
-                'kind' => 'tool',
-                'summary' => get_string('ask:page:lesson_desc', 'local_kaiproctor'),
-                'keywords' => self::keywords('tool'),
-            ],
         ];
     }
 

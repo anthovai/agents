@@ -749,3 +749,48 @@ if ($ytvideo) {
     ]);
     mtrace("  created cmid {$ytcm->coursemodule}");
 }
+
+mtrace('interactive video (monitored):');
+// A separate activity for the proctoring tests, rather than switching
+// monitoring on and off on the one everybody else uses. A camera prompt and an
+// overlay appearing mid-question would break the interactive-video tests for
+// reasons that have nothing to do with what they check.
+$watchedname = 'บทเรียนวิดีโอที่มีการเฝ้าดู';
+$watched = $DB->get_record('kaivideo', ['course' => $course->id, 'name' => $watchedname]);
+
+if ($watched) {
+    $watchedcm = get_coursemodule_from_instance('kaivideo', $watched->id);
+    mtrace("  already present (cmid {$watchedcm->id})");
+} else {
+    $module = $DB->get_record('modules', ['name' => 'kaivideo'], '*', MUST_EXIST);
+    $instance = (object) [
+        'course' => $course->id,
+        'name' => $watchedname,
+        'intro' => '<p>บทเรียนวิดีโอที่ระบบเฝ้าดูตลอดการเรียน</p>',
+        'introformat' => FORMAT_HTML,
+        'videourl' => $CFG->wwwroot . '/local/kaiproctor/samples/lesson.mp4',
+        // No questions on this one: what it exists to exercise is the
+        // monitoring, and a question panel opening over an overlay is a
+        // different test.
+        'mustanswer' => 0,
+        'allowreview' => 1,
+        'grade' => 0,
+    ];
+    $instance->id = kaivideo_add_instance($instance);
+
+    $watchedcm = (object) [
+        'course' => $course->id,
+        'module' => $module->id,
+        'instance' => $instance->id,
+        'section' => 0,
+        'visible' => 1,
+        'completion' => COMPLETION_TRACKING_NONE,
+    ];
+    $watchedcm->coursemodule = add_course_module($watchedcm);
+    course_add_cm_to_section($course->id, $watchedcm->coursemodule, 0);
+    $watchedcm = get_coursemodule_from_id('kaivideo', $watchedcm->coursemodule);
+    mtrace("  created cmid {$watchedcm->id}");
+}
+
+\local_kaiproctor\monitored::set((int) $watchedcm->id, true);
+mtrace('  monitoring is on for it');

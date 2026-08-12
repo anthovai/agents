@@ -1,4 +1,4 @@
-sign in and open the lesson page
+sign in and open a monitored activity
 attempt every shortcut and menu lockdown is meant to catch
 violations caught: ['context_menu', 'copy_attempt', 'copy_attempt', 'paste_attempt', 'devtools_suspected', 'devtools_suspected', 'browser_shortcut', 'browser_shortcut', 'tab_switch', 'app_switch', 'print_screen']
 violations written to the audit trail

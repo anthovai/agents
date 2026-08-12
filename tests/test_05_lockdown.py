@@ -6,7 +6,7 @@ what the browser *can* intercept is intercepted and recorded.
 """
 from __future__ import annotations
 
-from conftest import moodle
+from conftest import monitored_url, moodle
 
 DRIVE_LOCKDOWN = """
 () => new Promise((resolve) => {
@@ -52,9 +52,9 @@ DRIVE_LOCKDOWN = """
 def test_lockdown_blocks_and_reports_every_browser_exit(session, clean_learner, eventlog):
     clean_learner("learner")
 
-    session.note("sign in and open the lesson page")
+    session.note("sign in and open a monitored activity")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
+    session.goto(monitored_url())
 
     session.note("attempt every shortcut and menu lockdown is meant to catch")
     caught = session.page.evaluate(DRIVE_LOCKDOWN)
@@ -76,9 +76,9 @@ def test_lockdown_blocks_and_reports_every_browser_exit(session, clean_learner, 
 def test_text_selection_and_dragging_are_suppressed(session, clean_learner):
     clean_learner("learner")
 
-    session.note("sign in and open the lesson page")
+    session.note("sign in and open a monitored activity")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
+    session.goto(monitored_url())
 
     session.note("switch lockdown on and try to select text")
     result = session.page.evaluate(
@@ -111,7 +111,7 @@ def test_an_unknown_signal_is_refused_by_the_server(session, clean_learner):
 
     session.note("sign in")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
+    session.goto(monitored_url())
 
     session.note("try to log an invented signal type")
     result = session.page.evaluate(

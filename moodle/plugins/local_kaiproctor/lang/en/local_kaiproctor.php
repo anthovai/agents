@@ -54,8 +54,6 @@ $string['settings:strictlockdown'] = 'Strict mode';
 $string['settings:strictlockdown_desc'] = 'End the session on a policy breach instead of pausing and letting the learner continue.';
 $string['settings:desktopnotification'] = 'Desktop notifications';
 $string['settings:desktopnotification_desc'] = 'Raise an operating-system notification when the learner leaves the lesson.';
-$string['settings:lessonvideourl'] = 'Lesson video URL';
-$string['settings:lessonvideourl_desc'] = 'The video played on the monitored lesson page.';
 
 // Enrolment page.
 $string['enrol:title'] = 'Enrol your face';
@@ -67,12 +65,6 @@ $string['enrol:timeout'] = 'You did not complete the movement in time. Try again
 $string['enrol:replacing'] = 'You have already enrolled a face. Completing this will replace it.';
 $string['enrol:existing'] = 'Face enrolled on {$a}.';
 
-// Lesson page.
-$string['lesson:title'] = 'Monitored lesson';
-$string['lesson:start'] = 'Start the lesson';
-$string['lesson:monitoring'] = 'Monitoring is active. Stay in front of the camera and do not leave this window.';
-$string['lesson:notenrolled'] = 'You have not enrolled a face yet, so identity checks are switched off. Presence is still monitored.';
-$string['lesson:novideo'] = 'No lesson video has been configured. An administrator must set the lesson video URL in the plugin settings.';
 
 // Camera hints.
 $string['hint:noface'] = 'Move so your face is clearly visible.';
@@ -264,8 +256,6 @@ $string['ask:sources'] = 'Pages this came from';
 $string['ask:note'] = 'Answers are built only from pages you can open, and from your own record on them. It cannot see anybody else\'s results, it never works a figure out for itself, and it does not decide anything.';
 $string['ask:page:enrol'] = 'Enrol your face';
 $string['ask:page:enrol_desc'] = 'Register your face before a monitored lesson or exam.';
-$string['ask:page:lesson'] = 'Monitored lesson';
-$string['ask:page:lesson_desc'] = 'The lesson page that checks you are present while you study.';
 
 // The AI console.
 $string['ai:console'] = 'AI assistance';

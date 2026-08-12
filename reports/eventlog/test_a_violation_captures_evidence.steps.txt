@@ -1,3 +1,2 @@
-sign in and start the monitored lesson
-the learner leaves the window, which should be photographed
-evidence rows: 09:26:06  ctx=14   snapshot  violation_window_blur        snapshot-443.jpg
+leave the window, which is a policy breach
+evidence rows: 12:44:45  ctx=217  snapshot  violation_window_blur        snapshot-504.jpg

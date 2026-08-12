@@ -1,1 +1,1 @@
-after one correct answer of 2: {'answered': 1, 'correct': 1, 'fraction': 0.5, 'attempts': 1, 'grade': 50, 'grademax': 100, 'progress': {'furthest': 0.22, 'finished': False}}
+after one correct answer of 2: {'answered': 1, 'correct': 1, 'fraction': 0.5, 'attempts': 1, 'grade': 50, 'grademax': 100, 'progress': {'furthest': 0.2, 'finished': False}}

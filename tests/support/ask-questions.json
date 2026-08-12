@@ -11,7 +11,8 @@
     "of what this measures. Real calibration needs questions real learners",
     "actually typed, and the number should be recomputed once there are some.",
     "",
-    "Grade questions were added once the assistant could answer them. Several name no page at all — 'ยังสอบได้อีกกี่ครั้ง' — which is exactly the case the kind keywords exist for, so they belong in the calibration."
+    "Grade questions were added once the assistant could answer them. Several name no page at all — 'ยังสอบได้อีกกี่ครั้ง' — which is exactly the case the kind keywords exist for, so they belong in the calibration.",
+    "The monitored-lesson page was removed once mod_kaivideo could be flagged monitored; the questions that pointed at it went with it."
   ],
   "onTopic": [
     {
@@ -29,14 +30,6 @@
     {
       "q": "อยากลงทะเบียนใบหน้าใหม่",
       "expects": "kaiproctor/enrol.php"
-    },
-    {
-      "q": "บทเรียนที่มีการเฝ้าดูอยู่ไหน",
-      "expects": "kaiproctor/lesson.php"
-    },
-    {
-      "q": "หน้าเรียนแบบมีคนคุมอยู่ตรงไหน",
-      "expects": "kaiproctor/lesson.php"
     },
     {
       "q": "บทเรียนวิดีโออยู่ตรงไหน",

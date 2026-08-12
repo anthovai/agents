@@ -1,0 +1,2 @@
+run the monitor with a two-second presence interval
+paused after the learner could not be seen: True

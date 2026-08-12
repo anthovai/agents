@@ -257,6 +257,58 @@ class Session:
         return self.page.inner_text("body")
 
 
+_monitored_cmid = None
+
+
+def monitored_cmid() -> int:
+    """The interactive video that has monitoring switched on.
+
+    Its own activity rather than flipping the setting on the one the
+    interactive-video tests use: a camera prompt and an overlay appearing
+    mid-question would break those for reasons that have nothing to do with
+    what they check.
+    """
+    global _monitored_cmid
+    if _monitored_cmid is None:
+        _monitored_cmid = int(moodle("kaivideo-cmid-monitored").strip())
+    return _monitored_cmid
+
+
+def monitored_url() -> str:
+    """The monitored activity's address, without starting anything.
+
+    For tests that need a Moodle page able to load this plugin's AMD modules
+    and nothing more. Starting the monitor there would add a camera and
+    overlays that have nothing to do with what they check.
+    """
+    return f"/mod/kaivideo/view.php?id={monitored_cmid()}"
+
+
+def open_monitored(session, timeout: int = 30_000) -> int:
+    """Open the monitored activity and get the monitor actually running.
+
+    Replaces what used to be a standalone /local/kaiproctor/lesson.php page.
+    That page had an explicit start button; a monitored activity starts on the
+    learner's first interaction instead, because getUserMedia needs a user
+    gesture and opening an activity is not one.
+
+    Waits for the banner to turn green, which is the point at which the sitting
+    is open and the monitor is running — before that, assertions race the
+    camera.
+    """
+    cmid = monitored_cmid()
+    session.goto(f"/mod/kaivideo/view.php?id={cmid}")
+    session.beat(1)
+
+    # The gesture. Any click will do; the module listens once on the document.
+    session.page.click("body", position={"x": 5, "y": 5})
+
+    session.page.wait_for_selector(
+        ".kaiproctor-monitor-banner.alert-success", timeout=timeout)
+    session.beat(1.5)
+    return cmid
+
+
 @pytest.fixture
 def session(browser, request, install_support_script):
     """One browser context per test, recorded to its own video."""

@@ -14,7 +14,7 @@ import json
 
 import pytest
 
-from conftest import moodle
+from conftest import moodle, open_monitored
 
 
 @pytest.fixture
@@ -53,9 +53,7 @@ def test_what_gets_sent_contains_no_biometric_data(session, clean_learner):
 
     session.note("run a monitored lesson so there is a sitting to summarise")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
     session.page.evaluate("() => window.dispatchEvent(new Event('blur'))")
     session.beat(3)
@@ -85,9 +83,7 @@ def test_the_summary_is_labelled_as_a_draft_not_a_finding(session, clean_learner
 
     session.note("generate a sitting")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(2)
 
     contextid = moodle("user-context-id", "learner")
@@ -152,9 +148,7 @@ def test_a_summary_comes_back_when_a_model_is_behind_the_service(needs_model, se
 
     session.note("generate a sitting")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(2)
 
     original = json.loads(moodle("ai-state"))

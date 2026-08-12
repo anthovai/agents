@@ -8,19 +8,16 @@ from __future__ import annotations
 
 import json
 
-from conftest import QUIZ_CMID, moodle
+from conftest import QUIZ_CMID, monitored_cmid, moodle, open_monitored
 
 
 def test_starting_a_lesson_opens_one_sitting(session, clean_learner):
     clean_learner("learner")
 
-    session.note("sign in and open the monitored lesson")
+    session.note("sign in and open the monitored activity")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-
-    session.note("start the lesson")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    session.note("open the monitored activity and let the monitor start")
+    open_monitored(session)
     session.beat(2)
 
     sittings = json.loads(moodle("sessions", "learner"))
@@ -36,17 +33,13 @@ def test_reloading_does_not_start_a_second_sitting(session, clean_learner):
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
 
     first = json.loads(moodle("sessions", "learner"))
 
     session.note("reload and start again")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(2)
 
     second = json.loads(moodle("sessions", "learner"))
@@ -61,9 +54,7 @@ def test_the_rules_in_force_are_recorded_on_the_sitting(session, clean_learner):
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(2)
 
     sittings = json.loads(moodle("sessions", "learner"))
@@ -84,9 +75,7 @@ def test_changing_the_settings_does_not_rewrite_a_finished_sitting(session, clea
 
     session.note("sign in and run a lesson under the current rules")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(2)
 
     before = json.loads(moodle("sessions", "learner"))[0]
@@ -115,9 +104,7 @@ def test_a_terminated_sitting_records_why(session, clean_learner):
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
 
     session.note("the learner leaves the window, which ends it in strict mode")
@@ -139,9 +126,7 @@ def test_a_late_completion_cannot_launder_a_terminated_sitting(session, clean_le
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
 
     sittings = json.loads(moodle("sessions", "learner"))
@@ -175,9 +160,7 @@ def test_a_client_cannot_mark_a_sitting_abandoned(session, clean_learner):
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
 
     sessionid = json.loads(moodle("sessions", "learner"))[0]["id"]
@@ -202,9 +185,7 @@ def test_a_sitting_nobody_closed_is_marked_abandoned(session, clean_learner):
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
 
     session.note("the learner's machine goes away without closing anything")
@@ -225,9 +206,7 @@ def test_checks_and_evidence_are_filed_under_the_sitting(session, clean_learner)
 
     session.note("sign in and start the lesson")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
 
     sessionid = json.loads(moodle("sessions", "learner"))[0]["id"]
@@ -250,14 +229,12 @@ def test_the_report_groups_everything_by_sitting(session, clean_learner):
 
     session.note("sign in and run a lesson that gets terminated")
     session.login("learner")
-    session.goto("/local/kaiproctor/lesson.php")
-    session.page.click('[data-action="start"]')
-    session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=25_000)
+    open_monitored(session)
     session.beat(1.5)
     session.page.evaluate("() => window.dispatchEvent(new Event('blur'))")
     session.beat(4)
 
-    contextid = moodle("user-context-id", "learner")
+    contextid = moodle("cm-context-id", str(monitored_cmid())).strip()
     userid = moodle("user-id", "learner")
 
     session.note("open the evidence report")
