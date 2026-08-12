@@ -1,0 +1,137 @@
+# The stack as it runs on a server.
+#
+# Differences from docker-compose.yml that matter, rather than cosmetics:
+#
+#   * plugins are built into the image, not mounted from a working copy;
+#   * nothing but the reverse proxy is reachable from outside the host;
+#   * every service restarts unless somebody stopped it deliberately;
+#   * the database and the evidence live in named volumes with a backup
+#     procedure that has been run, not assumed.
+#
+# Run it from the repository root:
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d
+#
+# TLS is not here on purpose. Terminate it in front — see docs/DEPLOY.md.
+
+name: kaiproctor
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${MOODLE_DB_NAME:?set MOODLE_DB_NAME}
+      POSTGRES_USER: ${MOODLE_DB_USER:?set MOODLE_DB_USER}
+      POSTGRES_PASSWORD: ${MOODLE_DB_PASS:?set MOODLE_DB_PASS}
+      # Thai sorting and case folding come out wrong under C collation, and it
+      # cannot be changed after initdb without dumping and reloading.
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MOODLE_DB_USER} -d ${MOODLE_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # No published port. The database is reachable from the compose network and
+    # from nowhere else; a psql session comes through `docker compose exec`.
+
+  face-service:
+    build:
+      context: ..
+      dockerfile: face-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      PROCTOR_API_KEY: ${PROCTOR_API_KEY:?set PROCTOR_API_KEY}
+      FACE_MATCH_THRESHOLD: ${FACE_MATCH_THRESHOLD:-0.363}
+      FACE_REVIEW_MIN: ${FACE_REVIEW_MIN:-0.30}
+      FACE_LIVENESS_THRESHOLD: ${FACE_LIVENESS_THRESHOLD:-0.60}
+      FACE_DET_SCORE: ${FACE_DET_SCORE:-0.80}
+    volumes:
+      # Read-only, and outside the image, so the licence-audited weights stay
+      # inspectable on the host. See face-service/models/LICENSES.md.
+      - ../face-service/models:/app/models:ro
+    expose:
+      - "9000"
+    deploy:
+      resources:
+        limits:
+          # Measured: enrolment is the constraint, not lesson monitoring, and
+          # it is CPU-bound. reports/FACE-LOAD.txt has the numbers this comes
+          # from — raise it before raising anything else.
+          cpus: "${FACE_CPUS:-4}"
+          memory: ${FACE_MEMORY:-2g}
+
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      AI_LLM_BASE_URL: ${AI_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      AI_LLM_MODEL: ${AI_LLM_MODEL:-qwen2.5:7b-instruct}
+      AI_MODEL_ASK: ${AI_MODEL_ASK:-qwen3:8b}
+      AI_LLM_API_KEY: ${AI_LLM_API_KEY:-}
+      AI_TIMEOUT: ${AI_TIMEOUT:-300}
+      AI_API_KEY: ${PROCTOR_API_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "9100"
+
+  moodle:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.moodle
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      face-service:
+        condition: service_started
+    environment:
+      # Only this container installs and upgrades; see docker/moodle-entrypoint.sh.
+      MOODLE_ROLE: web
+      MOODLE_WWWROOT: ${MOODLE_WWWROOT:?set MOODLE_WWWROOT, https:// and no trailing slash}
+      MOODLE_DB_HOST: db
+      MOODLE_DB_NAME: ${MOODLE_DB_NAME}
+      MOODLE_DB_USER: ${MOODLE_DB_USER}
+      MOODLE_DB_PASS: ${MOODLE_DB_PASS}
+      MOODLE_ADMIN_USER: ${MOODLE_ADMIN_USER:?set MOODLE_ADMIN_USER}
+      MOODLE_ADMIN_PASS: ${MOODLE_ADMIN_PASS:?set MOODLE_ADMIN_PASS}
+      MOODLE_ADMIN_EMAIL: ${MOODLE_ADMIN_EMAIL:?set MOODLE_ADMIN_EMAIL}
+      # Behind a proxy Moodle must be told, or every generated URL is http://
+      # and the browser blocks the mixed content.
+      MOODLE_SSLPROXY: "1"
+    ports:
+      # Bound to the loopback interface: the reverse proxy on this host reaches
+      # it, the internet does not. Change to 127.0.0.1:8080 -> another port if
+      # something else already has 8080.
+      - "127.0.0.1:${MOODLE_HTTP_PORT:-8080}:80"
+    volumes:
+      - moodledata:/var/moodledata
+
+  cron:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.moodle
+    restart: unless-stopped
+    depends_on:
+      moodle:
+        condition: service_started
+    environment:
+      # Shares the image but must never install: two installers on one
+      # moodledata volume race each other and corrupt it.
+      MOODLE_ROLE: cron
+      MOODLE_WWWROOT: ${MOODLE_WWWROOT}
+      MOODLE_DB_HOST: db
+      MOODLE_DB_NAME: ${MOODLE_DB_NAME}
+      MOODLE_DB_USER: ${MOODLE_DB_USER}
+      MOODLE_DB_PASS: ${MOODLE_DB_PASS}
+      MOODLE_SSLPROXY: "1"
+    volumes:
+      - moodledata:/var/moodledata
+
+volumes:
+  db-data:
+  moodledata:

@@ -36,6 +36,16 @@ fi
 # env anyway, so this makes the container properly disposable.
 if [ ! -f "$CONFIG" ]; then
     echo "writing config.php from the environment"
+    # Behind a TLS-terminating proxy, Moodle has to be told: without this it
+    # builds every URL as http:// and the browser blocks its own page's assets
+    # as mixed content. The symptom is a site that half-loads and looks broken
+    # in a way that has nothing to do with the proxy configuration.
+    if [ "${MOODLE_SSLPROXY:-0}" = "1" ]; then
+        SSLPROXY_LINE="\$CFG->sslproxy = true;"
+    else
+        SSLPROXY_LINE=""
+    fi
+
     cat > "$CONFIG" <<PHPCONFIG
 <?php
 unset(\$CFG);
@@ -55,6 +65,7 @@ global \$CFG;
 \$CFG->dataroot  = '/var/moodledata';
 \$CFG->admin     = 'admin';
 \$CFG->directorypermissions = 0777;
+${SSLPROXY_LINE}
 
 require_once(__DIR__ . '/lib/setup.php');
 PHPCONFIG

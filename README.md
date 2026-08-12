@@ -8,6 +8,8 @@
 
 - [docs/PLAN.md](docs/PLAN.md) — สถาปัตยกรรม + ลำดับงาน
 - [docs/MIGRATION.md](docs/MIGRATION.md) — โค้ดเดิมแต่ละชิ้นไปไหน
+- [docs/DEPLOY.md](docs/DEPLOY.md) — ติดตั้งบนเซิร์ฟเวอร์ · TLS · ขนาดเครื่อง · สำรองข้อมูล
+- [docs/ADMIN.md](docs/ADMIN.md) — คู่มือผู้ดูแลรายวัน
 
 ## เริ่มต้น
 
