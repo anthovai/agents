@@ -38,7 +38,7 @@ $string['settings:presenceminutes_desc'] = 'ความถี่ในการ
 $string['settings:verifyminutes'] = 'ตรวจตัวตนทุก (นาที)';
 $string['settings:verifyminutes_desc'] = 'ความถี่ในการยืนยันว่ายังเป็นคนที่ลงทะเบียนไว้ ทำงานเฉพาะผู้เรียนที่ลงทะเบียนใบหน้าแล้ว';
 $string['settings:clickconfirmminutes'] = 'ให้กดยืนยันทุก (นาที)';
-$string['settings:clickconfirmminutes_desc'] = 'ความถี่ที่ผู้เรียนต้องกดยืนยันว่ายังเรียนอยู่';
+$string['settings:clickconfirmminutes_desc'] = 'ความถี่ที่ผู้เรียนต้องกดยืนยันว่ายังเรียนอยู่ นับเฉพาะตอนที่วิดีโอกำลังเล่น จึงไม่ขึ้นเลยถ้าบทเรียนสั้นกว่าค่านี้ — ตั้ง 5 นาทีกับวิดีโอ 1 นาที เท่ากับปิดการตรวจนี้ไปโดยปริยาย 0 = ปิด';
 $string['settings:clickconfirmgracesec'] = 'เวลาผ่อนผันการกดยืนยัน (วินาที)';
 $string['settings:clickconfirmgracesec_desc'] = 'เวลาที่ให้กดก่อนระบบจะหยุดวิดีโอ';
 $string['settings:mouseidleminutes'] = 'ทนการนิ่งได้ (นาที)';

@@ -1,0 +1,3 @@
+run the monitor with a three-second identity interval
+check rows written server-side: 18:47:06  ctx=217  identity   absent         sim=NULL     live=NULL     threshold='0.3630'
+18:47:10  ctx=217  identity   absent         sim=NULL     live=NULL     threshold='0.3630'

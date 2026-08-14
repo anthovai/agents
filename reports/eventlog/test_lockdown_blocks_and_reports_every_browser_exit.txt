@@ -1,0 +1,12 @@
+# audit trail for learner
+18:48:13  ctx=217  copy_attempt           videotime=NULL  {"action":"cut"}
+18:48:13  ctx=217  copy_attempt           videotime=NULL  {"action":"copy"}
+18:48:13  ctx=217  paste_attempt          videotime=NULL  {"action":"paste"}
+18:48:13  ctx=217  context_menu           videotime=NULL  []
+18:48:13  ctx=217  devtools_suspected     videotime=NULL  {"key":"F12"}
+18:48:13  ctx=217  devtools_suspected     videotime=NULL  {"key":"i"}
+18:48:13  ctx=217  browser_shortcut       videotime=NULL  {"key":"t"}
+18:48:13  ctx=217  browser_shortcut       videotime=NULL  {"key":"p"}
+18:48:13  ctx=217  tab_switch             videotime=NULL  {"key":"Tab"}
+18:48:13  ctx=217  app_switch             videotime=NULL  {"key":"Tab"}
+18:48:13  ctx=217  print_screen           videotime=NULL  {"key":"PrintScreen"}

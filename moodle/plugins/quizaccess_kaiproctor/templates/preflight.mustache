@@ -1,16 +1,50 @@
 {{!
     Identity check shown before a proctored attempt starts.
+
+    The region carries a data-state the stylesheet keys off:
+    idle -> running -> checking -> passed | failed
 }}
-<div class="kaiproctor-preflight" data-region="kaiproctor-preflight">
-    <div class="kaiproctor-camera-frame">
+<div class="kaiproctor-preflight" data-region="kaiproctor-preflight" data-state="idle">
+    <div class="kaiproctor-preflight-frame">
         <video data-region="preview" class="kaiproctor-preview" playsinline muted></video>
+
+        {{! Oval guide so the learner knows where their face should sit. }}
+        <div class="kaiproctor-face-guide" aria-hidden="true"></div>
+
+        {{! Shown while the camera is off, so the black box never looks broken. }}
+        <div class="kaiproctor-preflight-cover kaiproctor-preflight-cover-idle"
+             data-region="idlecover">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <path d="M23 7l-7 5 7 5V7z"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            <span>{{#str}}preflight:cameraoff, quizaccess_kaiproctor{{/str}}</span>
+        </div>
+
+        {{! Green confirmation once the check passes. }}
+        <div class="kaiproctor-preflight-cover kaiproctor-preflight-cover-pass"
+             aria-hidden="true">
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12.5l2.5 2.5L16 9.5"/>
+            </svg>
+            <span>{{#str}}preflight:verified, quizaccess_kaiproctor{{/str}}</span>
+        </div>
+
+        <p class="kaiproctor-preflight-instruction" data-region="instruction"
+           aria-live="assertive"></p>
     </div>
 
-    <p class="kaiproctor-instruction lead" data-region="instruction" aria-live="polite"></p>
+    <ol class="kaiproctor-preflight-steps" data-region="steps" hidden></ol>
 
     <div class="alert" data-region="status" role="status" aria-live="polite" hidden></div>
 
-    <button type="button" class="btn btn-secondary" data-action="verify">
+    <button type="button" class="btn btn-primary btn-lg kaiproctor-preflight-verify"
+            data-action="verify">
         {{#str}}preflight:verify, quizaccess_kaiproctor{{/str}}
     </button>
 </div>

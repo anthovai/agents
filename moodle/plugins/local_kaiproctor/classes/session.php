@@ -170,10 +170,20 @@ class session {
             ['status' => self::STATUS_ACTIVE, 'cutoff' => $cutoff]);
 
         foreach ($stale as $record) {
+            // Two different things end up here and they are not the same news.
+            // A learner who clicked back to the course left a page_left event
+            // on the way out; a learner whose laptop lost power left nothing.
+            // Closing both as abandoned made every ordinary lesson read as one
+            // we lost contact with — and hid the ones we genuinely did.
+            $left = self::left_deliberately($record);
+
             $DB->update_record('local_kaiproctor_session', (object) [
                 'id' => $record->id,
-                'status' => self::STATUS_ABANDONED,
-                'reason' => 'no_activity',
+                // 'completed' says the sitting ran its course without a
+                // breach, not that they watched to the end: how far they got
+                // is the video's record, not the proctor's.
+                'status' => $left ? self::STATUS_COMPLETED : self::STATUS_ABANDONED,
+                'reason' => $left ? 'page_left' : 'no_activity',
                 // The last sign of life, not the moment the task noticed.
                 'timeend' => $record->timemodified,
                 'timemodified' => time(),
@@ -181,6 +191,61 @@ class session {
         }
 
         return count($stale);
+    }
+
+    /**
+     * Whether the learner's last act in this sitting was leaving the page.
+     *
+     * The browser logs page_left on its way out and does not close the sitting
+     * itself: a reload raises the same event, and only the server can see that
+     * nobody came back. If the last thing recorded was the page going away and
+     * nothing since, they left.
+     *
+     * @param \stdClass $record the sitting
+     * @return bool
+     */
+    protected static function left_deliberately(\stdClass $record): bool {
+        $left = self::last_signal($record, 'page_left');
+        if ($left === null) {
+            return false;
+        }
+
+        // Compared against the last time monitoring started, not against
+        // whatever happened to be logged last. page_left is a beacon and the
+        // monitor's own shutdown is an ordinary request, so the two race and
+        // land in either order — a rule that read "the final event" called the
+        // same departure deliberate or not depending on which won.
+        //
+        // What actually decides it is whether they came back: a later
+        // monitor_started means they did, and whatever ended the sitting after
+        // that was not this departure.
+        $started = self::last_signal($record, 'monitor_started');
+        return $started === null || $left > $started;
+    }
+
+    /**
+     * The id of the most recent event of one type in a sitting.
+     *
+     * @param \stdClass $record the sitting
+     * @param string $type signal name
+     * @return int|null null when it never happened
+     */
+    protected static function last_signal(\stdClass $record, string $type): ?int {
+        global $DB;
+
+        $rows = $DB->get_records_select('logstore_standard_log',
+            'contextid = :contextid AND userid = :userid AND timecreated >= :from AND '
+            . $DB->sql_like('eventname', ':pattern') . ' AND '
+            . $DB->sql_like('other', ':signal'),
+            [
+                'contextid' => $record->contextid,
+                'userid' => $record->userid,
+                'from' => (int) $record->timestart,
+                'pattern' => '%kaiproctor%',
+                'signal' => '%"type":"' . $type . '"%',
+            ], 'id DESC', 'id', 0, 1);
+
+        return $rows ? (int) reset($rows)->id : null;
     }
 
     /**

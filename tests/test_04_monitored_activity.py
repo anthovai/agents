@@ -188,6 +188,56 @@ def test_being_sent_out_of_the_lesson_does_not_lose_the_watched_position(
         "the learner has to sit through it again")
 
 
+def test_clicking_through_to_another_page_is_recorded_and_closed_as_such(
+        session, clean_learner, eventlog):
+    """Leaving the lesson is the commonest way one ends, and it was untracked.
+
+    Clicking back to the course fires neither blur nor visibilitychange — the
+    page simply goes. Nothing said the lesson was over, so the sitting was
+    eventually closed as abandoned: "we lost contact with them" rather than
+    "they left". Because nothing else ever closed a lesson sitting cleanly,
+    every ordinary lesson read that way, and the ones we genuinely did lose
+    were hidden among them.
+
+    The browser records the leaving; the server decides what it meant. It has
+    to be that way round — a reload raises the same event, and only the server
+    can see whether anybody came back.
+    """
+    clean_learner("learner")
+
+    session.login("learner")
+    open_monitored(session)
+    session.page.evaluate(f"() => document.querySelector('{VIDEO}').play()")
+    session.beat(4)
+
+    assert any(s["status"] == "active"
+               for s in json.loads(moodle("sessions", "learner"))), \
+        "no sitting was open to begin with"
+
+    session.note("the learner clicks back to the course")
+    session.goto("/my/")
+    session.beat(2.5)
+
+    trail = eventlog("learner")
+    assert "page_left" in trail, "leaving the page was not recorded at all"
+    session.note("leaving is on the trail, with the video position on it")
+
+    # The sitting is still open at this point, on purpose: the learner might
+    # be reloading. The cleanup task is what decides, once nobody has come
+    # back — and it must now tell "they left" from "we lost them".
+    # Three hours, not two: the staleness cutoff IS two, and backdating by
+    # exactly that leaves the row a second on the wrong side of a < test.
+    moodle("age-session", "learner", "3")
+    moodle("run-stale-task")
+
+    latest = json.loads(moodle("sessions", "learner"))[0]
+    session.note(f"the sitting closed as {latest['status']} ({latest['reason']})")
+    assert latest["reason"] == "page_left", \
+        f"the record does not say how it ended: {latest['reason']}"
+    assert latest["status"] == "completed", \
+        "a learner who left cleanly is recorded as one we lost contact with"
+
+
 def test_a_violation_captures_evidence(session, clean_learner, eventlog):
     """Requirement 5: the event is not the evidence.
 

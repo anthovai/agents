@@ -1,1 +1,2 @@
-after three seconds of playback: {'error': 'NotSupportedError'}
+after three seconds of playback: {'time': 2.941504, 'tag': 'VIDEO'}
+stopped at 4s and asked: สตรีมนี้เล่นด้วยอะไร

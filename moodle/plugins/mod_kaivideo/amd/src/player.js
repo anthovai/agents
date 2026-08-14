@@ -17,8 +17,9 @@
 define([
     'core/ajax',
     'core/str',
-    'mod_kaivideo/backend'
-], function(Ajax, Str, Backend) {
+    'mod_kaivideo/backend',
+    'local_kaiproctor/beacon'
+], function(Ajax, Str, Backend, Beacon) {
 
     /** Close enough to "now" — the playhead is sampled about four times a
      *  second by either backend. */
@@ -533,34 +534,11 @@ define([
     /**
      * The same call, sent so that it survives the page closing.
      *
-     * A normal XHR issued from pagehide is cancelled with the document; a
-     * beacon is handed to the browser to deliver afterwards. It is fire and
-     * forget — there is no response to read — which is exactly right for a
-     * position that is advisory anyway.
-     *
      * @param {Object} args
      * @return {Boolean} whether it was queued
      */
     Player.prototype.beacon = function(args) {
-        if (!navigator.sendBeacon || !window.M || !M.cfg) {
-            return false;
-        }
-
-        var url = M.cfg.wwwroot + '/lib/ajax/service.php?sesskey='
-            + encodeURIComponent(M.cfg.sesskey)
-            + '&info=mod_kaivideo_record_progress';
-        var body = JSON.stringify([{
-            index: 0,
-            methodname: 'mod_kaivideo_record_progress',
-            args: args
-        }]);
-
-        try {
-            return navigator.sendBeacon(url,
-                new Blob([body], {type: 'application/json'}));
-        } catch (error) {
-            return false;
-        }
+        return Beacon.send('mod_kaivideo_record_progress', args);
     };
 
     return {

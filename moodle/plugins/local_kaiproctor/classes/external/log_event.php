@@ -25,6 +25,10 @@ class log_event extends external_api {
         'presence_ok', 'presence_error', 'identity_check', 'face_mismatch',
         'face_review', 'verify_error',
         'clip_started', 'clip_uploaded', 'clip_error', 'clip_skipped',
+        // The learner navigated away — clicked back to the course, closed the
+        // tab. Distinct from tab_hidden and window_blur, which are somebody
+        // looking away from a lesson that is still open: this one ends it.
+        'page_left',
         'session_terminated',
     ];
 

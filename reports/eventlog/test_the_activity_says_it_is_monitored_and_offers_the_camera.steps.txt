@@ -1,0 +1,3 @@
+sign in as the learner
+open the monitored interactive video
+start it, and the banner confirms monitoring is running

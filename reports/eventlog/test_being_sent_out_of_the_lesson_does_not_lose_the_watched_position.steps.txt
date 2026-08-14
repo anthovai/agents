@@ -1,0 +1,4 @@
+watch for a while, past the first progress tick
+the learner has watched to 17.9s
+they switch away, and the monitor takes them out
+the server kept 17.9s of 17.9s watched

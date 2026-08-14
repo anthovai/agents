@@ -1,0 +1,4 @@
+sign in and open the monitored activity
+play the video so there is something to interrupt
+the learner switches away from the window
+after leaving the window: {'paused': True, 'overlay': True, 'blocking': 'true'}

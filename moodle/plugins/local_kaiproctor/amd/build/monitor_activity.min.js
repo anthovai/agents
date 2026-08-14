@@ -14,9 +14,10 @@ define([
     'local_kaiproctor/attention_monitor',
     'local_kaiproctor/video_adapter',
     'local_kaiproctor/api',
+    'local_kaiproctor/beacon',
     'core/str',
     'core/notification'
-], function(Camera, AttentionMonitor, VideoAdapter, Api, Str, Notification) {
+], function(Camera, AttentionMonitor, VideoAdapter, Api, Beacon, Str, Notification) {
 
     return {
         init: function(config) {
@@ -53,6 +54,44 @@ define([
                     return null;
                 });
             };
+
+            // Record that the page went away. Nothing else did: clicking back
+            // to the course fires neither blur nor visibilitychange, so a
+            // learner leaving a lesson left no trace at all, and the sitting
+            // was only ever closed by the cleanup task calling it abandoned.
+            //
+            // Only logged here — the sitting is deliberately NOT closed. A
+            // sitting spans page loads on purpose, so that a reload does not
+            // split one lesson's evidence into two records, and pagehide fires
+            // on a reload exactly as it does on leaving. The browser cannot
+            // tell those apart; only the server can, by whether anybody came
+            // back. Closing here ended a sitting every time somebody pressed
+            // F5. Deciding it in the browser is deciding it too early.
+            //
+            // Not on visibilitychange either: switching tabs is somebody
+            // looking away from a lesson that is still open, which the
+            // focus-loss rules already handle by pausing and, in strict mode,
+            // terminating.
+            var onLeave = function() {
+                if (!sessionid || closed) {
+                    return;
+                }
+
+                // Rounded, because videotime is PARAM_INT and Moodle rejects
+                // the whole call rather than truncating: passing the raw
+                // currentTime silently dropped every one of these while the
+                // call beside it went through, which looked like a transport
+                // problem and was a type one.
+                var at = adapter ? adapter.currentTime : null;
+                Beacon.send('local_kaiproctor_log_event', {
+                    contextid: config.contextid,
+                    type: 'page_left',
+                    detail: '{}',
+                    videotime: (at === undefined || at === null) ? -1 : Math.round(at),
+                    sessionid: sessionid
+                });
+            };
+            window.addEventListener('pagehide', onLeave);
 
             var start = function() {
                 if (started) {

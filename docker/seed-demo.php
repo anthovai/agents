@@ -945,3 +945,38 @@ if ($watched) {
 
 \local_kaiproctor\monitored::set((int) $watchedcm->id, true);
 mtrace('  monitoring is on for it');
+
+mtrace('tidying the course front page:');
+// All six video activities exist because each is the only cover for one video
+// source, so none can go without losing a test. What they should not do is sit
+// in the section a customer is shown first — "interactive video" six times
+// reads as an unfinished course rather than as a feature list.
+$demosection = 'ตัวอย่างที่มาของวิดีโอ (สำหรับทดสอบระบบ)';
+$section = $DB->get_record('course_sections',
+    ['course' => $course->id, 'name' => $demosection]);
+
+if (!$section) {
+    $section = course_create_section($course->id);
+    $DB->set_field('course_sections', 'name', $demosection, ['id' => $section->id]);
+    $DB->set_field('course_sections', 'summary',
+        '<p>แต่ละอันสาธิตที่มาของวิดีโอคนละแบบ และมีเทสต์อัตโนมัติผูกอยู่ '
+        . 'ห้ามลบ — ถ้าลบ เทสต์ของที่มานั้นจะไม่มีอะไรให้ตรวจ</p>',
+        ['id' => $section->id]);
+    mtrace("  created section: {$demosection}");
+}
+
+// The two a customer is meant to look at stay where they are.
+$keepinplace = ['วิดีโอแบบมีปฏิสัมพันธ์ (KAISER)', 'บทเรียนวิดีโอที่มีการเฝ้าดู'];
+$moved = 0;
+foreach ($DB->get_records('kaivideo', ['course' => $course->id]) as $video) {
+    if (in_array($video->name, $keepinplace, true)) {
+        continue;
+    }
+    $cm = get_coursemodule_from_instance('kaivideo', $video->id);
+    if ($cm && (int) $cm->section !== (int) $section->id) {
+        moveto_module($cm, $section);
+        $moved++;
+    }
+}
+rebuild_course_cache($course->id, true);
+mtrace("  {$moved} backend demo(s) moved out of the front section");

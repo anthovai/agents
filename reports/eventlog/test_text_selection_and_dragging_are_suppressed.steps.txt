@@ -1,0 +1,3 @@
+sign in and open a monitored activity
+switch lockdown on and try to select text
+result: {'selectionAllowed': False, 'dragAllowed': False, 'userSelect': 'none'}
