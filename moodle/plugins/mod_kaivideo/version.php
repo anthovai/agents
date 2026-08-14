@@ -15,7 +15,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_kaivideo';
-$plugin->version   = 2026081301;
+$plugin->version   = 2026081400;
 $plugin->requires  = 2024100700; // Moodle 4.5 LTS.
 $plugin->dependencies = [
     // Monitoring is optional at runtime — an unproctored interactive video is

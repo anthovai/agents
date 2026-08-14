@@ -97,6 +97,25 @@ define([
             self.maybeReport();
         });
 
+        // Leaving the page is the commonest way a lesson ends, and until this
+        // existed the position was whatever the last fifteen-second tick had
+        // written: a learner who watched to 28s and left was sent back to 15s
+        // and made to sit through it again. Measured, not guessed.
+        //
+        // Both events, because neither fires reliably alone: pagehide is
+        // skipped when a mobile browser is backgrounded and killed, and
+        // visibilitychange does not fire on some desktop navigations. Sending
+        // twice is harmless — the server keeps the furthest point, not the
+        // last one.
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                self.report(false, true);
+            }
+        });
+        window.addEventListener('pagehide', function() {
+            self.report(false, true);
+        });
+
         this.backend.onPlayAttempt(function() {
             // A question that is due must not be playable past.
             if (self.config.mustanswer && self.due()) {
@@ -476,27 +495,72 @@ define([
     };
 
     Player.prototype.maybeReport = function() {
-        var now = Date.now();
-        if (now - this.lastReported < PROGRESS_EVERY) {
+        if (Date.now() - this.lastReported < PROGRESS_EVERY) {
             return;
         }
-        this.lastReported = now;
         this.report(false);
     };
 
-    Player.prototype.report = function(finished) {
+    /**
+     * Tell the server where the playhead is.
+     *
+     * @param {Boolean} finished whether the video reached its end
+     * @param {Boolean} [leaving] the page is going away, so an ordinary
+     *        request would be cancelled before it left the browser
+     */
+    Player.prototype.report = function(finished, leaving) {
+        var args = {
+            cmid: this.config.cmid,
+            seconds: this.backend.currentTime(),
+            finished: !!finished
+        };
+        this.lastReported = Date.now();
+
+        if (leaving && this.beacon(args)) {
+            return;
+        }
+
         Ajax.call([{
             methodname: 'mod_kaivideo_record_progress',
-            args: {
-                cmid: this.config.cmid,
-                seconds: this.backend.currentTime(),
-                finished: !!finished
-            }
+            args: args
         }])[0].catch(function() {
             // Progress is advisory — the grade comes from the answers — so a
             // failure here must not interrupt the lesson.
             return null;
         });
+    };
+
+    /**
+     * The same call, sent so that it survives the page closing.
+     *
+     * A normal XHR issued from pagehide is cancelled with the document; a
+     * beacon is handed to the browser to deliver afterwards. It is fire and
+     * forget — there is no response to read — which is exactly right for a
+     * position that is advisory anyway.
+     *
+     * @param {Object} args
+     * @return {Boolean} whether it was queued
+     */
+    Player.prototype.beacon = function(args) {
+        if (!navigator.sendBeacon || !window.M || !M.cfg) {
+            return false;
+        }
+
+        var url = M.cfg.wwwroot + '/lib/ajax/service.php?sesskey='
+            + encodeURIComponent(M.cfg.sesskey)
+            + '&info=mod_kaivideo_record_progress';
+        var body = JSON.stringify([{
+            index: 0,
+            methodname: 'mod_kaivideo_record_progress',
+            args: args
+        }]);
+
+        try {
+            return navigator.sendBeacon(url,
+                new Blob([body], {type: 'application/json'}));
+        } catch (error) {
+            return false;
+        }
     };
 
     return {

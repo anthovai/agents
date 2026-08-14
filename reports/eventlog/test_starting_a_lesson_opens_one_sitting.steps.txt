@@ -1,3 +1,0 @@
-sign in and open the monitored activity
-open the monitored activity and let the monitor start
-sittings: [{'id': 744, 'status': 'active', 'reason': None, 'attemptid': None, 'timestart': 1786638304, 'timeend': None, 'policy': {'presenceminutes': 2, 'verifyminutes': 10, 'clickconfirmminutes': 5, 'clickconfirmgracesec': 30, 'mouseidleminutes': 3, 'randomclipsperhour': 4, 'clipseconds': 8, 'blurallowance': 0, 'strictlockdown': True, 'desktopnotification': True, 'matchthreshold': 0.363, 'reviewmin': 0}}]

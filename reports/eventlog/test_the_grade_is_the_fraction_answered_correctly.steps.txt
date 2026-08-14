@@ -1,0 +1,1 @@
+after one correct answer of 4 questions (5 items on the timeline): {'answered': 1, 'correct': 1, 'fraction': 0.25, 'attempts': 1, 'grade': 25, 'grademax': 100, 'progress': {'furthest': 0.21, 'finished': False}}

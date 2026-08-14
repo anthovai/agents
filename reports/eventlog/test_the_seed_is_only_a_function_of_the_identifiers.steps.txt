@@ -1,1 +1,0 @@
-draw the same attempt twice, minutes apart in database terms

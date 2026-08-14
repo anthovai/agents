@@ -1,5 +1,0 @@
-sign in as an enrolled learner
-check the link Moodle offers
-launch links: ['seb://localhost:8080/mod/quiz/accessrule/seb/config.php?cmid=10']
-fetching the configuration at http://localhost:8080/mod/quiz/accessrule/seb/config.php?cmid=10
-download status: 200, 1006 bytes

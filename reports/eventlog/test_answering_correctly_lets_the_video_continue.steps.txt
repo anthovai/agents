@@ -1,0 +1,2 @@
+answer correctly (choice 0)
+feedback: ระบบตรวจว่ามีคนอยู่หน้ากล้องเป็นระยะ

@@ -1,5 +1,0 @@
-generate evidence as the learner
-evidence rows before the purge: 1
-backdate it past the retention window and run the purge task
-purge task result: purged 1
-evidence rows after the purge: 0

@@ -1,0 +1,2 @@
+fetch the same address signed out
+without a session: 200 text/html; charset=utf-8

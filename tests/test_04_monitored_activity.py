@@ -17,6 +17,8 @@ opening an activity is not one.
 """
 from __future__ import annotations
 
+import json
+
 from conftest import monitored_cmid, moodle, open_monitored
 
 VIDEO = '[data-region="video"]'
@@ -123,6 +125,67 @@ def test_leaving_the_window_pauses_the_video_and_is_recorded(session, clean_lear
 
     trail = eventlog("learner")
     assert "window_blur" in trail, "leaving the window was not recorded"
+
+
+def test_being_sent_out_of_the_lesson_does_not_lose_the_watched_position(
+        session, clean_learner):
+    """Where the video stops is where they come back to.
+
+    The monitor pauses the video and sends the learner out of the activity.
+    Until this was fixed, the server's record of how far they had watched was
+    whatever the last fifteen-second tick had written — so a learner cut off at
+    28 seconds was returned to 15 and made to sit through it again, as a
+    consequence of being interrupted rather than of anything they did.
+
+    Measured rather than argued: the position on the way out is compared with
+    what the server kept, and the gap must be under a second.
+    """
+    clean_learner("learner")
+    cmid = monitored_cmid()
+
+    # clean_learner does not touch this activity's progress, and without the
+    # reset the check reads a furthest point left by an earlier run — which
+    # sails past the assertion no matter what the code does. The first version
+    # of this test passed against the unfixed player for exactly that reason.
+    moodle("kaivideo-reset", "learner", str(cmid))
+
+    # Answered up front so playback is uninterrupted: a question falling due
+    # pauses the video, and what is being measured here is the watched
+    # position, not the question rule.
+    timeline = json.loads(moodle("kaivideo-timeline", str(cmid)))
+    for index, item in enumerate(timeline):
+        response = ("" if item["type"] == "info"
+                    else item["answerlabel"].split(" / ")[0]
+                    if item["type"] == "shorttext"
+                    else json.dumps(item["answers"]))
+        moodle("kaivideo-answer", "learner", str(cmid), str(index), response)
+
+    session.login("learner")
+    open_monitored(session)
+
+    session.note("watch for a while, past the first progress tick")
+    session.page.evaluate(f"() => document.querySelector('{VIDEO}').play()")
+    session.beat(18)
+
+    left_at = session.page.evaluate(
+        f"() => document.querySelector('{VIDEO}').currentTime")
+    session.note(f"the learner has watched to {left_at:.1f}s")
+
+    session.note("they switch away, and the monitor takes them out")
+    session.page.evaluate("() => window.dispatchEvent(new Event('blur'))")
+    session.beat(2)
+    # Leaving is what flushes the position, so the navigation is the event
+    # under test — not a tidy-up before checking.
+    session.goto("/my/")
+    session.beat(2)
+
+    state = json.loads(moodle("kaivideo-state", "learner", str(cmid)))
+    furthest = state["progress"]["furthest"]
+    session.note(f"the server kept {furthest:.1f}s of {left_at:.1f}s watched")
+
+    assert left_at - furthest < 1.0, (
+        f"being sent out cost {left_at - furthest:.1f}s of watching — "
+        "the learner has to sit through it again")
 
 
 def test_a_violation_captures_evidence(session, clean_learner, eventlog):

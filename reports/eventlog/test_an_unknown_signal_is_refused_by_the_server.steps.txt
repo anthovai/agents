@@ -1,3 +1,0 @@
-sign in
-try to log an invented signal type
-server response: {'ok': False, 'errorcode': 'unknown_type'}

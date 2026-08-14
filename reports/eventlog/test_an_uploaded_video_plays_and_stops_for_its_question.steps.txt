@@ -1,0 +1,2 @@
+served from http://localhost:8080/pluginfile.php/273/mod_kaivideo/video/0/lesson.mp4
+stopped at 3s and asked: วิดีโอนี้ถูกเก็บไว้ที่ไหน
