@@ -16,15 +16,19 @@ class answer_item extends external_api {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'The activity'),
             'itemid' => new external_value(PARAM_INT, 'The timeline question'),
-            'choice' => new external_value(PARAM_INT, 'Index of the chosen answer'),
+            // Raw, because what it carries depends on the item: JSON option
+            // indexes for the choice types, the learner's own words for a
+            // typed one. One endpoint rather than three, and the server is
+            // the only thing that decides what an item's answer means.
+            'response' => new external_value(PARAM_RAW, 'What the learner sent'),
         ]);
     }
 
-    public static function execute(int $cmid, int $itemid, int $choice): array {
+    public static function execute(int $cmid, int $itemid, string $response): array {
         global $DB, $USER;
 
         $params = self::validate_parameters(self::execute_parameters(),
-            ['cmid' => $cmid, 'itemid' => $itemid, 'choice' => $choice]);
+            ['cmid' => $cmid, 'itemid' => $itemid, 'response' => $response]);
 
         [$course, $cm] = get_course_and_cm_from_cmid($params['cmid'], 'kaivideo');
         $context = \context_module::instance($cm->id);
@@ -40,12 +44,14 @@ class answer_item extends external_api {
         $video = $DB->get_record('kaivideo', ['id' => $cm->instance], '*', MUST_EXIST);
 
         $result = \mod_kaivideo\responses::answer((int) $item->id, (int) $USER->id,
-            $params['choice'], (bool) $video->allowreview);
+            $params['response'], (bool) $video->allowreview);
         kaivideo_update_grades($video, (int) $USER->id);
 
         return [
             'correct' => $result['correct'],
-            'correctchoice' => $result['correctchoice'],
+            // JSON, for the same reason the request is raw: the shape
+            // depends on the item, and the page renders whichever it gets.
+            'answers' => json_encode($result['answers'], JSON_UNESCAPED_UNICODE),
             'feedback' => $result['feedback'],
         ];
     }
@@ -53,7 +59,8 @@ class answer_item extends external_api {
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'correct' => new external_value(PARAM_BOOL, 'Whether the choice was right'),
-            'correctchoice' => new external_value(PARAM_INT, 'Which one was right'),
+            'answers' => new external_value(PARAM_RAW,
+                'What the right answer was, once it may be shown'),
             'feedback' => new external_value(PARAM_RAW, 'What to tell them'),
         ]);
     }

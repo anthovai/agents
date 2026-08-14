@@ -11,7 +11,12 @@ from fastapi.testclient import TestClient
 from app import config, contract
 from app.main import app
 
-client = TestClient(app)
+# With whatever key the service is running under. Without this the suite only
+# passed on a machine where AI_API_KEY happened to be unset — inside the real
+# container every request bounced with a 401 before reaching the code under
+# test, and every assertion about the contract was actually asserting about
+# authentication.
+client = TestClient(app, headers={"X-Proctor-Key": config.API_KEY})
 
 
 def a_sitting(**overrides) -> dict:
@@ -358,6 +363,21 @@ def test_ids_inside_a_link_are_not_mistaken_for_arithmetic():
 
     assert guard.unsupported_numbers(
         "ดูที่ http://x/mod/quiz/view.php?id=13", "8 10") == []
+
+
+def test_list_numbering_is_formatting_not_arithmetic():
+    """Found in the browser, not in review: a course grew to seven video
+    activities, the model answered "where is the lesson" with a numbered list,
+    and the guard killed a correct answer for containing 1-7. A marker at the
+    start of a line is how a list looks; the same digit inside a sentence is
+    still a figure and is still checked."""
+    from app import guard
+
+    listed = "มีบทเรียนวิดีโอดังนี้\n1. วิดีโอแรก\n2. วิดีโอที่สอง\n3) วิดีโอที่สาม"
+    assert guard.unsupported_numbers(listed, "") == []
+
+    # The same digits mid-sentence are not markers, and stay caught.
+    assert guard.unsupported_numbers("คุณขาดอีก 2 คะแนน", "8 10") == ["2"]
 
 
 def test_a_localised_digit_is_still_a_digit():

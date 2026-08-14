@@ -615,7 +615,7 @@ switch ($command) {
         $rc->execute_plan();
         $rc->destroy();
 
-        $out = ['activities' => 0, 'questions' => 0, 'answers' => 0];
+        $out = ['activities' => 0, 'questions' => 0, 'answers' => 0, 'files' => 0];
         foreach ($DB->get_records('kaivideo', ['course' => $target->id]) as $copy) {
             $out['activities']++;
             $out['questions'] += $DB->count_records('kaivideo_item',
@@ -624,6 +624,15 @@ switch ($command) {
                 "SELECT COUNT(1) FROM {kaivideo_response} r
                    JOIN {kaivideo_item} i ON i.id = r.itemid
                   WHERE i.kaivideoid = ?", [$copy->id]);
+
+            // Uploaded videos, counted separately: a course can restore with
+            // every question intact and nothing to play them against, which
+            // reads as the questions having broken.
+            $copycm = get_coursemodule_from_instance('kaivideo', $copy->id);
+            if ($copycm && \mod_kaivideo\source::stored_file(
+                    context_module::instance($copycm->id)->id)) {
+                $out['files']++;
+            }
         }
 
         delete_course($target->id, false);
@@ -632,20 +641,33 @@ switch ($command) {
         break;
 
     case 'kaivideo-answer':
-        // kaivideo-answer <username> <cmid> <itemindex> <choice>
+        // kaivideo-answer <username> <cmid> <itemindex> <response>
         // Recording an answer without a browser, so a test can arrange a class
         // that mostly got one question wrong and then look at the report.
+        //
+        // The response is passed through as the browser would send it: a JSON
+        // array of option indexes, or the typed text. A helper that took an
+        // index and encoded it here would be exercising a path the player does
+        // not use.
         $user = kp_user($argv[2]);
         $cm = get_coursemodule_from_id('kaivideo', (int) $argv[3], 0, false, MUST_EXIST);
         $items = array_values($DB->get_records('kaivideo_item',
             ['kaivideoid' => $cm->instance], 'attime ASC, id ASC'));
         $item = $items[(int) $argv[4]];
         \mod_kaivideo\responses::answer((int) $item->id, (int) $user->id,
-            (int) $argv[5], false);
+            (string) $argv[5], false);
         $video = $DB->get_record('kaivideo', ['id' => $cm->instance], '*', MUST_EXIST);
         require_once($CFG->dirroot . '/mod/kaivideo/lib.php');
         kaivideo_update_grades($video, (int) $user->id);
-        echo "answered item {$argv[4]} with choice {$argv[5]}\n";
+        echo "answered item {$argv[4]} with {$argv[5]}\n";
+        break;
+
+    case 'kaivideo-delete-item':
+        // kaivideo-delete-item <itemid> — so a test that adds one through the
+        // editor can put the timeline back the way the rest of the suite
+        // expects to find it.
+        \mod_kaivideo\timeline::delete((int) $argv[2]);
+        echo "deleted item {$argv[2]}\n";
         break;
 
     case 'kaivideo-report':
@@ -713,20 +735,51 @@ switch ($command) {
         exit(1);
 
     case 'kaivideo-cmid':
-        // kaivideo-cmid <file|youtube> — look the activity up rather than
-        // hard-coding a course-module id, which changes whenever the demo
+        // kaivideo-cmid <file|youtube|upload> — look the activity up rather
+        // than hard-coding a course-module id, which changes whenever the demo
         // course is reseeded in a different order.
+        //
+        // 'upload' is not a provider: an uploaded video plays in the same
+        // <video> element as a linked one, which is the point. It is asked for
+        // separately here because a test about uploading has to find the one
+        // that was uploaded.
         $wanted = $argv[2] ?? 'file';
         foreach ($DB->get_records('kaivideo', [], 'id ASC') as $candidate) {
+            $cm = get_coursemodule_from_instance('kaivideo', $candidate->id);
+            if (!$cm) {
+                continue;
+            }
+            $stored = \mod_kaivideo\source::stored_file(
+                context_module::instance($cm->id)->id) !== null;
+
+            if ($wanted === 'upload') {
+                if ($stored) {
+                    echo $cm->id . "\n";
+                    exit(0);
+                }
+                continue;
+            }
+
+            // A linked source, so anything holding a file is the wrong one.
             $describe = \mod_kaivideo\source::describe($candidate->videourl);
-            if ($describe['provider'] === $wanted) {
-                $cm = get_coursemodule_from_instance('kaivideo', $candidate->id);
+            if (!$stored && $describe['provider'] === $wanted) {
                 echo $cm->id . "\n";
                 exit(0);
             }
         }
         fwrite(STDERR, "no kaivideo with a {$wanted} source" . PHP_EOL);
         exit(1);
+
+    case 'kaivideo-describe':
+        // kaivideo-describe <url> — which backend an address resolves to, and
+        // the id it carries. Separate from kaivideo-playable because "we will
+        // accept this" and "we understood which video it is" are different
+        // questions, and an unlisted Vimeo address passes the first while
+        // failing the second if its hash is dropped.
+        echo json_encode(\mod_kaivideo\source::describe($argv[2] ?? ''),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
 
     case 'kaivideo-playable':
         echo \mod_kaivideo\source::is_playable($argv[2] ?? '') ? "yes\n" : "no\n";
@@ -757,6 +810,17 @@ switch ($command) {
         $DB->delete_records('kaivideo_progress',
             ['kaivideoid' => $cm->instance, 'userid' => $user->id]);
         echo "reset {$argv[2]} on cmid {$argv[3]}\n";
+        break;
+
+    case 'kaivideo-reach':
+        // kaivideo-reach <username> <cmid> <seconds>
+        // Record watch progress the way the player does, so a test of the
+        // resume half does not first have to sit through the video.
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[3], 0, false, MUST_EXIST);
+        \mod_kaivideo\responses::reached((int) $cm->instance, (int) $user->id,
+            (float) $argv[4]);
+        echo "reached {$argv[4]}s\n";
         break;
 
     case 'kaivideo-state':
@@ -880,6 +944,70 @@ switch ($command) {
         echo json_encode(array_values(array_map(
             static fn($a) => strip_tags($a->answer), $answers)), JSON_UNESCAPED_UNICODE);
         echo "\n";
+        break;
+
+    case 'quiz-timing':
+        // quiz-timing <cmid> [timelimit] [timeopen] [timeclose] [attempts] [overduehandling]
+        //
+        // With only the cmid, reports the current values — which is what lets
+        // a test put them back exactly, instead of guessing what the seed set.
+        // Values: seconds for timelimit, unix or 0 for the window, attempt
+        // count or 0 for unlimited.
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);
+        $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
+
+        if (isset($argv[3])) {
+            $quiz->timelimit = (int) $argv[3];
+            $quiz->timeopen = (int) ($argv[4] ?? 0);
+            $quiz->timeclose = (int) ($argv[5] ?? 0);
+            $quiz->attempts = (int) ($argv[6] ?? 0);
+            $quiz->overduehandling = (string) ($argv[7] ?? 'autosubmit');
+            $DB->update_record('quiz', $quiz);
+            // The cached module info carries the dates; without this the view
+            // page keeps announcing the old window.
+            rebuild_course_cache($cm->course, true);
+        }
+
+        echo json_encode([
+            'timelimit' => (int) $quiz->timelimit,
+            'timeopen' => (int) $quiz->timeopen,
+            'timeclose' => (int) $quiz->timeclose,
+            'attempts' => (int) $quiz->attempts,
+            'overduehandling' => $quiz->overduehandling,
+        ]);
+        echo "\n";
+        break;
+
+    case 'expire-attempt':
+        // expire-attempt <username> <cmid> <secondsago>
+        // Move the open attempt's start back in time, so "the clock ran out"
+        // can be tested without the test itself sitting through the limit.
+        // The overdue handling still runs through Moodle's own cron task —
+        // what is being faked is only when the attempt began.
+        $user = kp_user($argv[2]);
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[3], 0, false, MUST_EXIST);
+        $attempt = $DB->get_record_sql(
+            'SELECT * FROM {quiz_attempts} WHERE userid = :userid AND quiz = :quiz
+              ORDER BY id DESC',
+            ['userid' => $user->id, 'quiz' => $cm->instance], IGNORE_MULTIPLE);
+        if (!$attempt) {
+            fwrite(STDERR, 'no attempt to expire' . PHP_EOL);
+            exit(1);
+        }
+        $shift = (int) $argv[4];
+        $attempt->timestart -= $shift;
+        if ($attempt->timecheckstate) {
+            $attempt->timecheckstate -= $shift;
+        }
+        $DB->update_record('quiz_attempts', $attempt);
+        echo "attempt {$attempt->id} started {$shift}s earlier\n";
+        break;
+
+    case 'run-overdue-task':
+        // Moodle's own sweep for attempts whose clock has run out.
+        $task = new \mod_quiz\task\update_overdue_attempts();
+        $task->execute();
+        echo "overdue attempts processed\n";
         break;
 
     case 'attempt-grade':

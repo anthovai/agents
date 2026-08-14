@@ -21,13 +21,13 @@ class backup_kaivideo_activity_structure_step extends backup_activity_structure_
 
         $items = new backup_nested_element('items');
         $item = new backup_nested_element('item', ['id'], [
-            'attime', 'type', 'questiontext', 'choices', 'correctchoice',
+            'attime', 'type', 'questiontext', 'choices', 'answers',
             'feedback', 'timecreated',
         ]);
 
         $responses = new backup_nested_element('responses');
         $response = new backup_nested_element('response', ['id'], [
-            'userid', 'choice', 'correct', 'timecreated',
+            'userid', 'response', 'correct', 'timecreated',
         ]);
 
         $progresses = new backup_nested_element('progresses');
@@ -60,6 +60,10 @@ class backup_kaivideo_activity_structure_step extends backup_activity_structure_
         $progress->annotate_ids('user', 'userid');
 
         $kaivideo->annotate_files('mod_kaivideo', 'intro', null);
+        // The video itself when it was uploaded rather than linked. Without
+        // this the course restores with a working timeline against nothing to
+        // play, which looks like the questions broke.
+        $kaivideo->annotate_files('mod_kaivideo', 'video', null);
 
         return $this->prepare_activity_structure($kaivideo);
     }

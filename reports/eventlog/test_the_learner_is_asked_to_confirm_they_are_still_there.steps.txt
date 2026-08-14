@@ -1,4 +1,0 @@
-run the monitor with a confirmation due every two seconds
-wait for the confirmation prompt
-the learner is asked: {'title': 'ยืนยันว่ายังเรียนอยู่', 'blocking': 'false'}
-the learner presses the button

@@ -13,6 +13,29 @@ define([], function() {
     };
 
     /**
+     * One word for why the camera did not start.
+     *
+     * @param {Error} error whatever getUserMedia rejected with
+     * @return {String} denied | busy | nocamera | generic
+     */
+    Camera.reason = function(error) {
+        var name = (error && error.name) || '';
+        if (name === 'NotAllowedError' || name === 'PermissionDeniedError'
+                || name === 'SecurityError') {
+            return 'denied';
+        }
+        if (name === 'NotReadableError' || name === 'TrackStartError'
+                || name === 'AbortError') {
+            return 'busy';
+        }
+        if (name === 'NotFoundError' || name === 'DevicesNotFoundError'
+                || name === 'OverconstrainedError') {
+            return 'nocamera';
+        }
+        return 'generic';
+    };
+
+    /**
      * Ask for the camera and start the preview.
      *
      * @return {Promise<MediaStream>}
@@ -34,6 +57,14 @@ define([], function() {
             return self.video.play().then(function() {
                 return stream;
             });
+        }).catch(function(error) {
+            // Named, because the fixes are different people's jobs. "Denied"
+            // is the learner's own permission prompt; "busy" is another
+            // program holding the camera; "none" is hardware. One generic
+            // message for all three sends every case to the help desk — the
+            // same mistake the face service made when it blamed the lighting
+            // for a low detection score.
+            throw new Error(Camera.reason(error));
         });
     };
 

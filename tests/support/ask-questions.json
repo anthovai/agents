@@ -33,15 +33,15 @@
     },
     {
       "q": "บทเรียนวิดีโออยู่ตรงไหน",
-      "expects": "interactivevideo/view.php"
+      "expects": "kaivideo/view.php"
     },
     {
       "q": "ขอลิงก์วิดีโอแบบมีปฏิสัมพันธ์",
-      "expects": "interactivevideo/view.php"
+      "expects": "kaivideo/view.php"
     },
     {
       "q": "อยากดูวิดีโอบทเรียน",
-      "expects": "interactivevideo/view.php"
+      "expects": "kaivideo/view.php"
     },
     {
       "q": "อยากทำข้อสอบความเสี่ยงสูง",

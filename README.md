@@ -42,15 +42,12 @@ docker compose up --build
 | ผู้ใช้ สิทธิ์ คอร์ส ข้อสอบ ตัดเกรด รายงาน | Moodle core | GPL-3 |
 | ความยินยอม PDPA + คำขอลบข้อมูล | `tool_policy` + Privacy API (core) | GPL-3 |
 | ล็อกเครื่องระดับ OS | Safe Exam Browser + `quizaccess_seb` (core) | MPL / GPL |
-| วิดีโอแบบมีปฏิสัมพันธ์ (ทางเลือก) | [`mod_interactivevideo`](https://github.com/sokunthearithmakara/moodle-mod_interactivevideo) | GPL-3 |
 | **วิดีโอแบบมีปฏิสัมพันธ์ (`mod_kaivideo`)** | เขียนเอง | — |
 | ตรวจจับใบหน้า / embedding | YuNet + SFace (OpenCV Zoo) | MIT / Apache-2.0 |
 | Liveness | MiniFASNet (Silent-Face-Anti-Spoofing) | Apache-2.0 |
 | **Active liveness challenge** | เขียนเอง | — |
 | **Attention enforcement 6 สัญญาณ** | เขียนเอง | — |
 | **หลักฐาน + retention + กติกาเข้าสอบ** | เขียนเอง | — |
-
-`mod_interactivevideo` ถูกดึงมาแบบ pin commit โดย `fetch-third-party.sh` ไม่ได้ก็อปเข้ามาในโปรเจค
 
 ## บันทึกการเรียนเป็นครั้งๆ (sitting)
 
@@ -126,14 +123,15 @@ docker compose up --build
 
 ## บทเรียนวิดีโอแบบมีปฏิสัมพันธ์
 
-`mod_interactivevideo` ให้ annotation คำถามระหว่างวิดีโอ และ player 22 แบบ (YouTube, Vimeo,
-PeerTube, HLS, HTML5, ...) ส่วนของเราคือเฝ้าดูผู้เรียนขณะใช้งาน
+`mod_kaivideo` (เขียนเอง ดู [docs/INTERACTIVE-VIDEO.md](docs/INTERACTIVE-VIDEO.md)) ให้คำถาม
+ระหว่างวิดีโอ 4 ชนิด และ player 5 แบบ (ไฟล์อัปโหลด, ไฟล์ตรง, HLS, YouTube, Vimeo)
+ส่วนการคุมสอบคือเฝ้าดูผู้เรียนขณะใช้งาน
 
 เปิด/ปิดรายกิจกรรมได้ที่เมนู **"การคุมสอบ"** ในกิจกรรมนั้น (`/local/kaiproctor/monitor.php?cmid=`)
-รองรับ `interactivevideo`, `h5pactivity`, `page`, `resource`, `url`
+รองรับ `kaivideo`, `h5pactivity`, `page`, `resource`, `url`
 
-การเชื่อมต่อใช้เฉพาะ `window.IVPLAYER` ที่ปลั๊กอินเปิดให้ใช้อย่างเป็นทางการ ไม่แตะภายใน
-จึงไม่พังเมื่อเขาออกเวอร์ชันใหม่ — ดู [video_adapter.js](moodle/plugins/local_kaiproctor/amd/src/video_adapter.js)
+การเชื่อมต่อใช้ `<video>` element ตรงๆ หรือ `window.KAIVIDEO` ที่ mod_kaivideo ประกาศไว้
+สำหรับ backend ที่เล่นใน iframe — ดู [video_adapter.js](moodle/plugins/local_kaiproctor/amd/src/video_adapter.js)
 
 **ผู้สอนที่เปิดดูกิจกรรมจะไม่ถูกเฝ้าดู** — คนตรวจงานไม่ใช่คนสอบ
 
@@ -274,8 +272,9 @@ LMS ──POST /summarise──> ai-service ──> Ollama บนเครื่
 
 ## วิดีโอแบบมีปฏิสัมพันธ์ของเราเอง — `mod_kaivideo`
 
-`mod_interactivevideo` ยังติดตั้งอยู่ข้างๆ ไม่ได้ถอด — แต่สิ่งที่มันเป็นไม่ได้คือ **เป็นของเรา**
-ลูกค้าต้องตรวจสอบทั้งสามชิ้นที่ซื้อไป และปลั๊กอินของคนอื่น*อ่านได้*แต่เรา*รับผิดชอบแทนไม่ได้*
+เขียนเองทั้งตัวเพราะลูกค้าต้องตรวจสอบทั้งสามชิ้นที่ซื้อไป และปลั๊กอินของคนอื่น*อ่านได้*
+แต่เรา*รับผิดชอบแทนไม่ได้* (เดิมเคยติดตั้ง `mod_interactivevideo` ไว้เทียบ — ถอดออกแล้ว
+เมื่อของเราครอบคลุมการใช้งานที่ต้องการครบ)
 
 ดู [docs/INTERACTIVE-VIDEO.md](docs/INTERACTIVE-VIDEO.md)
 

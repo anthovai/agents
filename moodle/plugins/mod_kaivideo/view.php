@@ -29,16 +29,22 @@ $progress = \mod_kaivideo\responses::progress((int) $video->id, (int) $USER->id)
 // the same questions again as though the first sitting never happened.
 $answered = [];
 foreach (\mod_kaivideo\responses::latest((int) $video->id, (int) $USER->id) as $itemid => $answer) {
-    $answered[] = ['itemid' => $itemid, 'choice' => $answer['choice'],
+    $answered[] = ['itemid' => $itemid, 'response' => $answer['response'],
         'correct' => $answer['correct']];
 }
 
-$source = \mod_kaivideo\source::describe($video->videourl);
+// The address the player loads, which for an uploaded video is a pluginfile
+// URL built against this context rather than anything stored on the record.
+$videourl = \mod_kaivideo\source::url($video, $context->id);
+$source = \mod_kaivideo\source::describe($videourl);
 
 $PAGE->requires->js_call_amd('mod_kaivideo/player', 'init', [[
     'cmid' => (int) $cm->id,
     'provider' => $source['provider'],
     'videoid' => $source['videoid'],
+    // The stream address, for the one backend that has to attach its source
+    // rather than declare it in the markup.
+    'streamurl' => $source['provider'] === \mod_kaivideo\source::HLS ? $videourl : '',
     'timeline' => $timeline,
     'answered' => $answered,
     'mustanswer' => (bool) $video->mustanswer,
@@ -52,10 +58,18 @@ echo $OUTPUT->header();
 // renders it, and printing it again put the same paragraph on the page twice.
 
 echo $OUTPUT->render_from_template('mod_kaivideo/player', [
-    'videourl' => $video->videourl,
+    'videourl' => $videourl,
     'provider' => $source['provider'],
-    'isfile' => ($source['provider'] === \mod_kaivideo\source::FILE),
-    'questioncount' => count($timeline),
+    'isnative' => in_array($source['provider'], \mod_kaivideo\source::NATIVE, true),
+    'isyoutube' => ($source['provider'] === \mod_kaivideo\source::YOUTUBE),
+    'isvimeo' => ($source['provider'] === \mod_kaivideo\source::VIMEO),
+    // An HLS playlist is not a src: handing a .m3u8 to a <video> that cannot
+    // decode it makes the browser report "no supported sources" before video.js
+    // has had a chance to attach. It arrives through the config instead.
+    'filesrc' => $source['provider'] === \mod_kaivideo\source::FILE ? $videourl : '',
+    // Questions, not interruptions: telling a learner there are eight when
+    // three of them are info cards sets them up to expect a longer test.
+    'questioncount' => count(array_filter($timeline, static fn($i) => $i['graded'])),
     'mustanswer' => (bool) $video->mustanswer,
     'canedit' => $canedit,
     'editurl' => (new moodle_url('/mod/kaivideo/edit.php', ['cmid' => $cm->id]))->out(false),

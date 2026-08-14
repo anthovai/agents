@@ -11,22 +11,27 @@
     {{! Whichever backend it is: an author choosing "ask this at 01:24" needs
         the frame at 01:24, and the native controls are wanted here — this page
         is for scrubbing around, not for taking the lesson. }}
-    {{#isfile}}
-    <video class="w-100 mb-3" data-region="preview" controls preload="metadata"
-           src="{{videourl}}"></video>
-    {{/isfile}}
-    {{^isfile}}
+    {{#isnative}}
+    {{! An HLS playlist too: the same element, with video.js attaching the
+        stream to it. A src attribute is not set here for that reason — a
+        browser handed a .m3u8 it cannot decode gives up before the library
+        has had a chance. }}
+    <video class="w-100 mb-3" data-region="preview" controls
+           preload="metadata" src="{{filesrc}}"></video>
+    {{/isnative}}
+    {{^isnative}}
     <div class="ratio ratio-16x9 mb-3">
-        <iframe data-region="preview" src="{{youtubeembed}}" title="preview"
+        <iframe data-region="preview" src="{{embedurl}}" title="preview"
                 allow="accelerometer; encrypted-media; picture-in-picture"
                 allowfullscreen></iframe>
     </div>
-    {{/isfile}}
+    {{/isnative}}
 
     <table class="table" data-region="items">
         <thead>
             <tr>
                 <th scope="col">{{#str}}attime, mod_kaivideo{{/str}}</th>
+                <th scope="col">{{#str}}type, mod_kaivideo{{/str}}</th>
                 <th scope="col">{{#str}}questiontext, mod_kaivideo{{/str}}</th>
                 <th scope="col">{{#str}}correctchoice, mod_kaivideo{{/str}}</th>
                 <th scope="col"></th>
@@ -34,10 +39,11 @@
         </thead>
         <tbody>
             {{#items}}
-            <tr data-item="{{id}}">
+            <tr data-item="{{id}}" data-type="{{type}}">
                 <td><code>{{attimelabel}}</code></td>
+                <td><span class="badge bg-secondary">{{typelabel}}</span></td>
                 <td>{{questiontext}}</td>
-                <td>{{answer}}</td>
+                <td>{{answerlabel}}</td>
                 <td class="text-nowrap">
                     <a href="{{editurl}}" data-action="edit">{{#str}}edit{{/str}}</a>
                     &middot;
@@ -46,7 +52,7 @@
             </tr>
             {{/items}}
             {{^items}}
-            <tr><td colspan="4">{{#str}}noquestions, mod_kaivideo{{/str}}</td></tr>
+            <tr><td colspan="5">{{#str}}noquestions, mod_kaivideo{{/str}}</td></tr>
             {{/items}}
         </tbody>
     </table>

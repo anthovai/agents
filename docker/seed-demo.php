@@ -248,8 +248,15 @@ $DB->update_record('quiz', (object) [
     'reviewgeneralfeedback' => $reviewall,
     'reviewrightanswer' => $reviewall,
     'reviewoverallfeedback' => $reviewall,
+    // When a timed attempt's clock runs out, grade whatever was answered
+    // rather than abandoning the whole paper. Moodle's code default is
+    // autoabandon, which turns a timing rule into a grading rule: two
+    // learners with the same answers score differently because one pressed
+    // submit ten seconds earlier. The old system graded on what was
+    // answered and recorded timed_out; autosubmit is that behaviour.
+    'overduehandling' => 'autosubmit',
 ]);
-mtrace('  review options enabled');
+mtrace('  review options enabled, timed-out attempts auto-submit');
 
 // add_moduleinfo does not always route through the access rule's save_settings,
 // so the flag is written explicitly rather than assumed.
@@ -349,54 +356,6 @@ if (\quizaccess_seb\seb_quiz_settings::get_record(['quizid' => $sebquiz->id])) {
     ]);
     $sebsettings->save();
     mtrace('  SEB configured (manual config, Moodle generates the .seb file and Config Key)');
-}
-
-mtrace('interactive video:');
-// The interactive part is mod_interactivevideo (GPL-3, fetched by
-// moodle/plugins/fetch-third-party.sh) — annotations, in-video questions and
-// 22 player backends, none of which we had to write. Our contribution is
-// watching the learner while they use it.
-if (!$DB->get_manager()->table_exists('interactivevideo')) {
-    mtrace('  mod_interactivevideo is not installed — run moodle/plugins/fetch-third-party.sh');
-} else {
-    $ivmodule = $DB->get_record('modules', ['name' => 'interactivevideo']);
-    $ivname = 'บทเรียนวิดีโอแบบมีปฏิสัมพันธ์';
-    $iv = $DB->get_record('interactivevideo', ['course' => $course->id, 'name' => $ivname]);
-
-    if ($iv) {
-        mtrace("  activity already exists (id {$iv->id})");
-    } else {
-        $moduleinfo = add_moduleinfo((object) [
-            'course' => $course->id,
-            'name' => $ivname,
-            'intro' => 'วิดีโอบทเรียนที่แทรกคำถามระหว่างเล่นได้ และมีระบบเฝ้าดูผู้เรียน',
-            'introformat' => FORMAT_HTML,
-            'modulename' => 'interactivevideo',
-            'module' => $ivmodule->id,
-            'section' => 1,
-            'visible' => 1,
-            'cmidnumber' => '',
-            'source' => 'url',
-            'videourl' => $CFG->wwwroot . '/local/kaiproctor/samples/lesson.mp4',
-            'type' => 'html5video',
-            'starttime' => 0,
-            'endtime' => 0,
-            'grade' => 0,
-            'completionpercentage' => 0,
-            'displayasstartscreen' => 1,
-            'endscreentext' => '',
-        ], $course);
-        $iv = $DB->get_record('interactivevideo', ['id' => $moduleinfo->instance]);
-        mtrace("  created activity (id {$iv->id})");
-    }
-
-    $ivcm = get_coursemodule_from_instance('interactivevideo', $iv->id);
-    if (\local_kaiproctor\monitored::is_monitored($ivcm->id)) {
-        mtrace('  already flagged as proctored');
-    } else {
-        \local_kaiproctor\monitored::set($ivcm->id, true);
-        mtrace("  flagged as proctored (cmid {$ivcm->id})");
-    }
 }
 
 mtrace('questions:');
@@ -676,33 +635,66 @@ if ($existing) {
     mtrace("  created cmid {$kaivideocm->id}");
 }
 
-// Two questions, early enough that a test does not have to watch a whole video
-// to reach the second one.
+// One of each kind, early enough that a test does not have to watch a whole
+// video to reach the last one. Seeded rather than left to a test to create,
+// because a type that only ever exists inside a test is a type nobody has
+// looked at on a real page.
 $questions = [
     [
         'attime' => 3,
+        'type' => 'choice',
         'questiontext' => 'ระหว่างเรียนบทเรียนที่มีการเฝ้าดู ผู้เรียนต้องทำอย่างไร',
         'choices' => ['อยู่หน้ากล้องตลอดเวลา', 'ปิดกล้องได้ถ้าเสียงยังดังอยู่',
             'สลับไปหน้าอื่นได้ตามต้องการ'],
-        'correctchoice' => 0,
+        'answers' => [0],
         'feedback' => 'ระบบตรวจว่ามีคนอยู่หน้ากล้องเป็นระยะ',
     ],
     [
         'attime' => 8,
+        'type' => 'choice',
         'questiontext' => 'ถ้าออกจากหน้าต่างบทเรียน จะเกิดอะไรขึ้น',
         'choices' => ['ไม่เกิดอะไร', 'ระบบบันทึกเหตุการณ์ไว้'],
-        'correctchoice' => 1,
+        'answers' => [1],
         'feedback' => 'ทุกครั้งที่ออกจากหน้าต่างถูกบันทึกเป็นหลักฐาน',
+    ],
+    [
+        'attime' => 13,
+        'type' => 'multichoice',
+        'questiontext' => 'ระบบบันทึกเหตุการณ์ใดไว้เป็นหลักฐานบ้าง (เลือกได้หลายข้อ)',
+        'choices' => ['ออกจากหน้าต่างบทเรียน', 'ไม่พบใบหน้าหน้ากล้อง',
+            'สีเสื้อของผู้เรียน', 'เวลาที่เริ่มและจบบทเรียน'],
+        'answers' => [0, 1, 3],
+        'feedback' => 'สิ่งที่บันทึกคือเหตุการณ์ ไม่ใช่ภาพหรือลักษณะของผู้เรียน',
+    ],
+    [
+        'attime' => 18,
+        'type' => 'shorttext',
+        'questiontext' => 'ข้อมูลใบหน้าถูกเก็บไว้ในรูปแบบใด (ตอบเป็นคำเดียว)',
+        'answers' => ['เวกเตอร์', 'vector', 'embedding'],
+        'feedback' => 'เก็บเป็นเวกเตอร์ตัวเลข ไม่ใช่รูปถ่าย',
+    ],
+    [
+        'attime' => 23,
+        'type' => 'info',
+        'questiontext' => 'ส่วนถัดไปเป็นขั้นตอนการยืนยันตัวตนก่อนเริ่มทำข้อสอบ',
+        'feedback' => 'เตรียมบัตรประจำตัวและตรวจว่ามีแสงพอ',
     ],
 ];
 
-if (!$DB->record_exists('kaivideo_item', ['kaivideoid' => $kaivideo->id])) {
-    foreach ($questions as $question) {
-        \mod_kaivideo\timeline::save((int) $kaivideo->id, $question);
-        mtrace("  question at {$question['attime']}s");
+// Per item rather than all-or-nothing. The first version skipped the whole
+// block once any item existed, so adding a kind of question to this list left
+// every already-seeded environment without it — including the one the tests
+// run against, where it looked like the new type was broken.
+foreach ($questions as $question) {
+    $already = $DB->record_exists_select('kaivideo_item',
+        'kaivideoid = :id AND attime = :attime',
+        ['id' => $kaivideo->id, 'attime' => $question['attime']]);
+    if ($already) {
+        mtrace("  already have one at {$question['attime']}s");
+        continue;
     }
-} else {
-    mtrace('  questions already on the timeline');
+    \mod_kaivideo\timeline::save((int) $kaivideo->id, $question);
+    mtrace("  {$question['type']} at {$question['attime']}s");
 }
 
 mtrace('interactive video (YouTube backend):');
@@ -742,12 +734,171 @@ if ($ytvideo) {
 
     \mod_kaivideo\timeline::save((int) $instance->id, [
         'attime' => 4,
+        'type' => 'choice',
         'questiontext' => 'วิดีโอนี้เล่นผ่านอะไร',
         'choices' => ['YouTube', 'ไฟล์ในเครื่อง'],
-        'correctchoice' => 0,
+        'answers' => [0],
         'feedback' => 'เล่นผ่าน iframe ของ YouTube ด้วย IFrame API',
     ]);
     mtrace("  created cmid {$ytcm->coursemodule}");
+}
+
+mtrace('interactive video (Vimeo and HLS):');
+// The other two backends. Both point at material we are allowed to point at:
+// Blender's open movies on Vimeo, and Unified Streaming's public demo stream,
+// which exists to be linked in exactly this way.
+//
+// Neither is reachable from a sealed network, and the tests that drive them
+// skip rather than fail when that is the case. A test that lies about the
+// environment is worse than one that says it could not run.
+$streams = [
+    [
+        'name' => 'วิดีโอ Vimeo (KAISER)',
+        // Big Buck Bunny on Blender's own Vimeo account: Creative Commons, and
+        // the same film the YouTube activity points at, so the two are
+        // comparable. Vimeo's long-standing demo id (76979871) is gone — its
+        // oEmbed lookup 404s, and the player then fails in a way that reads
+        // like our code rather than like a dead video.
+        //
+        // It will not actually embed on http://localhost:8080: Vimeo answers
+        // an embed request from an unrecognised host with a 401 behind a
+        // Cloudflare challenge, whatever the video's own settings say. That is
+        // worth having seeded anyway — it is exactly the failure a customer
+        // meets when their domain is not on a video's allowed list, and the
+        // test drives that path rather than pretending it did not happen.
+        'url' => 'https://vimeo.com/1084537',
+        'intro' => '<p>วิดีโอจาก Vimeo ที่หยุดถามคำถามระหว่างทาง</p>',
+        'question' => 'วิดีโอนี้เล่นผ่านผู้ให้บริการรายใด',
+        'choices' => ['Vimeo', 'YouTube'],
+    ],
+    [
+        'name' => 'วิดีโอสตรีม HLS (KAISER)',
+        'url' => 'https://demo.unified-streaming.com/k8s/features/stable/'
+            . 'video/tears-of-steel/tears-of-steel.ism/.m3u8',
+        'intro' => '<p>สตรีมแบบ HLS ที่เล่นใน video element ปกติ</p>',
+        'question' => 'สตรีมนี้เล่นด้วยอะไร',
+        'choices' => ['video element ปกติ', 'iframe ของผู้ให้บริการ'],
+    ],
+];
+
+foreach ($streams as $stream) {
+    $existing = $DB->get_record('kaivideo',
+        ['course' => $course->id, 'name' => $stream['name']]);
+    if ($existing) {
+        $streamcm = get_coursemodule_from_instance('kaivideo', $existing->id);
+        mtrace("  {$stream['name']}: already present (cmid {$streamcm->id})");
+        continue;
+    }
+
+    $module = $DB->get_record('modules', ['name' => 'kaivideo'], '*', MUST_EXIST);
+    $instance = (object) [
+        'course' => $course->id,
+        'name' => $stream['name'],
+        'intro' => $stream['intro'],
+        'introformat' => FORMAT_HTML,
+        'videourl' => $stream['url'],
+        'mustanswer' => 1,
+        'allowreview' => 1,
+        'grade' => 100,
+    ];
+    $instance->id = kaivideo_add_instance($instance);
+
+    $streamcm = (object) [
+        'course' => $course->id,
+        'module' => $module->id,
+        'instance' => $instance->id,
+        'section' => 0,
+        'visible' => 1,
+        'completion' => COMPLETION_TRACKING_NONE,
+    ];
+    $streamcm->coursemodule = add_course_module($streamcm);
+    course_add_cm_to_section($course->id, $streamcm->coursemodule, 0);
+
+    \mod_kaivideo\timeline::save((int) $instance->id, [
+        'attime' => 4,
+        'type' => 'choice',
+        'questiontext' => $stream['question'],
+        'choices' => $stream['choices'],
+        'answers' => [0],
+        'feedback' => 'กฎเรื่องคำถามถึงกำหนดเหมือนกันทุกที่มา',
+    ]);
+    mtrace("  {$stream['name']}: created cmid {$streamcm->coursemodule}");
+}
+
+mtrace('interactive video (uploaded file):');
+// The third source. Seeded because "the video lives in Moodle" is the option
+// most teachers can actually take, and an option that only ever exists in a
+// form is one nobody has watched play.
+$upname = 'วิดีโอที่อัปโหลดไว้ใน Moodle (KAISER)';
+$uploaded = $DB->get_record('kaivideo', ['course' => $course->id, 'name' => $upname]);
+
+// Find-or-create, then make sure the file and the question are there either
+// way. The all-or-nothing version left a half-built activity behind the first
+// time this block threw part way down — present, so skipped ever after, with
+// no video in it and no question on its timeline.
+if ($uploaded) {
+    $upcm = get_coursemodule_from_instance('kaivideo', $uploaded->id);
+    mtrace("  already present (cmid {$upcm->id})");
+    $upcm->coursemodule = $upcm->id;
+    $instance = $uploaded;
+} else {
+    $module = $DB->get_record('modules', ['name' => 'kaivideo'], '*', MUST_EXIST);
+    $instance = (object) [
+        'course' => $course->id,
+        'name' => $upname,
+        'intro' => '<p>วิดีโอที่เก็บไว้ใน Moodle เอง ไม่ได้ชี้ไปที่ที่อยู่ภายนอก</p>',
+        'introformat' => FORMAT_HTML,
+        'videourl' => '',
+        'mustanswer' => 1,
+        'allowreview' => 1,
+        'grade' => 100,
+    ];
+    $instance->id = kaivideo_add_instance($instance);
+
+    $upcm = (object) [
+        'course' => $course->id,
+        'module' => $module->id,
+        'instance' => $instance->id,
+        'section' => 0,
+        'visible' => 1,
+        'completion' => COMPLETION_TRACKING_NONE,
+    ];
+    $upcm->coursemodule = add_course_module($upcm);
+    course_add_cm_to_section($course->id, $upcm->coursemodule, 0);
+
+    mtrace("  created cmid {$upcm->coursemodule}");
+}
+
+// Straight into the file area from disk, which is what the form's file picker
+// ends up doing. Same sample the URL-backed activity points at, so the two are
+// comparable: the only difference is where it is served from.
+$upcontext = context_module::instance($upcm->coursemodule);
+if (\mod_kaivideo\source::stored_file($upcontext->id)) {
+    mtrace('  video already in its file area');
+} else {
+    get_file_storage()->create_file_from_pathname((object) [
+        'contextid' => $upcontext->id,
+        'component' => 'mod_kaivideo',
+        'filearea' => \mod_kaivideo\source::AREA,
+        'itemid' => 0,
+        'filepath' => '/',
+        'filename' => 'lesson.mp4',
+    ], $CFG->dirroot . '/local/kaiproctor/samples/lesson.mp4');
+    mtrace('  lesson.mp4 copied into its file area');
+}
+
+if ($DB->record_exists('kaivideo_item', ['kaivideoid' => $instance->id])) {
+    mtrace('  question already on its timeline');
+} else {
+    \mod_kaivideo\timeline::save((int) $instance->id, [
+        'attime' => 3,
+        'type' => 'choice',
+        'questiontext' => 'วิดีโอนี้ถูกเก็บไว้ที่ไหน',
+        'choices' => ['ใน Moodle นี้เอง', 'บนเว็บภายนอก'],
+        'answers' => [0],
+        'feedback' => 'ไฟล์อยู่ในระบบไฟล์ของ Moodle และส่งผ่าน pluginfile.php',
+    ]);
+    mtrace('  question at 3s');
 }
 
 mtrace('interactive video (monitored):');

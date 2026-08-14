@@ -143,7 +143,6 @@ class site_index {
             'quiz' => 'quiz',
             'lesson' => 'lesson',
             'kaivideo' => 'video',
-            'interactivevideo' => 'video',
             'h5pactivity' => 'video',
             'resource' => 'resource',
             'url' => 'resource',

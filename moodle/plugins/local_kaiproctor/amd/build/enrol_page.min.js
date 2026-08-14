@@ -102,7 +102,18 @@ define([
                 }).catch(function(error) {
                     camera.stop();
                     startButton.disabled = false;
-                    fail(error && error.message === 'nocamera' ? 'error:nocamera' : 'error:generic');
+                    // Camera.reason() has already named the cause: denied is
+                    // the learner's own permission prompt, busy is another
+                    // program holding the camera, nocamera is hardware. One
+                    // generic message for all of them sends every case to the
+                    // help desk — same mistake as blaming the lighting.
+                    var reason = (error && error.message) || '';
+                    var keys = {
+                        denied: 'error:cameradenied',
+                        busy: 'error:camerabusy',
+                        nocamera: 'error:nocamera'
+                    };
+                    fail(keys[reason] || 'error:generic');
                 });
             });
 

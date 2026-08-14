@@ -43,8 +43,13 @@ class report {
     public static function per_question(int $kaivideoid): array {
         global $DB;
 
-        $items = $DB->get_records('kaivideo_item', ['kaivideoid' => $kaivideoid],
-            'attime ASC, id ASC');
+        // Info cards are left out: there is nothing to have got wrong, and
+        // a row saying the class acknowledged a message is noise in a table
+        // meant to show where the lesson is failing.
+        [$insql, $params] = $DB->get_in_or_equal(timeline::GRADED, SQL_PARAMS_NAMED);
+        $params['kaivideoid'] = $kaivideoid;
+        $items = $DB->get_records_select('kaivideo_item',
+            "kaivideoid = :kaivideoid AND type $insql", $params, 'attime ASC, id ASC');
         if (!$items) {
             return [];
         }
@@ -53,7 +58,7 @@ class report {
         // each learner's latest attempt per item.
         $latest = [];
         foreach ($DB->get_records_sql(
-                "SELECT r.id, r.itemid, r.userid, r.choice, r.correct
+                "SELECT r.id, r.itemid, r.userid, r.response, r.correct
                    FROM {kaivideo_response} r
                    JOIN {kaivideo_item} i ON i.id = r.itemid
                   WHERE i.kaivideoid = :kaivideoid
@@ -65,27 +70,17 @@ class report {
         foreach ($items as $item) {
             $answers = $latest[(int) $item->id] ?? [];
             $choices = json_decode($item->choices, true) ?: [];
+            $expected = json_decode($item->answers, true) ?: [];
 
-            $tally = array_fill(0, count($choices), 0);
+            $total = count($answers);
             $right = 0;
             foreach ($answers as $answer) {
-                $index = (int) $answer->choice;
-                if (isset($tally[$index])) {
-                    $tally[$index]++;
-                }
                 $right += $answer->correct ? 1 : 0;
             }
 
-            $total = count($answers);
-            $breakdown = [];
-            foreach ($choices as $index => $text) {
-                $breakdown[] = [
-                    'text' => $text,
-                    'iscorrect' => ($index === (int) $item->correctchoice),
-                    'chosen' => $tally[$index],
-                    'share' => $total ? round($tally[$index] / $total * 100) : 0,
-                ];
-            }
+            $breakdown = $item->type === 'shorttext'
+                ? self::typed_breakdown($answers, $expected, $total)
+                : self::option_breakdown($answers, $choices, $expected, $total);
 
             // The commonest wrong answer, which is usually the misconception
             // worth addressing rather than the question being unclear.
@@ -122,6 +117,75 @@ class report {
         });
 
         return $rows;
+    }
+
+    /**
+     * How the options were spread, for the choice types.
+     *
+     * @param array $answers rows for this item
+     * @param array $choices option texts
+     * @param array $expected indexes that are correct
+     * @param int $total
+     * @return array
+     */
+    protected static function option_breakdown(array $answers, array $choices,
+            array $expected, int $total): array {
+        $tally = array_fill(0, max(1, count($choices)), 0);
+
+        foreach ($answers as $answer) {
+            // A multiple-response answer counts towards every option it
+            // contains: the question is which options attract people, not
+            // which combinations they submitted.
+            foreach ((json_decode((string) $answer->response, true) ?: []) as $index) {
+                if (isset($tally[(int) $index])) {
+                    $tally[(int) $index]++;
+                }
+            }
+        }
+
+        $breakdown = [];
+        foreach ($choices as $index => $text) {
+            $breakdown[] = [
+                'text' => $text,
+                'iscorrect' => in_array($index, $expected, true),
+                'chosen' => $tally[$index],
+                'share' => $total ? round($tally[$index] / $total * 100) : 0,
+            ];
+        }
+        return $breakdown;
+    }
+
+    /**
+     * What people actually typed, commonest first.
+     *
+     * The wrong answers are the point here. A typed question that half the
+     * class fails usually fails in one particular way, and the way is only
+     * visible if the words are kept.
+     *
+     * @param array $answers
+     * @param array $expected accepted strings
+     * @param int $total
+     * @return array
+     */
+    protected static function typed_breakdown(array $answers, array $expected,
+            int $total): array {
+        $tally = [];
+        foreach ($answers as $answer) {
+            $typed = (string) $answer->response;
+            $tally[$typed] = ($tally[$typed] ?? 0) + 1;
+        }
+        arsort($tally);
+
+        $breakdown = [];
+        foreach (array_slice($tally, 0, 8, true) as $typed => $count) {
+            $breakdown[] = [
+                'text' => $typed === '' ? get_string('report:blank', 'mod_kaivideo') : $typed,
+                'iscorrect' => in_array($typed, $expected, true),
+                'chosen' => $count,
+                'share' => $total ? round($count / $total * 100) : 0,
+            ];
+        }
+        return $breakdown;
     }
 
     /**

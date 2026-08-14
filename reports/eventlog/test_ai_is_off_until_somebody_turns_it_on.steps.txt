@@ -1,1 +1,0 @@
-AI settings: {'enabled': '0', 'baseurl': 'http://ai-service:9100', 'defaultenabled': '0'}

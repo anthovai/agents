@@ -29,18 +29,39 @@
             has no shape until metadata arrives, and what a learner sees on
             arrival is a tall black rectangle with a small white box floating
             in it. }}
-        {{#isfile}}
+        {{! A real <video> for both a plain file and an HLS stream. The stream
+            gets its source attached by video.js, which Moodle already ships
+            with @videojs/http-streaming in it; everything downstream — the
+            controls, the due-question rule, the proctoring adapter — is looking
+            at the same element either way and cannot tell them apart. }}
+        {{#isnative}}
         <div class="ratio ratio-16x9">
-            <video data-region="video" preload="metadata" src="{{videourl}}"
+            <video data-region="video" preload="metadata" src="{{filesrc}}"
                    style="object-fit: contain;"></video>
         </div>
-        {{/isfile}}
-        {{^isfile}}
+        {{/isnative}}
+        {{#isyoutube}}
         {{! Replaced by the iframe once YouTube's API has loaded. }}
         <div class="ratio ratio-16x9">
             <div data-region="youtube"></div>
         </div>
-        {{/isfile}}
+        {{/isyoutube}}
+        {{#isvimeo}}
+        <div class="ratio ratio-16x9 position-relative">
+            <div data-region="vimeo"></div>
+            {{!
+                A transparent sheet over the iframe. Vimeo's own controls can be
+                asked to go away, but whether that request is honoured depends
+                on the account the video sits in — and a guarantee that holds
+                only on some customers' accounts is not a guarantee.
+
+                So the controls are put out of reach instead of asked to hide.
+                Ours are underneath, where they always were.
+            }}
+            <div class="position-absolute top-0 start-0 w-100 h-100"
+                 data-region="shield" style="cursor: default;"></div>
+        </div>
+        {{/isvimeo}}
 
         {{!
             Drawn over the video rather than beside it. A question in the margin
@@ -65,7 +86,29 @@
             <div class="card shadow" style="max-width: 34rem; width: 100%;">
                 <div class="card-body">
                     <p class="lead mb-3" data-region="questiontext"></p>
+
+                    {{! One of these is filled in per question type; the others
+                        stay empty and hidden. Building the panel per type would
+                        mean four templates that have to stay in step with each
+                        other over one card. }}
                     <div data-region="choices" class="d-grid gap-2"></div>
+                    <div data-region="typed" hidden>
+                        <label class="visually-hidden" for="kaivideo-typed">
+                            {{#str}}youranswer, mod_kaivideo{{/str}}
+                        </label>
+                        <input type="text" class="form-control" id="kaivideo-typed"
+                               data-region="typedinput" autocomplete="off"
+                               maxlength="120">
+                    </div>
+
+                    {{! Needed by the types where an answer is not complete the
+                        moment it is clicked. A single-answer question has no
+                        submit button on purpose: an extra click that can only
+                        ever mean "yes, that one" is an extra click. }}
+                    <button type="button" class="btn btn-primary mt-3"
+                            data-action="submit" hidden>
+                        {{#str}}submitanswer, mod_kaivideo{{/str}}
+                    </button>
 
                     <div data-region="outcome" hidden>
                         <p data-region="verdict" class="mb-1"></p>

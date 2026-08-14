@@ -28,10 +28,10 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="kaivideoid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="attime" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Seconds into the video. Stored with decimals because a question landing mid-word is worse than one landing a moment late."/>
-        <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="question" SEQUENCE="false"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="choice" SEQUENCE="false" COMMENT="choice, multichoice, shorttext or info."/>
         <FIELD NAME="questiontext" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="choices" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON array of answer texts, in the order shown."/>
-        <FIELD NAME="correctchoice" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Index into choices. Never sent to the browser before the learner answers."/>
+        <FIELD NAME="choices" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON array of option texts in the order shown. Empty for shorttext and info."/>
+        <FIELD NAME="answers" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON. Option indexes for the choice types, accepted strings for shorttext, empty for info. Never sent to the browser before the learner answers."/>
         <FIELD NAME="feedback" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
@@ -49,7 +49,7 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="choice" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="response" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="What the learner sent: JSON option indexes, or their typed text. Kept verbatim so a teacher can see what was actually said, not only whether it was accepted."/>
         <FIELD NAME="correct" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>

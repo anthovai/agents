@@ -25,7 +25,7 @@ class provider implements
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table('kaivideo_response', [
             'userid' => 'privacy:metadata:kaivideo_response:userid',
-            'choice' => 'privacy:metadata:kaivideo_response:choice',
+            'response' => 'privacy:metadata:kaivideo_response:response',
             'correct' => 'privacy:metadata:kaivideo_response:correct',
             'timecreated' => 'privacy:metadata:kaivideo_response:timecreated',
         ], 'privacy:metadata:kaivideo_response');
@@ -36,6 +36,12 @@ class provider implements
             'finished' => 'privacy:metadata:kaivideo_progress:finished',
             'timemodified' => 'privacy:metadata:kaivideo_progress:timemodified',
         ], 'privacy:metadata:kaivideo_progress');
+
+        // Declared even though it holds nothing personal. A file area that is
+        // never mentioned reads, to anybody auditing the plugin, as an area
+        // somebody forgot to think about.
+        $collection->add_subsystem_link('core_files', [],
+            'privacy:metadata:filepurpose');
 
         return $collection;
     }
@@ -101,10 +107,23 @@ class provider implements
                     as $itemid => $answer) {
                 $item = $DB->get_record('kaivideo_item', ['id' => $itemid]);
                 $choices = $item ? (json_decode($item->choices, true) ?: []) : [];
+                // Exported as what they said, not as an index into a list the
+                // person would have to reconstruct. A subject access request
+                // answered with "3" tells them nothing.
+                $said = (string) $answer['response'];
+                $indexes = json_decode($said, true);
+                if (is_array($indexes)) {
+                    $named = [];
+                    foreach ($indexes as $index) {
+                        $named[] = $choices[(int) $index] ?? '';
+                    }
+                    $said = implode(', ', $named);
+                }
+
                 $answers[] = [
                     'question' => $item->questiontext ?? '',
                     'at' => $item ? \mod_kaivideo\timeline::clock((float) $item->attime) : '',
-                    'chose' => $choices[$answer['choice']] ?? '',
+                    'said' => $said,
                     'correct' => $answer['correct'] ? get_string('yes') : get_string('no'),
                 ];
             }

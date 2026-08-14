@@ -34,7 +34,7 @@ PAGES = [
      "kind": "quiz", "summary": "หลักสูตรทดสอบระบบคุมสอบ"},
     {"title": "ข้อสอบความเสี่ยงสูง (SEB)", "url": "/mod/quiz/view.php?id=10",
      "kind": "quiz", "summary": "หลักสูตรทดสอบระบบคุมสอบ"},
-    {"title": "บทเรียนวิดีโอแบบมีปฏิสัมพันธ์", "url": "/mod/interactivevideo/view.php?id=11",
+    {"title": "บทเรียนวิดีโอแบบมีปฏิสัมพันธ์", "url": "/mod/kaivideo/view.php?id=15",
      "kind": "video", "summary": "หลักสูตรทดสอบระบบคุมสอบ"},
     {"title": "ข้อสอบสุ่มตามระดับความยาก", "url": "/mod/quiz/view.php?id=13",
      "kind": "quiz", "summary": "หลักสูตรทดสอบระบบคุมสอบ"},
@@ -42,7 +42,7 @@ PAGES = [
 
 CASES = [
     ("จะไปหน้าลงทะเบียนใบหน้าได้ยังไง", "/local/kaiproctor/enrol.php"),
-    ("บทเรียนวิดีโออยู่ตรงไหน", "/mod/interactivevideo/view.php?id=11"),
+    ("บทเรียนวิดีโออยู่ตรงไหน", "/mod/kaivideo/view.php?id=15"),
     ("อยากทำข้อสอบความเสี่ยงสูง", "/mod/quiz/view.php?id=10"),
     ("ขอลิงก์หน้าคอร์สหน่อย", "/course/view.php?id=2"),
     ("ข้อสอบที่สุ่มตามความยากอยู่ไหน", "/mod/quiz/view.php?id=13"),

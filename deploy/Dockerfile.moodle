@@ -37,10 +37,16 @@ RUN sed -ri 's/^Timeout [0-9]+/Timeout 420/' /etc/apache2/apache2.conf
 # Production PHP settings. The stock php.ini-production plus what Moodle needs
 # and what a proctored session needs: evidence clips are uploaded from the
 # browser, and the defaults are smaller than a short WebM.
+#
+# 512M rather than the 32M that covers an evidence clip, because a lesson video
+# uploaded into an interactive video goes through the same limit and a ten
+# minute recording is comfortably past 32M. Moodle shows the smaller of this
+# and the course limit in its file picker, so an admin who wants to cap uploads
+# lower does it there rather than by rebuilding the image.
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
     && { \
-        echo 'upload_max_filesize = 32M'; \
-        echo 'post_max_size = 32M'; \
+        echo 'upload_max_filesize = 512M'; \
+        echo 'post_max_size = 512M'; \
         echo 'max_execution_time = 300'; \
         echo 'memory_limit = 512M'; \
         echo 'opcache.enable = 1'; \
@@ -58,8 +64,6 @@ COPY moodle/plugins/local_kaiproctor /var/www/html/public/local/kaiproctor
 COPY moodle/plugins/quizaccess_kaiproctor /var/www/html/public/mod/quiz/accessrule/kaiproctor
 COPY moodle/plugins/mod_kaivideo /var/www/html/public/mod/kaivideo
 
-# Third-party, and optional: fetched by moodle/plugins/fetch-third-party.sh
-# before building. Absent is fine — nothing depends on it.
 COPY docker/moodle-entrypoint.sh /usr/local/bin/moodle-entrypoint
 RUN chmod +x /usr/local/bin/moodle-entrypoint
 

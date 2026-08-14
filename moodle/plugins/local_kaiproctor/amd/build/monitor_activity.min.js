@@ -118,8 +118,16 @@ define([
                     started = false;
                     camera.stop();
                     closeSession('terminated', 'startup_failed');
-                    var key = (error && error.message === 'nocamera')
-                        ? 'error:nocamera' : 'error:generic';
+                    // Named by Camera.reason(): a learner who pressed "block"
+                    // on the permission prompt needs telling that, not
+                    // "something went wrong, try again" — retrying cannot fix
+                    // a decision the browser has remembered.
+                    var keys = {
+                        denied: 'error:cameradenied',
+                        busy: 'error:camerabusy',
+                        nocamera: 'error:nocamera'
+                    };
+                    var key = keys[(error && error.message) || ''] || 'error:generic';
                     Str.get_string(key, 'local_kaiproctor').then(function(text) {
                         banner.className = 'alert alert-danger kaiproctor-monitor-banner';
                         banner.textContent = text;

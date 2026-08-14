@@ -1,10 +1,9 @@
 <?php
 // Which course modules are watched.
 //
-// The activities being watched belong to other plugins — mod_interactivevideo
-// today, something else tomorrow. Storing the flag here rather than adding a
-// field to their settings form is what keeps this an integration instead of a
-// fork we have to carry.
+// Most of the activities being watched belong to core — h5pactivity, page,
+// url. Storing the flag here rather than adding a field to their settings
+// forms is what keeps this an integration instead of a fork we have to carry.
 
 namespace local_kaiproctor;
 
@@ -15,8 +14,7 @@ class monitored {
     /** Module types this plugin knows how to watch. */
     // kaivideo is ours and leads the list: its player is a plain <video>
     // element, which the attention monitor drives with no adapter at all.
-    const SUPPORTED = ['kaivideo', 'interactivevideo', 'h5pactivity', 'page',
-        'resource', 'url'];
+    const SUPPORTED = ['kaivideo', 'h5pactivity', 'page', 'resource', 'url'];
 
     public static function is_monitored(int $cmid): bool {
         global $DB;

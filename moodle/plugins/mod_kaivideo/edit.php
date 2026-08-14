@@ -43,15 +43,23 @@ if ($edit) {
     $record = $DB->get_record('kaivideo_item',
         ['id' => $edit, 'kaivideoid' => $video->id], '*', MUST_EXIST);
     $choices = json_decode($record->choices, true) ?: [];
+    $answers = json_decode($record->answers, true) ?: [];
+
     $existing = (object) [
         'itemid' => $record->id,
         'attime' => (float) $record->attime,
+        'type' => $record->type,
         'questiontext' => $record->questiontext,
-        'correctchoice' => (int) $record->correctchoice,
         'feedback' => $record->feedback,
+        // Only one of these two is meaningful for a given type, and the form
+        // hides the other. Both are filled in anyway so that an author who
+        // switches type to look at it and switches back has lost nothing.
+        'acceptedanswers' => $record->type === 'shorttext'
+            ? implode("\n", $answers) : '',
     ];
     foreach ($choices as $index => $text) {
         $existing->{'choice' . $index} = $text;
+        $existing->{'correct' . $index} = in_array($index, $answers, true) ? 1 : 0;
     }
 }
 
@@ -63,17 +71,35 @@ if ($existing) {
 if ($form->is_cancelled()) {
     redirect($url);
 } else if ($data = $form->get_data()) {
+    // The indexes sent to timeline::save count filled options only. The form
+    // numbers its boxes 0-5 including the empty ones, so an author who leaves
+    // box 2 blank and ticks box 3 would otherwise mark the wrong answer
+    // correct once the blanks are dropped.
     $choices = [];
+    $answers = [];
     for ($index = 0; $index < \mod_kaivideo\timeline::MAX_CHOICES; $index++) {
-        $choices[] = $data->{'choice' . $index} ?? '';
+        $text = trim((string) ($data->{'choice' . $index} ?? ''));
+        if ($text === '') {
+            continue;
+        }
+        if (!empty($data->{'correct' . $index})) {
+            $answers[] = count($choices);
+        }
+        $choices[] = $text;
+    }
+
+    if ($data->type === 'shorttext') {
+        $answers = mod_kaivideo_edit_form::accepted_lines(
+            (string) ($data->acceptedanswers ?? ''));
     }
 
     try {
         \mod_kaivideo\timeline::save((int) $video->id, [
             'attime' => $data->attime,
+            'type' => $data->type,
             'questiontext' => $data->questiontext,
             'choices' => $choices,
-            'correctchoice' => $data->correctchoice,
+            'answers' => $answers,
             'feedback' => $data->feedback,
         ], $data->itemid ?: null);
 
@@ -88,20 +114,31 @@ if ($form->is_cancelled()) {
     }
 }
 
+$videourl = \mod_kaivideo\source::url($video, $context->id);
+$source = \mod_kaivideo\source::describe($videourl);
+
+if ($source['provider'] === \mod_kaivideo\source::HLS) {
+    // The one source that cannot be declared in the markup. Same helper the
+    // player uses, so there is one place that knows how a stream gets onto a
+    // <video> element.
+    $PAGE->requires->js_call_amd('mod_kaivideo/backend', 'attachStream',
+        ['[data-region="preview"]', $videourl]);
+}
+
 echo $OUTPUT->header();
 
-$source = \mod_kaivideo\source::describe($video->videourl);
-
+// The preview keeps the provider's own controls, unlike the player: this page
+// is for scrubbing around to find a frame, not for taking the lesson, and there
+// is nothing here to skip past.
 echo $OUTPUT->render_from_template('mod_kaivideo/edit', [
-    'videourl' => $video->videourl,
-    'isfile' => ($source['provider'] === \mod_kaivideo\source::FILE),
-    'youtubeembed' => $source['videoid'] === '' ? ''
-        : 'https://www.youtube.com/embed/' . $source['videoid'],
+    'videourl' => $videourl,
+    'isnative' => in_array($source['provider'], \mod_kaivideo\source::NATIVE, true),
+    'filesrc' => $source['provider'] === \mod_kaivideo\source::FILE ? $videourl : '',
+    'embedurl' => \mod_kaivideo\source::embed_url($source),
     'items' => array_map(static function($item) use ($cmid, $url) {
         $item['editurl'] = (new moodle_url($url, ['edit' => $item['id']]))->out(false);
         $item['deleteurl'] = (new moodle_url($url,
             ['delete' => $item['id'], 'sesskey' => sesskey()]))->out(false);
-        $item['answer'] = $item['choices'][$item['correctchoice']] ?? '';
         return $item;
     }, \mod_kaivideo\timeline::for_editing((int) $video->id)),
     'viewurl' => (new moodle_url('/mod/kaivideo/view.php', ['id' => $cmid]))->out(false),

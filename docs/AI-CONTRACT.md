@@ -77,7 +77,7 @@
   "question": "บทเรียนวิดีโออยู่ตรงไหน",
   "context": [
     {"title": "บทเรียนวิดีโอแบบมีปฏิสัมพันธ์",
-     "url": "https://lms.example.com/mod/interactivevideo/view.php?id=11",
+     "url": "https://lms.example.com/mod/kaivideo/view.php?id=11",
      "kind": "video",
      "summary": "หลักสูตรทดสอบระบบคุมสอบ"}
   ]

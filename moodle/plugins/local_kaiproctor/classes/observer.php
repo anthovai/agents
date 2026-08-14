@@ -40,4 +40,21 @@ class observer {
 
         exam_draw::record($attempt, (int) $seed);
     }
+
+    /**
+     * Drop the monitored flag when the activity carrying it is deleted.
+     *
+     * Not housekeeping: course-module ids are reused by restore, so a stale
+     * row means some future activity lands on a recycled id already flagged —
+     * and its learners are put in front of a camera nobody asked for.
+     *
+     * @param \core\event\course_module_deleted $event
+     */
+    public static function course_module_deleted(
+            \core\event\course_module_deleted $event): void {
+        global $DB;
+
+        $DB->delete_records('local_kaiproctor_monitored',
+            ['cmid' => $event->objectid]);
+    }
 }

@@ -127,10 +127,6 @@ services:
       # Moodle 5.0+ serves from public/, so plugins live under it too.
       - ./moodle/plugins/local_kaiproctor:/var/www/html/public/local/kaiproctor
       - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/public/mod/quiz/accessrule/kaiproctor
-      # Third-party, fetched by moodle/plugins/fetch-third-party.sh.
-      - ./moodle/plugins/mod_interactivevideo:/var/www/html/public/mod/interactivevideo
-      # Ours. Lives beside the third-party one on purpose: the customer
-      # can compare them, and nothing has to be switched off to try it.
       - ./moodle/plugins/mod_kaivideo:/var/www/html/public/mod/kaivideo
 
   cron:
@@ -151,10 +147,12 @@ services:
       MOODLE_DB_PASS: ${MOODLE_DB_PASS:-moodle}
     volumes:
       - moodledata:/var/moodledata
+      # The same plugin set as the web container. A plugin installed in the
+      # database but missing from this container's disk makes every cron run
+      # log it as broken.
       - ./moodle/plugins/local_kaiproctor:/var/www/html/public/local/kaiproctor
       - ./moodle/plugins/quizaccess_kaiproctor:/var/www/html/public/mod/quiz/accessrule/kaiproctor
-      # Third-party, fetched by moodle/plugins/fetch-third-party.sh.
-      - ./moodle/plugins/mod_interactivevideo:/var/www/html/public/mod/interactivevideo
+      - ./moodle/plugins/mod_kaivideo:/var/www/html/public/mod/kaivideo
     # Moodle scheduled tasks (evidence purge, notifications) need a real cron.
     command: sh -c "while true; do php /var/www/html/admin/cli/cron.php >/dev/null 2>&1; sleep 60; done"
 

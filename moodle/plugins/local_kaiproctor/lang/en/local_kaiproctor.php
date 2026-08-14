@@ -70,7 +70,9 @@ $string['enrol:existing'] = 'Face enrolled on {$a}.';
 $string['hint:noface'] = 'Move so your face is clearly visible.';
 $string['hint:multiplefaces'] = 'Only one face should be in frame.';
 $string['hint:spoof'] = 'Possible spoofing detected.';
-$string['error:nocamera'] = 'The camera could not be started. Allow camera access and make sure the page is served over HTTPS or localhost.';
+$string['error:nocamera'] = 'No camera was found on this device. Plug one in, or use a device that has one.';
+$string['error:cameradenied'] = 'Camera access was blocked. Click the camera icon in the address bar, allow it, and reload the page — retrying without that changes nothing.';
+$string['error:camerabusy'] = 'The camera is being used by another program. Close video calls or camera apps, then try again.';
 $string['error:generic'] = 'Something went wrong. Please try again.';
 
 // Capabilities.

@@ -4,27 +4,26 @@
 // The monitor only ever touches pause(), play(), paused, currentTime and
 // parentElement, so anything exposing those works. Two sources are handled:
 //
-//   * a plain <video> element — used directly, nothing to adapt
-//   * mod_interactivevideo, which publishes window.IVPLAYER with a common
-//     play/pause/getCurrentTime/isPaused contract across all 22 of its
-//     backends (YouTube, Vimeo, PeerTube, HLS, HTML5, ...)
-//
-// The second case is why this exists: reaching into that plugin's internals
-// would break on its next release, but its published player object is the
-// interface it offers on purpose.
+//   * a plain <video> element — used directly, nothing to adapt. This covers
+//     mod_kaivideo's file, upload and HLS backends, and any core activity
+//     that embeds a video.
+//   * window.KAIVIDEO — mod_kaivideo's published player object, which is how
+//     its YouTube and Vimeo lessons stay watchable: both play inside an
+//     iframe where no <video> is reachable, so the module publishes a
+//     play/pause/currentTime/isPaused contract instead.
 define([], function() {
 
     /**
-     * Wraps mod_interactivevideo's player.
+     * Wraps the published player object.
      *
-     * isPaused() is treated as possibly asynchronous — some of its backends
+     * isPaused() is treated as possibly asynchronous — the iframe backends
      * answer over postMessage — so paused state is tracked locally and only
      * reconciled with the player, never read from it synchronously.
      *
-     * @param {Object} player window.IVPLAYER
+     * @param {Object} player window.KAIVIDEO
      * @param {HTMLElement} host element the overlay is drawn over
      */
-    var InteractivePlayerAdapter = function(player, host) {
+    var PublishedPlayerAdapter = function(player, host) {
         var self = this;
         this.player = player;
         this.parentElement = host;
@@ -41,7 +40,7 @@ define([], function() {
                 }).catch(function() {
                     return null;
                 });
-                Promise.resolve(player.getCurrentTime()).then(function(time) {
+                Promise.resolve(player.currentTime()).then(function(time) {
                     if (typeof time === 'number' && !isNaN(time)) {
                         self._currentTime = time;
                     }
@@ -58,19 +57,19 @@ define([], function() {
         this._poll = setInterval(reconcile, 1000);
     };
 
-    Object.defineProperty(InteractivePlayerAdapter.prototype, 'paused', {
+    Object.defineProperty(PublishedPlayerAdapter.prototype, 'paused', {
         get: function() {
             return this._paused;
         }
     });
 
-    Object.defineProperty(InteractivePlayerAdapter.prototype, 'currentTime', {
+    Object.defineProperty(PublishedPlayerAdapter.prototype, 'currentTime', {
         get: function() {
             return this._currentTime;
         }
     });
 
-    InteractivePlayerAdapter.prototype.pause = function() {
+    PublishedPlayerAdapter.prototype.pause = function() {
         this._paused = true;
         try {
             this.player.pause();
@@ -81,7 +80,7 @@ define([], function() {
         }
     };
 
-    InteractivePlayerAdapter.prototype.play = function() {
+    PublishedPlayerAdapter.prototype.play = function() {
         this._paused = false;
         try {
             this.player.play();
@@ -90,7 +89,7 @@ define([], function() {
         }
     };
 
-    InteractivePlayerAdapter.prototype.destroy = function() {
+    PublishedPlayerAdapter.prototype.destroy = function() {
         clearInterval(this._poll);
     };
 
@@ -111,17 +110,15 @@ define([], function() {
                     return;
                 }
 
-                // mod_kaivideo publishes the same contract, so a YouTube
-                // lesson of ours is watchable without this file knowing what
-                // YouTube is.
                 if (window.KAIVIDEO) {
-                    resolve(new InteractivePlayerAdapter(window.KAIVIDEO, host));
-                    return;
-                }
-                if (window.IVPLAYER) {
-                    var host = document.querySelector('#interactivevideo-container, #video-wrapper')
-                        || document.body;
-                    resolve(new InteractivePlayerAdapter(window.IVPLAYER, host));
+                    // The backend publishes the element it lives in as .host —
+                    // the iframe for YouTube and Vimeo — which is where the
+                    // monitor's overlay belongs. The old version reached for a
+                    // variable declared in a later branch, which hoisting made
+                    // undefined rather than an error, so the overlay quietly
+                    // anchored to nothing.
+                    resolve(new PublishedPlayerAdapter(window.KAIVIDEO,
+                        window.KAIVIDEO.host || document.body));
                     return;
                 }
 
@@ -137,6 +134,6 @@ define([], function() {
             return new Promise(attempt);
         },
 
-        InteractivePlayerAdapter: InteractivePlayerAdapter
+        PublishedPlayerAdapter: PublishedPlayerAdapter
     };
 });

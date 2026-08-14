@@ -1,3 +1,0 @@
-generate a sitting
-model behind the service: qwen2.5:7b-instruct at http://host.docker.internal:11434/v1
-summary: {'ok': True, 'summary': 'การสอบมีความยาวไม่ถึง 2 นาที และไม่มีเหตุการณ์หรือหลักฐานผิดปกติใดๆ ที่ควรให้ผู้ตรวจสอบพิจารณา. ดังนั้นไม่มีข้อมูลเพียงพอให้สรุปว่ามีพฤติกรรมผิดระเบียบหรือไม่.', 'model': 'qwen2.5:7b-instruct', 'contract': '1.1', 'reviewed': {'status': 'active', 'reason': None, 'minutes': None, 'checks': [], 'events': {'monitor_started': 1}, 'evidence': [], 'policy': {'presenceminutes': 2,

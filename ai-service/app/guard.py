@@ -113,6 +113,14 @@ _NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 # Thai digits, in case a model helpfully localises "80" to "๘๐".
 _THAI_DIGITS = str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789")
 
+# "1." or "2)" at the start of a line is how a model formats a list, not a
+# figure it is asserting. Counting them broke the moment a course had seven
+# video activities: asked where the lesson was, the model enumerated them
+# 1-7, and the guard killed a correct answer for containing numbers nobody
+# supplied. The mirror mistake to the one documented on `supplied` below —
+# markup is not data on either side of the comparison.
+_LIST_MARKER = re.compile(r"^\s*\d{1,2}[.)]\s", re.MULTILINE)
+
 
 def _numbers(text: str) -> list[str]:
     plain = text.translate(_THAI_DIGITS)
@@ -144,6 +152,7 @@ def unsupported_numbers(answer: str, supplied: str) -> list[str]:
     """
     allowed = set(_numbers(supplied))
     prose = _URL_IN_TEXT.sub(" ", answer)
+    prose = _LIST_MARKER.sub(" ", prose)
     return [n for n in _numbers(prose) if n not in allowed]
 
 

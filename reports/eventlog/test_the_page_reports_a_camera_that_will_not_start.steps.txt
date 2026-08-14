@@ -1,3 +1,0 @@
-sign in and open the enrolment page
-simulate the camera being unavailable
-status shown to the learner: เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้อง และตรวจว่าหน้าเว็บอยู่บน HTTPS หรือ localhost

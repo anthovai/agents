@@ -1,4 +1,0 @@
-question bank before: {'entries': 234, 'tags': {'easy': 76, 'medium': 76, 'hard': 76, 'pdfimport': 228}}
-import the pack
-import result: {'ok': True, 'imported': 6, 'skipped': 0, 'messages': []}
-question bank after: {'entries': 240, 'tags': {'easy': 78, 'medium': 78, 'hard': 78, 'pdfimport': 234}}

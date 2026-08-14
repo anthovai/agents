@@ -44,7 +44,7 @@ PAGES = [
      "kind": "quiz", "summary": "หลักสูตรทดสอบระบบคุมสอบ",
      "facts": {"notattempted": True, "attemptsused": 0}},
     {"title": "บทเรียนวิดีโอแบบมีปฏิสัมพันธ์",
-     "url": "/mod/interactivevideo/view.php?id=11",
+     "url": "/mod/kaivideo/view.php?id=15",
      "kind": "video", "summary": "หลักสูตรทดสอบระบบคุมสอบ"},
 ]
 

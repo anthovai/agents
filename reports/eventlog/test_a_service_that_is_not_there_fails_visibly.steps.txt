@@ -1,1 +1,0 @@
-result with no service: {'ok': False, 'error': {'code': 'unreachable', 'message': 'Failed to connect to 127.0.0.1 port 9998 after 0 ms: Could not connect to server'}}

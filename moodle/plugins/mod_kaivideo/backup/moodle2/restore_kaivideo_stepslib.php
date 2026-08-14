@@ -73,5 +73,6 @@ class restore_kaivideo_activity_structure_step extends restore_activity_structur
 
     protected function after_execute() {
         $this->add_related_files('mod_kaivideo', 'intro', null);
+        $this->add_related_files('mod_kaivideo', 'video', null);
     }
 }

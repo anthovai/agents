@@ -1,4 +1,0 @@
-sign in as the instructor
-open the proctoring setting for the activity
-turn it off
-turn it back on

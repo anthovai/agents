@@ -1,2 +1,0 @@
-leave the window, which is a policy breach
-evidence rows: 12:44:45  ctx=217  snapshot  violation_window_blur        snapshot-504.jpg

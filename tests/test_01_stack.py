@@ -59,10 +59,26 @@ def test_site_loads(session):
 
 
 def test_face_service_is_not_reachable_from_the_browser(session):
-    """It is on an internal network on purpose; only Moodle may call it."""
+    """It is on an internal network on purpose; only Moodle may call it.
+
+    Checked by identity, not by whether the port answers. The first version
+    asserted that nothing responds on localhost:9000, and failed on a machine
+    where some unrelated development server happened to be sitting on that
+    port — reporting a security hole that did not exist. What actually has to
+    be false is that OUR service answers there: a response that is not ours
+    means the port belongs to somebody else, which is fine.
+    """
     session.note("confirm the face service is not published to the host")
-    result = session.page.evaluate(
-        """() => fetch('http://localhost:9000/health', {mode: 'no-cors'})
-                 .then(() => 'reachable').catch(() => 'blocked')"""
-    )
-    assert result == "blocked"
+
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen("http://localhost:9000/health", timeout=5) as response:
+            body = response.read(2000).decode("utf-8", "replace")
+    except OSError:
+        session.note("nothing answers on the host port at all")
+        return
+
+    session.note(f"something answers on 9000; checking whose it is: {body[:120]}")
+    assert "yunet+sface" not in body and "model_pack" not in body, \
+        "the face service is published to the host — it must be internal-only"

@@ -20,26 +20,24 @@ class responses {
      *
      * @param int $itemid
      * @param int $userid
-     * @param int $choice index into the item's choices
-     * @return array {correct, correctchoice, feedback}
+     * @param string $response what the learner sent: a JSON array of option
+     *     indexes for the choice types, or the typed text for shorttext
+     * @param bool $mayretry whether another attempt is still available
+     * @return array {correct, answers, feedback}
      */
-    public static function answer(int $itemid, int $userid, int $choice,
+    public static function answer(int $itemid, int $userid, string $response,
             bool $mayretry = false): array {
         global $DB;
 
         $item = $DB->get_record('kaivideo_item', ['id' => $itemid], '*', MUST_EXIST);
-        $choices = json_decode($item->choices, true) ?: [];
+        $expected = json_decode($item->answers, true) ?: [];
 
-        if ($choice < 0 || $choice >= count($choices)) {
-            throw new \moodle_exception('error:badchoice', 'mod_kaivideo');
-        }
-
-        $correct = ((int) $item->correctchoice === $choice);
+        [$stored, $correct] = self::judge($item, $expected, $response);
 
         $DB->insert_record('kaivideo_response', (object) [
             'itemid' => $itemid,
             'userid' => $userid,
-            'choice' => $choice,
+            'response' => $stored,
             'correct' => $correct ? 1 : 0,
             'timecreated' => time(),
         ]);
@@ -48,30 +46,77 @@ class responses {
         // where the answer stays hidden. Showing it and then offering "try
         // again" makes the second attempt free, which is not a second attempt
         // at anything — it is a button that awards a mark.
-        //
-        // Once they are right, or once there is no retry, the explanation is
-        // the whole point of asking mid-lesson, so it is released.
         if (!$correct && $mayretry) {
-            return ['correct' => false, 'correctchoice' => -1, 'feedback' => ''];
+            return ['correct' => false, 'answers' => [], 'feedback' => ''];
         }
 
         return [
             'correct' => $correct,
-            'correctchoice' => (int) $item->correctchoice,
+            'answers' => $expected,
             'feedback' => (string) $item->feedback,
         ];
     }
 
     /**
-     * The latest answer to each question, for one learner.
+     * Is it right, and what should be kept as a record of what they said?
      *
-     * @return array itemid => {choice, correct}
+     * @param \stdClass $item
+     * @param array $expected
+     * @param string $response
+     * @return array [stored, correct]
+     */
+    protected static function judge(\stdClass $item, array $expected,
+            string $response): array {
+        if ($item->type === 'info') {
+            // Acknowledged, not answered. Recorded so a report can say they
+            // reached it, and always counted as correct because there was
+            // nothing to get wrong.
+            return ['', true];
+        }
+
+        if ($item->type === 'shorttext') {
+            $typed = timeline::normalise($response);
+            return [$typed, in_array($typed, $expected, true)];
+        }
+
+        $chosen = json_decode($response, true);
+        if (!is_array($chosen)) {
+            throw new \moodle_exception('error:badchoice', 'mod_kaivideo');
+        }
+
+        $choices = json_decode($item->choices, true) ?: [];
+        $clean = [];
+        foreach ($chosen as $index) {
+            $index = (int) $index;
+            if ($index < 0 || $index >= count($choices)) {
+                throw new \moodle_exception('error:badchoice', 'mod_kaivideo');
+            }
+            if (!in_array($index, $clean, true)) {
+                $clean[] = $index;
+            }
+        }
+        sort($clean);
+
+        if ($item->type === 'choice' && count($clean) !== 1) {
+            throw new \moodle_exception('error:badchoice', 'mod_kaivideo');
+        }
+
+        // All of them, and nothing else. No partial credit: half a mark for
+        // half the boxes invites an argument about the scheme that neither the
+        // learner nor the teacher can settle from the record.
+        return [json_encode($clean), $clean === $expected];
+    }
+
+    /**
+     * The latest answer to each item, for one learner.
+     *
+     * @return array itemid => {response, correct}
      */
     public static function latest(int $kaivideoid, int $userid): array {
         global $DB;
 
         $records = $DB->get_records_sql(
-            "SELECT r.id, r.itemid, r.choice, r.correct
+            "SELECT r.id, r.itemid, r.response, r.correct
                FROM {kaivideo_response} r
                JOIN {kaivideo_item} i ON i.id = r.itemid
               WHERE i.kaivideoid = :kaivideoid AND r.userid = :userid
@@ -83,7 +128,7 @@ class responses {
         $latest = [];
         foreach ($records as $record) {
             $latest[(int) $record->itemid] = [
-                'choice' => (int) $record->choice,
+                'response' => (string) $record->response,
                 'correct' => (bool) $record->correct,
             ];
         }
@@ -91,26 +136,35 @@ class responses {
     }
 
     /**
-     * Fraction of the questions answered correctly, or null when there are
+     * Fraction of the graded items answered correctly, or null when there are
      * none to answer.
      *
-     * Unanswered counts as wrong rather than as absent. A learner who skipped
+     * Info cards are not in the denominator. Reading a message is not a
+     * question, and counting it would inflate everybody's mark by however many
+     * an author happened to add.
+     *
+     * Unanswered counts as wrong rather than as absent: a learner who skipped
      * half the video has not earned the same mark as one who answered
      * everything, and treating the gaps as neutral would give them that.
      */
     public static function fraction(int $kaivideoid, int $userid): ?float {
         global $DB;
 
-        $total = $DB->count_records('kaivideo_item', ['kaivideoid' => $kaivideoid]);
-        if (!$total) {
+        [$insql, $params] = $DB->get_in_or_equal(timeline::GRADED, SQL_PARAMS_NAMED);
+        $params['kaivideoid'] = $kaivideoid;
+
+        $graded = $DB->get_fieldset_select('kaivideo_item', 'id',
+            "kaivideoid = :kaivideoid AND type $insql", $params);
+        if (!$graded) {
             return null;
         }
 
+        $answers = self::latest($kaivideoid, $userid);
         $right = 0;
-        foreach (self::latest($kaivideoid, $userid) as $answer) {
-            $right += $answer['correct'] ? 1 : 0;
+        foreach ($graded as $itemid) {
+            $right += !empty($answers[(int) $itemid]['correct']) ? 1 : 0;
         }
-        return $right / $total;
+        return $right / count($graded);
     }
 
     /**
@@ -159,12 +213,33 @@ class responses {
 
     /** Everything one learner did, for the activity's report. */
     public static function summary(int $kaivideoid, int $userid): array {
+        global $DB;
+
         $answers = self::latest($kaivideoid, $userid);
         $fraction = self::fraction($kaivideoid, $userid);
 
+        // "Correct" counts graded items only. An info card records as correct
+        // because there is nothing to get wrong, but counting it here put
+        // "ตอบถูก 4" next to "คะแนน 75%" — which is 3 of 4 — in the teacher's
+        // table: two figures about the same learner that cannot be reconciled
+        // by looking at them. "Answered" still counts every item, because it
+        // sits next to the timeline's total and means how far they worked
+        // through, not how well.
+        [$insql, $params] = $DB->get_in_or_equal(timeline::GRADED, SQL_PARAMS_NAMED);
+        $params['kaivideoid'] = $kaivideoid;
+        $graded = array_map('intval', $DB->get_fieldset_select('kaivideo_item',
+            'id', "kaivideoid = :kaivideoid AND type $insql", $params));
+
+        $correct = 0;
+        foreach ($answers as $itemid => $answer) {
+            if ($answer['correct'] && in_array((int) $itemid, $graded, true)) {
+                $correct++;
+            }
+        }
+
         return [
             'answered' => count($answers),
-            'correct' => count(array_filter($answers, static fn($a) => $a['correct'])),
+            'correct' => $correct,
             'fraction' => $fraction,
             'progress' => self::progress($kaivideoid, $userid),
         ];

@@ -25,6 +25,11 @@ class custom_completion extends activity_custom_completion {
         $video = $DB->get_record('kaivideo', ['id' => $this->cm->instance], '*', MUST_EXIST);
 
         if ($rule === 'completionanswerall') {
+            // Every item, info cards included — deliberately unlike the grade,
+            // which counts only what can be got wrong. The rule is about
+            // working through the video, and an info card is a stop on that
+            // path; leaving it out would let somebody complete the activity
+            // without ever having reached the thing the author paused to say.
             $total = $DB->count_records('kaivideo_item', ['kaivideoid' => $video->id]);
             if (!$total) {
                 // A video with no questions cannot be completed by answering

@@ -28,31 +28,136 @@ function kaivideo_supports($feature) {
 
 /**
  * @param stdClass $data from mod_form
+ * @param mixed $mform
  * @return int
  */
-function kaivideo_add_instance($data) {
+function kaivideo_add_instance($data, $mform = null) {
     global $DB;
+
+    kaivideo_settle_source($data);
 
     $data->timecreated = time();
     $data->timemodified = time();
     $data->id = $DB->insert_record('kaivideo', $data);
 
+    kaivideo_save_video_file($data);
     kaivideo_grade_item_update($data);
     return $data->id;
 }
 
 /**
  * @param stdClass $data from mod_form
+ * @param mixed $mform
  * @return bool
  */
-function kaivideo_update_instance($data) {
+function kaivideo_update_instance($data, $mform = null) {
     global $DB;
+
+    kaivideo_settle_source($data);
 
     $data->id = $data->instance;
     $data->timemodified = time();
     $DB->update_record('kaivideo', $data);
 
+    kaivideo_save_video_file($data);
     kaivideo_grade_item_update($data);
+    return true;
+}
+
+/**
+ * Make sure exactly one source survives the save.
+ *
+ * An uploaded file and a typed address can both be sitting in the form — an
+ * author who uploaded a video and then switched to a URL still has the file in
+ * their draft area. Whichever they did not choose is cleared here, so the
+ * record and the file area cannot end up describing two different videos.
+ *
+ * Called with no sourcetype at all by the seed script and by anything else
+ * creating an instance in code, where an address is the only thing on offer.
+ *
+ * @param stdClass $data
+ */
+function kaivideo_settle_source($data) {
+    $chosen = $data->sourcetype ?? (empty($data->videofile) ? 'url' : \mod_kaivideo\source::FILE);
+
+    if ($chosen === 'url') {
+        $data->videofile = 0;
+        return;
+    }
+
+    // The address column is emptied rather than left to go stale: source::url()
+    // falls back to it whenever no file is present, and a leftover address
+    // would silently become the video again if the file were ever removed.
+    $data->videourl = '';
+}
+
+/**
+ * Move the uploaded video out of the draft area, or clear what is there.
+ *
+ * @param stdClass $data with coursemodule and videofile
+ */
+function kaivideo_save_video_file($data) {
+    if (empty($data->coursemodule)) {
+        return;
+    }
+
+    require_once(__DIR__ . '/mod_form.php');
+    $context = context_module::instance($data->coursemodule);
+
+    if (empty($data->videofile)) {
+        get_file_storage()->delete_area_files($context->id, 'mod_kaivideo',
+            \mod_kaivideo\source::AREA, 0);
+        return;
+    }
+
+    file_save_draft_area_files($data->videofile, $context->id, 'mod_kaivideo',
+        \mod_kaivideo\source::AREA, 0, mod_kaivideo_mod_form::filemanager_options());
+}
+
+/**
+ * Serve the uploaded video.
+ *
+ * @param stdClass $course
+ * @param stdClass $cm
+ * @param context $context
+ * @param string $filearea
+ * @param array $args
+ * @param bool $forcedownload
+ * @param array $options
+ * @return bool false when it is not ours to serve
+ */
+function kaivideo_pluginfile($course, $cm, $context, $filearea, $args,
+        $forcedownload, array $options = []) {
+    if ($context->contextlevel != CONTEXT_MODULE
+            || $filearea !== \mod_kaivideo\source::AREA) {
+        return false;
+    }
+
+    // Enrolment is checked, not just login: a course video is course material,
+    // and a URL that plays for anybody with an account is a URL that will be
+    // passed around.
+    require_login($course, true, $cm);
+    if (!has_capability('mod/kaivideo:view', $context)) {
+        return false;
+    }
+
+    // The itemid is the first thing in $args, not something to add back: it is
+    // part of the address core has already split up for us. Building the path
+    // with a literal 0 as well produced /video/0/0/lesson.mp4, which matches no
+    // file — and the symptom was a 404 rendered as an HTML error page, which
+    // the <video> element reported as "no supported sources".
+    $itemid = (int) array_shift($args);
+    $file = get_file_storage()->get_file_by_hash(sha1(
+        "/{$context->id}/mod_kaivideo/" . \mod_kaivideo\source::AREA
+        . "/{$itemid}/" . implode('/', $args)));
+    if (!$file || $file->is_directory()) {
+        return false;
+    }
+
+    // Never forced as a download, whatever was asked for. This file exists to
+    // be played in a <video> element, and Moodle only byte-serves — which is
+    // what makes seeking work at all — when it is not sending an attachment.
+    send_stored_file($file, DAYSECS, 0, false, $options);
     return true;
 }
 

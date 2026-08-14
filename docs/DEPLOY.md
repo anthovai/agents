@@ -84,7 +84,7 @@ Caddy สั้นที่สุดและออกใบรับรอง�
 proctor.example.co.th {
     reverse_proxy 127.0.0.1:8080
     request_body {
-        max_size 32MB
+        max_size 512MB
     }
 }
 ```
@@ -96,8 +96,10 @@ server {
     listen 443 ssl http2;
     server_name proctor.example.co.th;
 
-    # คลิปหลักฐานอัปโหลดจากเบราว์เซอร์ ค่าเริ่มต้น 1M เล็กเกินไป
-    client_max_body_size 32M;
+    # คลิปหลักฐานอัปโหลดจากเบราว์เซอร์ และไฟล์วิดีโอบทเรียนที่ผู้สอนอัปโหลดเข้ามา
+    # ค่าเริ่มต้น 1M เล็กเกินไปมาก ต้องไม่น้อยกว่า upload_max_filesize ใน PHP
+    # มิฉะนั้นการอัปโหลดจะถูกตัดที่ proxy โดยที่ Moodle ไม่มีโอกาสอธิบายอะไรเลย
+    client_max_body_size 512M;
 
     # ผู้ช่วย AI บนโมเดลที่รันเองใช้เวลาได้ถึง 300 วินาที
     # ลำดับ timeout ต้องกว้างออกด้านนอกเสมอ:

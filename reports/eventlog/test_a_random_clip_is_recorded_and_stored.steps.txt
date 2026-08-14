@@ -1,5 +1,0 @@
-run the monitor with clips scheduled about once a second
-evidence rows: 12:45:54  ctx=217  clip      random_sample                clip-505.webm
-12:45:57  ctx=217  clip      random_sample                clip-506.webm
-12:46:00  ctx=217  clip      random_sample                clip-507.webm
-12:46:01  ctx=217  clip      random_sample                clip-508.webm
