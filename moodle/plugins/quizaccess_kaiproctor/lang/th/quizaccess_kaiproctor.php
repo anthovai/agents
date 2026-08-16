@@ -15,5 +15,16 @@ $string['preflight:cameraoff'] = 'กล้องจะเปิดเมื่�
 $string['preflight:checking'] = 'กำลังเทียบใบหน้ากับที่ลงทะเบียนไว้...';
 $string['preflight:stepverify'] = 'เทียบใบหน้า';
 $string['preflight:verified'] = 'ยืนยันตัวตนสำเร็จ เริ่มทำข้อสอบได้';
-$string['preflight:failed'] = 'ยืนยันตัวตนไม่สำเร็จ ตรวจสอบว่าห้องมีแสงเพียงพอและมีคุณอยู่คนเดียวในกรอบ แล้วลองใหม่';
+// Named causes. The generic message below is the last resort, not the default:
+// telling everyone to check the lighting sends people to fix the wrong thing.
+$string['preflight:nomatch'] = 'ใบหน้าไม่ตรงกับที่ลงทะเบียนไว้ ถ้านี่คือบัญชีของคุณ ให้ลงทะเบียนใบหน้าใหม่แล้วลองอีกครั้ง';
+$string['preflight:spoof'] = 'ยืนยันไม่ได้ว่าเป็นคนจริง ให้มองตรงเข้ากล้องด้วยตัวคุณเอง ไม่ใช่ถือภาพถ่ายหรือจออื่นมาส่อง';
+$string['preflight:review'] = 'ผลการเทียบใบหน้ายังไม่ชัดเจนพอ ขยับให้เห็นใบหน้าชัดขึ้นแล้วลองใหม่';
+$string['preflight:noface'] = 'กล้องหาใบหน้าไม่พบ นั่งหันหน้าเข้ากล้อง อย่าให้มีอะไรปิดหน้า แล้วลองใหม่';
+$string['preflight:toosmall'] = 'ใบหน้าเล็กเกินไปในภาพ ขยับเข้าใกล้กล้องแล้วลองใหม่';
+$string['preflight:multiplefaces'] = 'มีใบหน้ามากกว่าหนึ่งในภาพ ให้มีคุณอยู่คนเดียวในกรอบ — ภาพถ่ายหรือจอที่อยู่ด้านหลังก็นับด้วย';
+$string['preflight:timeout'] = 'ทำท่าไม่ทันเวลา ลองใหม่และหันหน้าช้าๆ ตามคำสั่ง';
+$string['preflight:notenrolled'] = 'คุณยังไม่ได้ลงทะเบียนใบหน้า ต้องลงทะเบียนก่อนจึงจะเข้าสอบได้';
+$string['preflight:servicefailed'] = 'ตรวจสอบใบหน้าไม่สำเร็จเพราะระบบตรวจใบหน้าไม่ตอบสนอง เรื่องนี้แก้ที่เครื่องคุณไม่ได้ กรุณาแจ้งผู้ดูแลระบบ';
+$string['preflight:failed'] = 'ยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
 $string['preflight:notverified'] = 'ต้องยืนยันตัวตนก่อนเริ่มทำข้อสอบ';

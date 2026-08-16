@@ -43,6 +43,55 @@ define([
                 }).catch(Notification.exception);
             };
 
+            // Why the check did not pass, in words the learner can act on.
+            //
+            // This was one message for every cause, and it told people to turn
+            // the lights on. That is wrong often enough to matter: the commonest
+            // real cause is that the face in front of the camera is not the one
+            // on file, which no amount of light will fix, and somebody sent to
+            // adjust a lamp never finds out that they need to re-enrol. Naming
+            // the cause is the whole reason this step exists.
+            //
+            // @param {Object} result what ActiveLiveness.run() resolved with
+            // @return {String} a string key in this component
+            var reasonKey = function(result) {
+                var response = result.result || {};
+
+                // No decision means verification never ran — the challenge
+                // itself stopped first, so what was blocking it is the answer.
+                if (!response.decision) {
+                    var blocked = {
+                        noface: 'preflight:noface',
+                        toosmall: 'preflight:toosmall',
+                        multiplefaces: 'preflight:multiplefaces',
+                        spoof: 'preflight:spoof'
+                    };
+                    return blocked[result.blockedBy]
+                        || ((result.reason || '').indexOf('timeout_') === 0
+                            ? 'preflight:timeout' : 'preflight:failed');
+                }
+
+                // The service could not judge the frame at all. Separated from
+                // a judgement of "not you": one is the learner's to fix, the
+                // other is the site's.
+                if (!response.ok) {
+                    var codes = {
+                        not_enrolled: 'preflight:notenrolled',
+                        no_face: 'preflight:noface',
+                        face_too_small: 'preflight:toosmall',
+                        multiple_faces: 'preflight:multiplefaces'
+                    };
+                    return codes[response.errorcode] || 'preflight:servicefailed';
+                }
+
+                var decisions = {
+                    fail: 'preflight:nomatch',
+                    fail_liveness: 'preflight:spoof',
+                    review: 'preflight:review'
+                };
+                return decisions[response.decision] || 'preflight:failed';
+            };
+
             // One chip per pose, plus the final face-match step. Poses are
             // only revealed as they start (the order is randomised), so chips
             // begin as numbers and take their label when their turn comes.
@@ -147,7 +196,7 @@ define([
                     }
                     setState('failed');
                     button.disabled = false;
-                    return show('preflight:failed', 'danger');
+                    return show(reasonKey(result), 'danger');
                 }).catch(function(error) {
                     camera.stop();
                     instruction.textContent = '';

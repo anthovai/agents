@@ -62,6 +62,51 @@ def test_the_preflight_check_asks_for_the_camera(session, clean_learner):
     assert "จะเริ่มทำข้อสอบไม่ได้จนกว่า" in text
 
 
+def test_a_failed_check_says_what_was_actually_wrong(session, clean_learner):
+    """The message has to name the cause, and one cause in particular.
+
+    Chromium's fake camera shows no face, so what is being proved here is the
+    no-face branch. The branch that matters most in production is the one
+    beside it: a face that does not match the enrolled one. Both used to
+    produce the same sentence, and that sentence told the learner to check the
+    room lighting — which is wrong for every cause here, and sends somebody to
+    adjust a lamp when the real answer is that they need to re-enrol.
+    """
+    clean_learner("learner")
+    moodle("seed-enrolment", "learner")
+
+    session.note("sign in as an enrolled learner and reach the identity check")
+    session.login("learner")
+    session.goto(f"/mod/quiz/view.php?id={QUIZ_CMID}")
+    session.page.locator('form[action*="startattempt"] button').first.click()
+    session.page.wait_for_load_state("domcontentloaded")
+    session.beat(1.5)
+
+    session.note("the panel is idle until the learner starts it")
+    region = session.page.locator('[data-region="kaiproctor-preflight"]')
+    assert region.get_attribute("data-state") == "idle"
+
+    session.note("run the check in front of a camera showing no face")
+    session.page.click('[data-action="verify"]')
+
+    # Each pose has its own 15-second timeout and every poll is a round trip
+    # to the face service, so the wait allows for a slow one.
+    session.page.wait_for_selector(
+        '[data-region="status"]:not([hidden])', timeout=90_000)
+    session.beat(2)
+
+    status = session.page.inner_text('[data-region="status"]')
+    session.note(f"status shown to the learner: {status}")
+
+    assert region.get_attribute("data-state") == "failed", (
+        "the panel did not show the check as failed"
+    )
+    assert "ใบหน้า" in status, "the message does not say what was wrong"
+    assert "แสง" not in status, (
+        "the message is blaming the lighting again, which nothing here measures"
+    )
+
+
 def test_a_forged_client_marker_does_not_open_the_attempt(session, clean_learner, eventlog):
     """The heart of the gate."""
     clean_learner("learner")
