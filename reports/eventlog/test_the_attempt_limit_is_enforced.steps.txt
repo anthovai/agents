@@ -1,0 +1,4 @@
+allow exactly one attempt, from the back office
+finish the attempt without answering
+back on the quiz page, there must be no second attempt
+the used attempt is the only one

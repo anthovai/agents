@@ -1,0 +1,4 @@
+sign in as an enrolled learner and reach the identity check
+the panel is idle until the learner starts it
+run the check in front of a camera showing no face
+status shown to the learner: กล้องหาใบหน้าไม่พบ นั่งหันหน้าเข้ากล้อง อย่าให้มีอะไรปิดหน้า แล้วลองใหม่

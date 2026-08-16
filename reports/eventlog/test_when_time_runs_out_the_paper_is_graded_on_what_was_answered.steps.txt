@@ -1,0 +1,3 @@
+answer only the first question, correctly
+push the attempt's start 10 minutes into the past
+after the overdue sweep: {'state': 'finished', 'sumgrades': 1, 'maxgrades': 3}

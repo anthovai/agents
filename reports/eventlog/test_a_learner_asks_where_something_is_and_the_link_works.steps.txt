@@ -1,0 +1,4 @@
+ask where the interactive video lesson is
+answer shown: บทเรียนวิดีโออยู่ที่: 1. [video] บทเรียนวิดีโอที่มีการเฝ้าดู (http://localhost:8080/mod/kaivideo/view.php?id=177) 2. [video] วิดีโอแบบมีปฏิสัมพันธ์ (KAISER) (http://localhost:8080/mod/kaivideo/view.ph
+following the first link: http://localhost:8080/mod/kaivideo/view.php?id=177
+the link opened a real page

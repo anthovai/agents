@@ -1,0 +1,7 @@
+the console reports:
+Reviewer service	http://ai-service:9100 OK
+Model endpoint	http://host.docker.internal:11434/v1 OK
+Model for sitting summaries	qwen2.5:7b-instruct
+Model for the navigation assistant	qwen3:8b
+Model for proof-reading imported questions	qwen2.5:7b-instruct
+Payload contract	1.1

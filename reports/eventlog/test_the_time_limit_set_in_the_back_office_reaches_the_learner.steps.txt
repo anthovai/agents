@@ -1,0 +1,4 @@
+give the quiz a 30-minute limit from the back office
+the view page announces the limit before the attempt
+inside the attempt, the timer must be ticking
+timer read '0:29:58', then '0:29:55'

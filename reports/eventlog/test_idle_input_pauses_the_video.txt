@@ -1,0 +1,4 @@
+# audit trail for learner
+17:52:47  ctx=217  monitor_started        videotime=23    {"strict":false,"verify_minutes":0,"presence_minutes":0,"clips_per_hour":0}
+17:52:50  ctx=217  mouse_idle             videotime=26    []
+17:52:55  ctx=217  monitor_stopped        videotime=26    []

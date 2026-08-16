@@ -1,0 +1,2 @@
+confirm the face service is not published to the host
+nothing answers on the host port at all

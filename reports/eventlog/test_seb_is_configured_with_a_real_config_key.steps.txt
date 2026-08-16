@@ -1,0 +1,1 @@
+SEB settings: {'requiresafeexambrowser': 1, 'configkey': '529b5d7deb550f104c514d4428cb27a618ca1993ef9a7b63c9f2c2faeb526a7b', 'configbytes': 1006, 'kaiproctorenabled': True}

@@ -1,0 +1,3 @@
+a course only learner2 is enrolled in: คอร์สลับเฉพาะบุคคล
+ask for it by its exact name
+not found, and the name is not echoed back
