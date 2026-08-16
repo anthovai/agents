@@ -200,6 +200,7 @@ class assistant {
     /** @return array trigram => true */
     protected static function trigrams(string $text): array {
         $text = \core_text::strtolower(trim(preg_replace('/\s+/u', ' ', $text)));
+        $text = self::strip_particles($text);
         $length = \core_text::strlen($text);
         if ($length < 3) {
             return $length ? [$text => true] : [];
@@ -210,6 +211,46 @@ class assistant {
             $grams[\core_text::substr($text, $at, 3)] = true;
         }
         return $grams;
+    }
+
+    /**
+     * Drop the politeness particle a Thai question ends with.
+     *
+     * One of them was actively breaking the threshold. "ครับ" ends in the same
+     * three characters as "สำหรับ", so a bare "สวัสดีครับ" overlapped a page
+     * titled "...(สำหรับทดสอบระบบ)" on that trigram alone, scored 0.125, and
+     * got past a threshold whose whole job is to turn away a question with no
+     * matching page. The particle carries no meaning to retrieve on, so the
+     * fix belongs here rather than in the number: raising MIN_SCORE again
+     * would also turn away the questions about a result that it was lowered
+     * for.
+     *
+     * Only from the end, which is where a particle goes, because several of
+     * them are ordinary syllables mid-word — "คะ" opens "คะแนน", the word this
+     * feature most needs to match. Repeatedly, because "หน่อยนะครับ" ends in
+     * more than one.
+     *
+     * @param string $text already trimmed and lowercased
+     * @return string
+     */
+    protected static function strip_particles(string $text): string {
+        // Deliberately not "นะ": it is the tail of ordinary words such as
+        // "ชนะ", and stripping it would eat the question instead of its
+        // punctuation.
+        static $particles = ['ครับ', 'คับ', 'ค่ะ', 'คะ', 'จ้ะ', 'จ๊ะ', 'จ้า', 'ฮะ'];
+
+        $changed = true;
+        while ($changed && $text !== '') {
+            $changed = false;
+            foreach ($particles as $particle) {
+                $keep = \core_text::strlen($text) - \core_text::strlen($particle);
+                if ($keep >= 0 && \core_text::substr($text, $keep) === $particle) {
+                    $text = trim(\core_text::substr($text, 0, $keep));
+                    $changed = true;
+                }
+            }
+        }
+        return $text;
     }
 
     protected static function fail(string $code, string $message): array {
