@@ -284,6 +284,34 @@ def test_presence_check_runs_on_its_interval(session, clean_learner, eventlog):
     assert paused is True
 
 
+def test_idle_input_pauses_the_video(session, clean_learner, eventlog):
+    """Requirement 2: no mouse or keyboard for the configured time pauses the
+    lesson.
+
+    Nothing here touches the page after the monitor starts — the idleness being
+    tested is the real thing, not a simulated event.
+    """
+    clean_learner("learner")
+
+    session.login("learner")
+    session.goto(f"/mod/kaivideo/view.php?id={monitored_cmid()}")
+    session.beat(1.5)
+
+    session.note("run the monitor with a three-second idle limit, touching nothing")
+    session.page.evaluate(RUN_MONITOR, {"videoSelector": VIDEO,
+                                        "options": {"mouseIdleMinutes": 1 / 20},
+                                        "runFor": 8000})
+    session.beat(2)
+
+    log = eventlog("learner")
+    assert "mouse_idle" in log, "the idle timeout never fired"
+
+    paused = session.page.evaluate(
+        "(selector) => document.querySelector(selector).paused", VIDEO)
+    session.note(f"paused after sitting idle: {paused}")
+    assert paused is True, "the video kept playing with nobody at the controls"
+
+
 def test_identity_check_runs_on_its_own_interval(session, clean_learner, eventlog):
     """Requirement 4, and only for somebody who has enrolled a face."""
     clean_learner("learner")

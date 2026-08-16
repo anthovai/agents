@@ -324,7 +324,12 @@ define([
         this.getSnapshot().then(function(blob) {
             return Api.analyze(blob);
         }).then(function(response) {
-            if (response.ok && response.present === false) {
+            if (!response.ok) {
+                // A check that could not run is not a check that passed. It
+                // was logged as presence_ok once, and a dead face service
+                // looked like a room full of attentive learners.
+                self._log('presence_error', {code: response.errorcode});
+            } else if (response.present === false) {
                 self._interrupt('face_absent', {reason: response.reason});
             } else if (response.warning === 'multiple_faces') {
                 self._interrupt('multiple_faces');
