@@ -28,9 +28,103 @@ class report {
      */
     public static function build(int $kaivideoid, int $courseid): array {
         return [
+            'categories' => self::per_category($kaivideoid),
             'questions' => self::per_question($kaivideoid),
             'learners' => self::per_learner($kaivideoid, $courseid),
         ];
+    }
+
+    /**
+     * How the class did on each topic, weakest first.
+     *
+     * The per-question table says which question is failing; this says which
+     * subject is. They are different findings and lead to different actions —
+     * one question everybody misses is usually a badly worded question, while
+     * a whole topic sitting at 40% is a section of the video that did not
+     * teach what it was meant to.
+     *
+     * Empty when nothing has been categorised, so a video whose author never
+     * used the field does not grow a table with one nameless row in it.
+     *
+     * @param int $kaivideoid
+     * @return array of {category, learners, answered, correct, correctshare, struggled}
+     */
+    public static function per_category(int $kaivideoid): array {
+        global $DB;
+
+        $named = $DB->count_records_select('kaivideo_item',
+            'kaivideoid = :id AND category <> :blank',
+            ['id' => $kaivideoid, 'blank' => '']);
+        if (!$named) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal(timeline::GRADED, SQL_PARAMS_NAMED);
+        $params['kaivideoid'] = $kaivideoid;
+
+        // The item's category, not the answer's. This table describes the
+        // video as it stands now — "which topic is weak" is a question about
+        // the current lesson, so it groups by how the questions are filed
+        // today. The copy kept on each answer is for the opposite job: showing
+        // an individual's past result under the topic it was marked as.
+        $rows = $DB->get_records_sql(
+            "SELECT i.id, i.category, r.userid, r.correct
+               FROM {kaivideo_item} i
+          LEFT JOIN {kaivideo_response} r ON r.itemid = i.id
+              WHERE i.kaivideoid = :kaivideoid AND i.type $insql
+           ORDER BY r.id ASC", $params);
+
+        // Newest answer per learner per item wins, matching the grade.
+        $latest = [];
+        $categoryof = [];
+        foreach ($rows as $row) {
+            $categoryof[(int) $row->id] = (string) $row->category;
+            if ($row->userid !== null) {
+                $latest[(int) $row->id][(int) $row->userid] = (bool) $row->correct;
+            }
+        }
+
+        $totals = [];
+        foreach ($categoryof as $itemid => $name) {
+            if (!isset($totals[$name])) {
+                $totals[$name] = ['category' => $name, 'answered' => 0,
+                    'correct' => 0, 'people' => []];
+            }
+            foreach ($latest[$itemid] ?? [] as $userid => $wasright) {
+                $totals[$name]['answered']++;
+                $totals[$name]['correct'] += $wasright ? 1 : 0;
+                $totals[$name]['people'][$userid] = true;
+            }
+        }
+
+        $out = [];
+        foreach ($totals as $row) {
+            $share = $row['answered']
+                ? round($row['correct'] / $row['answered'] * 100) : null;
+            $out[] = [
+                'category' => $row['category'] === ''
+                    ? get_string('report:uncategorised', 'mod_kaivideo')
+                    : $row['category'],
+                'learners' => count($row['people']),
+                'answered' => $row['answered'],
+                'correct' => $row['correct'],
+                'correctshare' => $share,
+                // Rendered here rather than in the template. Mustache treats 0
+                // as absent, so a topic the whole class got wrong displayed as
+                // "-" — the mark meaning "nobody has answered this yet". The
+                // worst result on the page was showing as no result at all.
+                'sharelabel' => $share === null ? '-' : $share . '%',
+                'struggled' => $share !== null
+                    && ($share / 100) < self::STRUGGLE_THRESHOLD,
+            ];
+        }
+
+        // Weakest first, for the same reason the question table is.
+        usort($out, static function ($a, $b) {
+            return ($a['correctshare'] ?? 101) <=> ($b['correctshare'] ?? 101);
+        });
+
+        return $out;
     }
 
     /**

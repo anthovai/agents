@@ -82,5 +82,35 @@ function xmldb_kaivideo_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026081200, 'kaivideo');
     }
 
+    if ($oldversion < 2026081700) {
+        // Questions gain a category, and so does every answer to one.
+        //
+        // Two columns rather than a join, because they answer different
+        // questions. The item's category is what it is filed under now; the
+        // response's is what it was filed under when somebody answered it.
+        // Recategorising a question next term must not rewrite what last
+        // term's report said, in the same way that changing a threshold does
+        // not rewrite the checks already recorded against the old one.
+        $items = new xmldb_table('kaivideo_item');
+        $category = new xmldb_field('category', XMLDB_TYPE_CHAR, '100', null,
+            XMLDB_NOTNULL, null, '', 'type');
+        if (!$dbman->field_exists($items, $category)) {
+            $dbman->add_field($items, $category);
+        }
+
+        $responses = new xmldb_table('kaivideo_response');
+        $answered = new xmldb_field('category', XMLDB_TYPE_CHAR, '100', null,
+            XMLDB_NOTNULL, null, '', 'response');
+        if (!$dbman->field_exists($responses, $answered)) {
+            $dbman->add_field($responses, $answered);
+        }
+
+        // Existing answers keep the empty category their questions now carry.
+        // Backfilling them from anywhere would be inventing a fact about the
+        // past: nothing was categorised when they were given.
+
+        upgrade_mod_savepoint(true, 2026081700, 'kaivideo');
+    }
+
     return true;
 }

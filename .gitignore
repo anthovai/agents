@@ -35,3 +35,9 @@ moodle/plugins/mod_interactivevideo/
 face-service/tests/sample-exam.pdf
 face-service/tests/*.ttf
 ai-service/reports/
+
+# Backups of the env file carry the same secrets the env file does.
+.env.bak
+
+# Holds the OpenAI key and both service keys.
+deploy/digitalocean/.env

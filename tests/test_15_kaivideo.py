@@ -542,6 +542,39 @@ def test_it_can_be_proctored_like_any_other_activity(session):
         moodle("set-monitored", str(KAIVIDEO_CMID), original or "0")
 
 
+def test_a_teacher_can_reach_the_monitoring_switch_by_clicking(session):
+    """Turning monitoring on has to be reachable from the activity itself.
+
+    Every test that needed monitoring on set it through the CLI helper, which
+    is fine for arranging a test and useless as evidence that a teacher can do
+    it. They could not: the callback offering the link was named
+    local_kaiproctor_extend_navigation_course_module, which is not a callback
+    Moodle has — core calls local_<plugin>_extend_settings_navigation for local
+    plugins, so the function sat there never being called and the link never
+    appeared. The only way in was to already know the URL.
+    """
+    session.note("sign in as the teacher and open the activity")
+    session.login("instructor")
+    session.goto(f"/mod/kaivideo/view.php?id={KAIVIDEO_CMID}")
+    session.beat(1.5)
+
+    link = session.page.locator('a[href*="kaiproctor/monitor.php"]')
+    assert link.count() >= 1, (
+        "a teacher has no way to reach the monitoring switch but to know the URL"
+    )
+    session.note(f"offered as: {link.first.inner_text().strip()}")
+
+    session.note("follow it, the way a teacher would")
+    link.first.click()
+    session.page.wait_for_load_state("domcontentloaded")
+    session.beat(1.5)
+
+    assert "monitor.php" in session.page.url, "the link does not lead to the switch"
+    assert session.page.locator('input[type="checkbox"], select').count() >= 1, (
+        "the page offers nothing to switch"
+    )
+
+
 def test_the_assistant_can_point_a_learner_at_it(session):
     """It is an ordinary activity, so it appears in the navigation index like
     any other — no special case anywhere."""
@@ -606,6 +639,91 @@ def test_the_report_names_the_question_the_class_got_wrong(session, fresh_video)
     # And the commonest wrong answer is named, because that is usually the
     # misconception rather than the question being unclear.
     assert first["choices"][picked] in table
+
+
+def test_results_are_broken_down_by_topic(session, fresh_video):
+    """One video usually covers several subjects, and "60%" does not say which
+    one somebody is weak on.
+
+    The per-question table finds the badly worded question; this finds the
+    section of video that did not teach what it was meant to. Different
+    findings, different fixes.
+    """
+    # Graded items only: an info card has no topic score to contribute, and
+    # picking by position would land on one as soon as an author adds a card.
+    graded = [(index, item) for index, item in enumerate(fresh_video)
+              if item["type"] != "info"]
+    (rightindex, rightitem), (wrongindex, wrongitem) = graded[0], graded[1]
+
+    moodle("kaivideo-categorise", str(KAIVIDEO_CMID), str(rightindex), "ความปลอดภัย")
+    moodle("kaivideo-categorise", str(KAIVIDEO_CMID), str(wrongindex), "คุณภาพ")
+
+    session.note("a class that gets the first topic right and the second wrong")
+    for who in ("learner", "learner2"):
+        moodle("kaivideo-reset", who, str(KAIVIDEO_CMID))
+        moodle("kaivideo-answer", who, str(KAIVIDEO_CMID), str(rightindex),
+               sent_for(rightitem, True))
+        moodle("kaivideo-answer", who, str(KAIVIDEO_CMID), str(wrongindex),
+               sent_for(wrongitem, False))
+
+    rows = {row["category"]: row
+            for row in json.loads(moodle("kaivideo-categories", str(KAIVIDEO_CMID)))}
+    session.note(f"per topic: {rows}")
+
+    assert rows["ความปลอดภัย"]["correctshare"] == 100
+    assert rows["คุณภาพ"]["correctshare"] == 0
+    assert rows["คุณภาพ"]["struggled"], "the failing topic is not flagged"
+
+    session.note("and the teacher sees it, weakest topic first")
+    session.login("instructor")
+    session.goto(f"/mod/kaivideo/report.php?cmid={KAIVIDEO_CMID}")
+    session.beat(2)
+
+    table = session.page.locator('[data-region="by-category"]')
+    assert table.count() == 1, "the report has no topic table"
+
+    text = table.inner_text()
+    session.note(f"the topic table says:\n{text[:300]}")
+    assert "ความปลอดภัย" in text and "คุณภาพ" in text
+
+    # 0% and "nobody answered" are opposite findings, and mustache treats zero
+    # as absent — so the worst topic on the page rendered as having no result.
+    assert "0%" in text, "a topic the class got wrong is not shown as 0%"
+
+    first_row = table.locator("tbody tr").first.inner_text()
+    session.note(f"top row: {first_row}")
+    assert "คุณภาพ" in first_row, "the weakest topic is not first"
+
+
+def test_a_recategorised_question_does_not_rewrite_past_results(session, fresh_video):
+    """What a topic scored last term stays what it scored.
+
+    The answer carries the topic it was marked under, rather than reading it
+    back through the question. Refiling a question is an ordinary thing to do
+    between cohorts and must not silently change a report somebody has already
+    acted on.
+    """
+    index, item = next((n, i) for n, i in enumerate(fresh_video)
+                       if i["type"] != "info")
+    moodle("kaivideo-categorise", str(KAIVIDEO_CMID), str(index), "หมวดเดิม")
+
+    moodle("kaivideo-reset", "learner", str(KAIVIDEO_CMID))
+    moodle("kaivideo-answer", "learner", str(KAIVIDEO_CMID), str(index),
+           sent_for(item, True))
+
+    before = json.loads(moodle("kaivideo-response-categories", str(KAIVIDEO_CMID)))
+    session.note(f"stamped on the answer: {before}")
+    assert any(row["category"] == "หมวดเดิม" for row in before)
+
+    session.note("the author refiles the question under a different topic")
+    moodle("kaivideo-categorise", str(KAIVIDEO_CMID), str(index), "หมวดใหม่")
+
+    after = json.loads(moodle("kaivideo-response-categories", str(KAIVIDEO_CMID)))
+    session.note(f"the answer still says: {after}")
+    assert any(row["category"] == "หมวดเดิม" for row in after), (
+        "refiling the question rewrote what the learner was marked under"
+    )
+    assert not any(row["category"] == "หมวดใหม่" for row in after)
 
 
 def test_an_author_can_add_each_kind_from_the_editor(session):

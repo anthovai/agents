@@ -1,0 +1,3 @@
+[submodule "deliverables/face-recognition"]
+	path = deliverables/face-recognition
+	url = https://github.com/anthovai/face-recognition.git

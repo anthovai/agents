@@ -49,6 +49,7 @@ if ($edit) {
         'itemid' => $record->id,
         'attime' => (float) $record->attime,
         'type' => $record->type,
+        'category' => $record->category,
         'questiontext' => $record->questiontext,
         'feedback' => $record->feedback,
         // Only one of these two is meaningful for a given type, and the form
@@ -63,7 +64,10 @@ if ($edit) {
     }
 }
 
-$form = new mod_kaivideo_edit_form($url, ['cmid' => $cmid]);
+$form = new mod_kaivideo_edit_form($url, [
+    'cmid' => $cmid,
+    'categories' => \mod_kaivideo\timeline::categories((int) $video->id),
+]);
 if ($existing) {
     $form->set_data($existing);
 }
@@ -97,6 +101,7 @@ if ($form->is_cancelled()) {
         \mod_kaivideo\timeline::save((int) $video->id, [
             'attime' => $data->attime,
             'type' => $data->type,
+            'category' => $data->category ?? '',
             'questiontext' => $data->questiontext,
             'choices' => $choices,
             'answers' => $answers,

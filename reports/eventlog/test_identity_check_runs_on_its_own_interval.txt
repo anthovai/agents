@@ -1,6 +1,0 @@
-# audit trail for learner
-17:53:11  ctx=217  monitor_started        videotime=23    {"strict":false,"verify_minutes":0.05,"presence_minutes":0,"clips_per_hour":0}
-17:53:14  ctx=217  verify_error           videotime=26    {"code":"no_face"}
-17:53:17  ctx=217  verify_error           videotime=29    {"code":"no_face"}
-17:53:20  ctx=217  verify_error           videotime=32    {"code":"no_face"}
-17:53:21  ctx=217  monitor_stopped        videotime=33    []

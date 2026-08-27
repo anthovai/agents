@@ -59,10 +59,22 @@ define([
 
         sources.forEach(function(source) {
             var item = document.createElement('li');
-            var link = document.createElement('a');
-            link.href = source.url;
-            link.textContent = source.title;
-            item.appendChild(link);
+            if (source.url) {
+                var link = document.createElement('a');
+                link.href = source.url;
+                link.textContent = source.title;
+                item.appendChild(link);
+            } else {
+                // A source with nowhere to go.
+                //
+                // The Indorama assistant cites tables and files in a different
+                // system; there is no page on this site to open. Shown as a
+                // plain label rather than as a dead link, because a link that
+                // goes nowhere is worse than a label that never promised to.
+                var name = document.createElement('code');
+                name.textContent = source.title;
+                item.appendChild(name);
+            }
             list.appendChild(item);
         });
         conversation.appendChild(list);
@@ -75,6 +87,12 @@ define([
             if (!root) {
                 return;
             }
+
+            // One panel, one conversation. The service files each turn under a
+            // conversation and hands the id back; sending it with the next
+            // question keeps the transcript in one thread instead of opening a
+            // new record per question. Reset only by reloading the page.
+            var conversationid = '';
 
             var panel = root.querySelector('[data-region="assistant-panel"]');
             var toggle = root.querySelector('[data-action="assistant-toggle"]');
@@ -130,9 +148,12 @@ define([
 
                         return Ajax.call([{
                             methodname: 'local_kaiproctor_ask',
-                            args: {question: question}
+                            args: {question: question, conversationid: conversationid}
                         }])[0].then(function(result) {
                             waiting.remove();
+                            if (result.conversationid) {
+                                conversationid = result.conversationid;
+                            }
                             if (result.ok) {
                                 say(root, result.answer, 'answer');
                                 showSources(root, result.sources);

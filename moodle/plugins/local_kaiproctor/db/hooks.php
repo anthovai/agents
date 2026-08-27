@@ -18,4 +18,10 @@ $callbacks = [
         'hook' => core\hook\output\before_footer_html_generation::class,
         'callback' => 'local_kaiproctor\hooks::start_monitor',
     ],
+    [
+        // Face enrolment, somewhere a learner can actually find it. The
+        // navigation node it had was effectively invisible in Boost.
+        'hook' => core_user\hook\extend_user_menu::class,
+        'callback' => 'local_kaiproctor\hooks::add_enrolment_to_user_menu',
+    ],
 ];

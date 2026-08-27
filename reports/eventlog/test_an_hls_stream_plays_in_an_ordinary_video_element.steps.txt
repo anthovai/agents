@@ -1,2 +1,0 @@
-after three seconds of playback: {'time': 2.951771, 'tag': 'VIDEO'}
-stopped at 4s and asked: สตรีมนี้เล่นด้วยอะไร

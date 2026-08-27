@@ -1,3 +1,0 @@
-the learner clicks back to the course
-leaving is on the trail, with the video position on it
-the sitting closed as completed (page_left)

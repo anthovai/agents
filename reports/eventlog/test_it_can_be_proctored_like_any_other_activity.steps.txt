@@ -1,2 +1,0 @@
-activities that can be monitored: ['kaivideo', 'h5pactivity', 'page', 'resource', 'url']
-the learner is told before anything starts

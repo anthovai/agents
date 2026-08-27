@@ -1,5 +1,0 @@
-add a typed question at 40s
-saved as shorttext, accepts: kaiproctor / ไคโปรคเตอร์
-and a multiple-answer question at 45s
-saved as multichoice, right answers: ก + ค
-tidy up so the rest of the suite sees the seeded timeline

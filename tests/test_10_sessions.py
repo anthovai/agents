@@ -8,7 +8,32 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from conftest import QUIZ_CMID, monitored_cmid, moodle, open_monitored
+
+
+@pytest.fixture
+def strict_lessons():
+    """End a lesson on the first breach, which is not what a site does.
+
+    Two settings, because ending a sitting needs both: the strict reading
+    (which lessons do not get by default, since ending one protects nothing —
+    see session::current_policy) and no tolerance left (a site that allows two
+    focus losses does not end anything on the first).
+
+    Pinned here rather than assumed, and restored to whatever the site had.
+    The tests below are about what a terminated sitting looks like; they should
+    not also depend on how forgiving this particular deployment is configured
+    to be, which is a number an administrator is free to change.
+    """
+    before = json.loads(moodle("current-policy"))
+    moodle("set-setting", "lessonstrictlockdown", "1")
+    moodle("set-setting", "blurallowance", "0")
+    yield
+    moodle("set-setting", "lessonstrictlockdown",
+           "1" if before["strictlockdown"] else "0")
+    moodle("set-setting", "blurallowance", str(int(before["blurallowance"])))
 
 
 def test_starting_a_lesson_opens_one_sitting(session, clean_learner):
@@ -63,8 +88,8 @@ def test_the_rules_in_force_are_recorded_on_the_sitting(session, clean_learner):
 
     # Everything the monitor's behaviour depends on has to be in the snapshot,
     # including how strict the face comparison was.
-    for key in ["presenceminutes", "verifyminutes", "clickconfirmminutes",
-                "mouseidleminutes", "randomclipsperhour", "blurallowance",
+    for key in ["presenceseconds", "verifyseconds", "clickconfirmseconds",
+                "mouseidleseconds", "randomclipsperhour", "blurallowance",
                 "strictlockdown", "matchthreshold", "reviewmin"]:
         assert key in policy, f"the snapshot does not record {key}"
 
@@ -79,27 +104,27 @@ def test_changing_the_settings_does_not_rewrite_a_finished_sitting(session, clea
     session.beat(2)
 
     before = json.loads(moodle("sessions", "learner"))[0]
-    original = before["policy"]["verifyminutes"]
+    original = before["policy"]["verifyseconds"]
     session.note(f"identity check interval at the time: {original}")
 
     try:
         session.note("an administrator later changes the interval")
-        moodle("set-setting", "verifyminutes", "99")
+        moodle("set-setting", "verifyseconds", "99")
 
         after = json.loads(moodle("sessions", "learner"))[0]
-        session.note(f"the sitting still records: {after['policy']['verifyminutes']}")
+        session.note(f"the sitting still records: {after['policy']['verifyseconds']}")
 
-        assert after["policy"]["verifyminutes"] == original, (
+        assert after["policy"]["verifyseconds"] == original, (
             "changing the settings rewrote what a past sitting was governed by"
         )
         # And a new sitting picks the new value up, or the snapshot would be
         # recording something nobody is enforcing.
-        assert json.loads(moodle("current-policy"))["verifyminutes"] == 99.0
+        assert json.loads(moodle("current-policy"))["verifyseconds"] == 99.0
     finally:
-        moodle("set-setting", "verifyminutes", str(original))
+        moodle("set-setting", "verifyseconds", str(original))
 
 
-def test_a_terminated_sitting_records_why(session, clean_learner):
+def test_a_terminated_sitting_records_why(session, clean_learner, strict_lessons):
     clean_learner("learner")
 
     session.note("sign in and start the lesson")
@@ -119,7 +144,8 @@ def test_a_terminated_sitting_records_why(session, clean_learner):
     assert sittings[0]["timeend"], "a closed sitting has no end time"
 
 
-def test_a_late_completion_cannot_launder_a_terminated_sitting(session, clean_learner):
+def test_a_late_completion_cannot_launder_a_terminated_sitting(session, clean_learner,
+                                                               strict_lessons):
     """A client that gets cut off must not be able to report the sitting as a
     clean finish afterwards."""
     clean_learner("learner")
@@ -224,7 +250,7 @@ def test_checks_and_evidence_are_filed_under_the_sitting(session, clean_learner)
     assert int(filed) >= 1
 
 
-def test_the_report_groups_everything_by_sitting(session, clean_learner):
+def test_the_report_groups_everything_by_sitting(session, clean_learner, strict_lessons):
     clean_learner("learner")
 
     session.note("sign in and run a lesson that gets terminated")

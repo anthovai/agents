@@ -192,10 +192,23 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b))
 
 
-def decide(similarity: float) -> str:
-    """Map a similarity score to a decision: pass / review / fail."""
-    if similarity >= config.MATCH_THRESHOLD:
+def decide(similarity: float,
+           match: float | None = None,
+           review: float | None = None) -> str:
+    """Map a similarity score to a decision: pass / review / fail.
+
+    The caller may supply the two thresholds. It should: the platform is where
+    an administrator sets them, where they are shown to an auditor, and where
+    they are written into the record of the decision. This service's own
+    values are the fallback for a caller that has none, not the authority —
+    when the two disagreed, the record said one number and the decision used
+    another, and only the record was ever read.
+    """
+    match = config.MATCH_THRESHOLD if match is None else match
+    review = config.REVIEW_MIN if review is None else review
+
+    if similarity >= match:
         return "pass"
-    if similarity >= config.REVIEW_MIN:
+    if similarity >= review:
         return "review"
     return "fail"

@@ -1,0 +1,80 @@
+# One domain, two services, separated by path prefix.
+#
+# Paths rather than subdomains on purpose: subdomains need a DNS record each,
+# and the point of this file is that somebody with one A record pointing at one
+# droplet can be serving both services in a minute. Split them later if the two
+# ever need different certificates or different owners.
+#
+#   https://<domain>/face/*   -> the face recognition service
+#   https://<domain>/agent/*  -> the assistant
+#
+# Caddy gets a certificate from Let's Encrypt on first start and renews it
+# without being asked. That needs the domain to already resolve to this
+# droplet, and port 80 reachable — the challenge is answered there.
+
+{$SITE_DOMAIN} {
+	# Access log. Kept because the first question after "is it down" is
+	# always "who was calling it", and the answer has to exist before the
+	# question is asked.
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+
+	# Security headers. Neither service serves a page a browser should frame
+	# or sniff, and the agent's demo UI is the only HTML here at all.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	handle_path /face/* {
+		reverse_proxy face:9000 {
+			# A cold /analyze on a busy CPU can take a few seconds; the
+			# default 0 (no limit) is fine, but a request that has been
+			# waiting two minutes is one the caller has already given up on.
+			transport http {
+				response_header_timeout 120s
+			}
+		}
+	}
+
+	handle_path /agent/* {
+		reverse_proxy agent:9200 {
+			# One agent turn is several model calls. This has to sit above
+			# RAG_AGENT_TIMEOUT (300s by default) or the proxy gives up
+			# first and the caller gets a 504 instead of the service's own
+			# named failure, which is the more useful of the two.
+			transport http {
+				response_header_timeout 360s
+			}
+		}
+	}
+
+	# Anything else is not a service here. Answered rather than proxied
+	# somewhere by accident.
+	handle {
+		respond "Not found" 404
+	}
+}
+
+# Uncomment to serve over plain HTTP against a bare IP, with no certificate.
+#
+# For a smoke test on a droplet that has no domain yet, and nothing else: the
+# API key travels in a header, and over http:// that header is readable by
+# anything on the path between the caller and here. Do not hand this address
+# to a customer.
+#
+# :80 {
+# 	handle_path /face/* {
+# 		reverse_proxy face:9000
+# 	}
+# 	handle_path /agent/* {
+# 		reverse_proxy agent:9200
+# 	}
+# }

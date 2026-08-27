@@ -30,11 +30,6 @@ define([
             preview.className = 'kaiproctor-preview kaiproctor-preview-attempt';
             document.body.appendChild(preview);
 
-            // The monitor pauses "the lesson" on a violation. A quiz has no
-            // video, so it is given a detached one: pause() is then a no-op
-            // and every other signal behaves exactly as it does in a lesson.
-            var standIn = document.createElement('video');
-
             var camera = new Camera(preview);
 
             var closeSession = function(status, reason) {
@@ -45,6 +40,30 @@ define([
                 Api.endSession(sessionid, status, reason).catch(function() {
                     return null;
                 });
+            };
+
+            /**
+             * One interval from a policy, in seconds, whichever unit it was recorded in.
+             *
+             * Same reasoning as the copy in local_kaiproctor's monitor_activity: a
+             * sitting keeps the policy it opened with, so an attempt that began before
+             * intervals moved to seconds still carries `presenceminutes`. Reading only
+             * the new key leaves every interval undefined and the monitor falls back to
+             * its own defaults — which is how an exam ends up policed by numbers nobody
+             * chose.
+             *
+             * @param {Object} policy
+             * @param {String} base setting name without its unit suffix
+             * @return {Number|undefined} seconds, or undefined if the policy has neither
+             */
+            var intervalSeconds = function(policy, base) {
+                if (policy[base + 'seconds'] !== undefined) {
+                    return policy[base + 'seconds'];
+                }
+                if (policy[base + 'minutes'] !== undefined) {
+                    return policy[base + 'minutes'] * 60;
+                }
+                return undefined;
             };
 
             var start = function() {
@@ -61,7 +80,13 @@ define([
                     sessionid = response.sessionid;
 
                     monitor = new AttentionMonitor({
-                        video: standIn,
+                        // No lesson here, and saying so matters. This used to
+                        // pass a detached <video> so that pause() would be a
+                        // no-op, and a never-played video reports itself
+                        // paused — which is the monitor's signal to skip every
+                        // timed check. Presence, identity and idle did not run
+                        // once for the whole of an exam.
+                        video: null,
                         contextid: config.contextid,
                         attemptid: config.attemptid || 0,
                         sessionid: sessionid,
@@ -73,12 +98,14 @@ define([
                         },
                         strictLockdown: policy.strictlockdown,
                         blurAllowance: policy.blurallowance,
-                        presenceMinutes: policy.presenceminutes,
-                        verifyMinutes: policy.verifyminutes,
+                        presenceSeconds: intervalSeconds(policy, 'presence'),
+                        verifySeconds: intervalSeconds(policy, 'verify'),
                         // A quiz already demands attention; interrupting it to
                         // ask "are you still there" would cost answering time.
-                        clickConfirmMinutes: 0,
-                        mouseIdleMinutes: policy.mouseidleminutes,
+                        clickConfirmSeconds: 0,
+                        mouseIdleSeconds: intervalSeconds(policy, 'mouseidle'),
+                        mouseIdleWarnSec: policy.mouseidlewarnsec,
+                        presenceWarnSec: policy.presencewarnsec,
                         randomClipsPerHour: policy.randomclipsperhour,
                         clipSeconds: policy.clipseconds,
                         desktopNotification: policy.desktopnotification,

@@ -1,4 +1,0 @@
-sign in as an administrator
-open the policy management page
-read how the published policy is actually configured
-published policies: [{'name': 'ความยินยอมการเก็บข้อมูลชีวมิติ (PDPA)', 'revision': '1.0', 'type': 1, 'audience': 1, 'optional': 0, 'iscompulsory': True}]

@@ -1,4 +1,0 @@
-the uploaded activity opens on 'file'
-the linked activity opens on 'url'
-switch it to upload without choosing a file, and save
-the form came back with an error rather than saving

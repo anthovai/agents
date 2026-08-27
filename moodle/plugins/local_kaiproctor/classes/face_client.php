@@ -103,7 +103,17 @@ class face_client {
         ], null, self::PARSE_TIMEOUT);
     }
 
-    /** Compare a live frame against a stored embedding. */
+    /**
+     * Compare a live frame against a stored embedding.
+     *
+     * The thresholds go with the request. They are configured here, shown to
+     * an auditor here, and written into the record here — so this is where
+     * they have to be decided. They used to be left to the service's own
+     * environment, which meant the number an administrator set, the number
+     * printed on the report as "the rule that applied", and the number that
+     * actually decided the learner's result were three things that only
+     * happened to agree.
+     */
     public static function verify(string $jpeg, string $referenceembedding): array {
         // The image is passed under a different field name by this endpoint,
         // so post() cannot supply it via its $jpeg argument.
@@ -113,6 +123,26 @@ class face_client {
         return self::post('/verify', [
             'live_image' => new \CURLFile($tempfile, 'image/jpeg', 'live.jpg'),
             'reference_embedding' => $referenceembedding,
+            'match_threshold' => (string) self::configured_threshold('matchthreshold'),
+            'review_min' => (string) self::configured_threshold('reviewmin'),
         ]);
+    }
+
+    /**
+     * A configured threshold, or the shipped default if it was never saved.
+     *
+     * get_config returns false for a setting no one has written, and (float)
+     * false is 0.0 — which as a review threshold means "treat every face as
+     * inconclusive rather than failing it". reviewmin was in exactly that
+     * state, so the fallback is named here rather than left to a cast.
+     *
+     * @param string $name
+     * @return float
+     */
+    public static function configured_threshold(string $name): float {
+        $defaults = ['matchthreshold' => 0.363, 'reviewmin' => 0.30];
+        $value = get_config('local_kaiproctor', $name);
+        return ($value === false || $value === '')
+            ? $defaults[$name] : (float) $value;
     }
 }

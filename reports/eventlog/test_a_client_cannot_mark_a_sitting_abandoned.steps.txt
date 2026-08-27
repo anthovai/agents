@@ -1,2 +1,0 @@
-sign in and start the lesson
-server response: {'ok': False, 'errorcode': 'invalid_status'}

@@ -6,9 +6,10 @@
 define([
     'local_kaiproctor/camera',
     'local_kaiproctor/active_liveness',
+    'local_kaiproctor/camera_notice',
     'core/str',
     'core/notification'
-], function(Camera, ActiveLiveness, Str, Notification) {
+], function(Camera, ActiveLiveness, CameraNotice, Str, Notification) {
 
     return {
         /**
@@ -44,13 +45,10 @@ define([
                 }).catch(Notification.exception);
             };
 
-            startButton.addEventListener('click', function() {
-                startButton.disabled = true;
-                status.hidden = true;
-
-                camera.start().then(function() {
+            /** The challenge itself, once there is permission to open a lens. */
+            var run = function() {
+                return camera.start().then(function() {
                     var liveness = new ActiveLiveness({
-                        mode: 'enrol',
                         getSnapshot: function() {
                             return camera.snapshot();
                         },
@@ -115,6 +113,26 @@ define([
                     };
                     fail(keys[reason] || 'error:generic');
                 });
+            };
+
+            startButton.addEventListener('click', function() {
+                startButton.disabled = true;
+                status.hidden = true;
+
+                // Asked before the camera, not after: a notice that arrives
+                // once the lens is already open is a description, not consent.
+                CameraNotice.ask(config.contextid, 'enrol',
+                    config.retentiondays).then(function(agreed) {
+                    if (!agreed) {
+                        startButton.disabled = false;
+                        return Str.get_string('notice:declined', 'local_kaiproctor')
+                            .then(function(message) {
+                                setStatus(message, 'info');
+                                return message;
+                            });
+                    }
+                    return run();
+                }).catch(Notification.exception);
             });
 
             if (config && config.alreadyenrolled) {

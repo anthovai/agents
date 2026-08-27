@@ -1,2 +1,0 @@
-a typed question: ข้อมูลใบหน้าถูกเก็บไว้ในรูปแบบใด (ตอบเป็นคำเดียว)
-type it with stray spacing: '  เวกเตอร์  '

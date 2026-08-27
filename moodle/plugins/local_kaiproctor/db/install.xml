@@ -125,5 +125,24 @@
         <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
+    <TABLE NAME="local_kaiproctor_convo" COMMENT="One row per conversation with the assistant. An index beside the file, not instead of it: listing somebody's conversations and totalling what they use must work without opening every file they own. The transcript itself is Markdown in the user context file area, which is what deleting a user actually deletes.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Taken from the first question. A list of conversations all called the same thing is a list nobody can navigate."/>
+        <FIELD NAME="turns" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="bytes" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Size of the transcript, summed per user to enforce the quota without stat-ing every file."/>
+        <FIELD NAME="remoteid" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="The far side's id for this conversation, when the assistant keeps its own state (the Indorama service does). Without it every question through this site starts the remote conversation over, and the far side's memory of earlier turns goes unused. Null for the built-in assistant, which keeps no remote state."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid-timemodified" UNIQUE="false" FIELDS="userid, timemodified"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>

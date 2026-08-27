@@ -1,0 +1,144 @@
+# Face recognition and the agent, on one droplet, behind one reverse proxy.
+#
+# Run it from the repository root:
+#   docker compose -f deploy/digitalocean/docker-compose.yml \
+#                  --env-file deploy/digitalocean/.env up -d
+#
+# Two services that share nothing but a machine. They have separate images,
+# separate keys and separate volumes; either can be stopped without the other
+# noticing. They are here together because one droplet is cheaper than two and
+# neither is big enough to need its own.
+#
+# PORTS
+#
+# Nothing but Caddy is published. The two services bind to loopback on the
+# droplet, so the only way in is through the proxy, and the only ports open to
+# the internet are 80 and 443 (plus SSH, which is the provider's firewall to
+# manage, not this file's).
+#
+# The loopback ports are 18081 and 18082 rather than the 9000 and 9200 the
+# services default to. Both defaults are heavily used: 9000 belongs to MinIO,
+# Portainer and PHP-FPM, and 9200 is Elasticsearch's, which is the one that
+# actually matters — a droplet that later runs Elasticsearch would have taken
+# the port and the failure reads as the agent being down. 18081/18082 are in
+# the ephemeral range's lower edge, unassigned by anything common.
+
+name: kai-services
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      # Caddy reads {$SITE_DOMAIN} from its own environment, not from the
+      # compose file's. Without this line the placeholder expands to nothing,
+      # the site block opens with a bare `{`, and Caddy reads the whole file
+      # as global options — reporting the first directive inside it as an
+      # unrecognised global option, which says nothing about the real cause.
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in deploy/digitalocean/.env}
+    ports:
+      # The only two ports open to the world. 80 is not optional: it is how
+      # Let's Encrypt answers its own challenge, and how a plain http:// link
+      # gets redirected instead of hanging.
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and account keys. Losing this volume means re-issuing on
+      # every restart, which Let's Encrypt rate-limits — five per week per
+      # domain, after which the site has no certificate until it expires.
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - face
+      - agent
+
+  face:
+    build:
+      context: ../../deliverables/face-recognition
+    restart: unless-stopped
+    environment:
+      FACE_API_KEY: ${FACE_API_KEY:?set FACE_API_KEY in deploy/digitalocean/.env}
+      FACE_MATCH_THRESHOLD: ${FACE_MATCH_THRESHOLD:-0.363}
+      FACE_REVIEW_MIN: ${FACE_REVIEW_MIN:-0.30}
+      FACE_LIVENESS_THRESHOLD: ${FACE_LIVENESS_THRESHOLD:-0.60}
+      FACE_DET_SCORE: ${FACE_DET_SCORE:-0.80}
+    volumes:
+      # Model weights from the host, read-only. Run
+      # deliverables/face-recognition/models/fetch.sh on the droplet once
+      # before the first start — the two large ones are not in the repository.
+      - ../../deliverables/face-recognition/models:/app/models:ro
+    ports:
+      - "127.0.0.1:18081:9000"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          # Face work is CPU-bound and bursty. Capped so that a flood of
+          # /analyze cannot starve the agent and the proxy on a shared box —
+          # requests queue instead, which is visible as latency rather than as
+          # the whole droplet going quiet.
+          cpus: "1.5"
+          memory: 1500M
+
+  agent:
+    build:
+      context: ../../indorama-rag
+    restart: unless-stopped
+    environment:
+      RAG_API_KEY: ${RAG_API_KEY:?set RAG_API_KEY in deploy/digitalocean/.env}
+      # One caller's model-backed calls per minute, and how many may
+      # arrive at once. Every one of them is billed at OpenAI, and the
+      # caller is trusted with its users' conversations, not the invoice.
+      RAG_RATE_PER_MINUTE: ${RAG_RATE_PER_MINUTE:-20}
+      RAG_RATE_BURST: ${RAG_RATE_BURST:-10}
+      # Hosted by default here, and on a droplet there is no alternative worth
+      # pretending about: a 7B model needs 16GB of RAM, which is a $84/month
+      # droplet instead of a $12 one. If the client's data may not reach a
+      # third party, this service belongs on their hardware, not here.
+      RAG_LLM_BASE_URL: ${RAG_LLM_BASE_URL:-https://api.openai.com/v1}
+      RAG_LLM_MODEL: ${RAG_LLM_MODEL:-gpt-5-mini}
+      RAG_LLM_API_KEY: ${RAG_LLM_API_KEY:?set RAG_LLM_API_KEY in deploy/digitalocean/.env}
+      RAG_INDEX_PATH: /index/index.sqlite
+      RAG_CHAT_DIR: /chats
+      RAG_AGENT_TIMEOUT: ${RAG_AGENT_TIMEOUT:-300}
+    volumes:
+      # The index is a build artefact of one export and is not in the image or
+      # the repository. Copy it to the droplet and mount it read-only: the
+      # service never writes to it, and mounting it this way means a bug
+      # cannot quietly change what the answers are built from.
+      - ./index:/index:ro
+      # Conversations are the users'. A named volume rather than a bind mount
+      # so that `docker compose down -v` is the only thing that can remove
+      # them, and so a backup has one thing to name.
+      - agent-chats:/chats
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,json;\
+              d=json.load(urllib.request.urlopen('http://localhost:9200/health'));\
+              raise SystemExit(0 if d.get('ok') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "127.0.0.1:18082:9200"
+    deploy:
+      resources:
+        limits:
+          # It waits on OpenAI rather than computing anything; 41MB resident
+          # was what it used under test. The ceiling is a runaway guard, not a
+          # sizing.
+          cpus: "0.5"
+          memory: 512M
+
+volumes:
+  caddy-data:
+  caddy-config:
+  agent-chats:

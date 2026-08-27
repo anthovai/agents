@@ -32,27 +32,51 @@ $string['settings:retentiondays'] = 'ระยะเก็บหลักฐา�
 $string['settings:retentiondays_desc'] = 'ภาพและคลิปที่เก่ากว่านี้จะถูกลบโดย scheduled task';
 
 $string['settings:policy'] = 'นโยบายการเฝ้าดู';
-$string['settings:policy_desc'] = 'ความถี่ของการตรวจแต่ละอย่างระหว่างเรียน ใส่ 0 เพื่อปิดการตรวจนั้น';
-$string['settings:presenceminutes'] = 'ตรวจการมีตัวตนทุก (นาที)';
-$string['settings:presenceminutes_desc'] = 'ความถี่ในการยืนยันว่ามีคนนั่งอยู่หน้ากล้อง';
-$string['settings:verifyminutes'] = 'ตรวจตัวตนทุก (นาที)';
-$string['settings:verifyminutes_desc'] = 'ความถี่ในการยืนยันว่ายังเป็นคนที่ลงทะเบียนไว้ ทำงานเฉพาะผู้เรียนที่ลงทะเบียนใบหน้าแล้ว';
-$string['settings:clickconfirmminutes'] = 'ให้กดยืนยันทุก (นาที)';
-$string['settings:clickconfirmminutes_desc'] = 'ความถี่ที่ผู้เรียนต้องกดยืนยันว่ายังเรียนอยู่ นับเฉพาะตอนที่วิดีโอกำลังเล่น จึงไม่ขึ้นเลยถ้าบทเรียนสั้นกว่าค่านี้ — ตั้ง 5 นาทีกับวิดีโอ 1 นาที เท่ากับปิดการตรวจนี้ไปโดยปริยาย 0 = ปิด';
-$string['settings:clickconfirmgracesec'] = 'เวลาผ่อนผันการกดยืนยัน (วินาที)';
-$string['settings:clickconfirmgracesec_desc'] = 'เวลาที่ให้กดก่อนระบบจะหยุดวิดีโอ';
-$string['settings:mouseidleminutes'] = 'ทนการนิ่งได้ (นาที)';
-$string['settings:mouseidleminutes_desc'] = 'หยุดวิดีโอเมื่อไม่มีการขยับเมาส์หรือใช้คีย์บอร์ดนานเกินนี้';
-$string['settings:randomclipsperhour'] = 'สุ่มอัดคลิปต่อชั่วโมง';
-$string['settings:randomclipsperhour_desc'] = 'จำนวนคลิปสั้นที่เก็บเป็นหลักฐานโดยเฉลี่ยต่อชั่วโมง เวลาที่อัดถูกสุ่มให้คาดเดาไม่ได้';
-$string['settings:clipseconds'] = 'ความยาวคลิป (วินาที)';
-$string['settings:clipseconds_desc'] = 'ความยาวของคลิปหลักฐานแต่ละอัน';
-$string['settings:blurallowance'] = 'จำนวนครั้งที่ยอมให้ออกจากหน้าเรียน';
-$string['settings:blurallowance_desc'] = 'ออกจากหน้าต่างเรียนได้กี่ครั้งก่อนถูกยุติ ใส่ 0 = ยุติตั้งแต่ครั้งแรก';
-$string['settings:strictlockdown'] = 'โหมดเข้มงวด';
-$string['settings:strictlockdown_desc'] = 'ยุติการอบรมเมื่อละเมิดนโยบาย แทนการหยุดวิดีโอแล้วให้เรียนต่อ';
+$string['settings:policy_desc'] = 'ตั้งว่าระบบจะตรวจอะไรบ้างระหว่างเรียน และตรวจถี่แค่ไหน <strong>ทุกช่องเป็นวินาที</strong> ใส่ 0 ในช่องไหนคือปิดการตรวจนั้น';
+$string['settings:clickconfirmgracesec'] = 'ให้เวลากดยืนยันกี่วินาที';
+$string['settings:clickconfirmgracesec_desc'] = 'นับถอยหลังให้กดปุ่ม ถ้าไม่กดภายในเวลานี้ วิดีโอจะหยุด';
+$string['settings:mouseidlewarnsec'] = 'เตือนล่วงหน้ากี่วินาที ก่อนหยุดเพราะไม่ขยับ';
+$string['settings:mouseidlewarnsec_desc'] = 'ตัวนับถอยหลังจะขึ้นก่อนวิดีโอหยุดตามเวลานี้ <strong>ต้องไม่เกินค่าในช่องด้านบน</strong> ตัวอย่าง: ช่องบน 30 ช่องนี้ 10 = นิ่งครบ 20 วินาทีเริ่มนับถอยหลัง 10 9 8 … แล้วหยุด ใส่ 0 = หยุดเลยโดยไม่เตือน';
+$string['settings:warntoolong'] = 'เตือนล่วงหน้า {$a->warn} วินาทีไม่ได้ เพราะระบบทนความนิ่งได้เพียง {$a->tolerance} วินาที ตัวนับถอยหลังต้องอยู่ในช่วงนั้น — ลดค่านี้ลง หรือเพิ่ม "ทนการนิ่งได้" ก่อน';
+$string['settings:warnnegative'] = 'ใส่ค่าติดลบไม่ได้';
+$string['settings:presencewarnsec'] = 'เตือนล่วงหน้ากี่วินาที ก่อนหยุดเพราะไม่เห็นหน้า';
+$string['settings:presencewarnsec_desc'] = 'เมื่อกล้องไม่เห็นหน้า ระบบจะตรวจซ้ำและนับถอยหลังตามเวลานี้ก่อนหยุดจริง ใส่ 0 = หยุดทันทีที่ไม่เห็นหน้า';
+$string['settings:randomclipsperhour'] = 'อัดคลิปเก็บหลักฐาน กี่คลิปต่อชั่วโมง';
+$string['settings:randomclipsperhour_desc'] = 'จำนวนคลิปสั้นที่เก็บไว้เป็นหลักฐานโดยเฉลี่ยใน 1 ชั่วโมง ระบบสุ่มเวลาอัดเองเพื่อไม่ให้คาดเดาได้ ใส่ 0 = ไม่อัด';
+$string['settings:clipseconds'] = 'คลิปหลักฐานยาวกี่วินาที';
+$string['settings:clipseconds_desc'] = 'ความยาวของคลิปแต่ละอันที่อัดเก็บไว้';
+$string['settings:blurallowance'] = 'ออกจากหน้าเรียนได้กี่ครั้ง';
+$string['settings:blurallowance_desc'] = 'สลับไปหน้าต่างอื่นได้กี่ครั้งก่อนถูกยุติการเรียน ใส่ 0 = ยุติตั้งแต่ครั้งแรก';
+$string['settings:strictlockdown'] = 'โหมดเข้มงวด (ข้อสอบ)';
+$string['settings:strictlockdown_desc'] = 'ยุติการสอบเมื่อละเมิดนโยบาย แทนการหยุดแล้วให้ทำต่อ ใช้กับการทำข้อสอบเท่านั้น';
+$string['settings:lessonstrictlockdown'] = 'โหมดเข้มงวดกับบทเรียนด้วย';
+$string['settings:lessonstrictlockdown_desc'] = 'ปกติบทเรียนจะไม่ถูกยุติ เมื่อละเมิดนโยบายระบบจะหยุดวิดีโอ บันทึกหลักฐาน แล้วให้กดเรียนต่อได้ เพราะการยุติบทเรียนไม่ได้ปกป้องอะไร แค่ทำให้ต้องเริ่มใหม่ เปิดข้อนี้ถ้าต้องการให้บทเรียนถูกยุติเหมือนข้อสอบ';
 $string['settings:desktopnotification'] = 'แจ้งเตือนระดับระบบ';
 $string['settings:desktopnotification_desc'] = 'เด้งการแจ้งเตือนของระบบปฏิบัติการเมื่อผู้เรียนออกจากหน้าเรียน';
+
+// The notice shown right before the camera opens. Separate from the site
+// policy, which is agreed to once and covers everything — this one is about
+// what is happening in the next few seconds. {$a} is the retention period,
+// read from the setting so the notice cannot promise something the purge task
+// does not do.
+$string['notice:title'] = 'กำลังจะเปิดกล้อง';
+$string['notice:enrol'] = '<p>ขั้นตอนต่อไปจะเปิดกล้องเพื่อลงทะเบียนใบหน้าของคุณ</p>
+<ul>
+<li>ระบบเก็บเป็น<strong>ค่าตัวเลขที่แทนใบหน้า</strong> ไม่ได้เก็บรูปถ่ายของคุณไว้</li>
+<li>ใช้เพื่อยืนยันว่าคนที่เรียนและสอบคือคุณเท่านั้น</li>
+<li>คุณขอลบข้อมูลนี้ได้ทุกเมื่อผ่านเมนูข้อมูลส่วนบุคคลของบัญชีคุณ</li>
+</ul>
+<p>กด "ยินยอมและเปิดกล้อง" เพื่อดำเนินการต่อ</p>';
+$string['notice:verify'] = '<p>ขั้นตอนต่อไปจะเปิดกล้องเพื่อยืนยันว่าเป็นคุณ ก่อนเริ่มทำข้อสอบ</p>
+<ul>
+<li>ระบบเทียบใบหน้าสดกับค่าที่คุณลงทะเบียนไว้</li>
+<li>ระหว่างสอบจะมีการตรวจเป็นระยะ และ<strong>เก็บภาพไว้เป็นหลักฐานเมื่อพบสิ่งผิดปกติ</strong></li>
+<li>หลักฐานถูกลบอัตโนมัติเมื่อครบ {$a} วัน</li>
+</ul>
+<p>กด "ยินยอมและเปิดกล้อง" เพื่อดำเนินการต่อ</p>';
+$string['notice:agree'] = 'ยินยอมและเปิดกล้อง';
+$string['notice:decline'] = 'ไม่ยินยอม';
+$string['notice:declined'] = 'คุณยังไม่ได้ให้ความยินยอม จึงยังเปิดกล้องไม่ได้ กดอีกครั้งเมื่อพร้อม';
 
 $string['enrol:title'] = 'ลงทะเบียนใบหน้า';
 $string['enrol:intro'] = 'ระบบจะยืนยันตัวตนผ่านกล้องระหว่างเรียน ทำตามคำสั่งบนหน้าจอ: มองตรงเข้ากล้อง แล้วหันหน้าตามที่ระบบบอก';
@@ -62,6 +86,10 @@ $string['enrol:failed'] = 'ลงทะเบียนใบหน้าไม�
 $string['enrol:timeout'] = 'หันหน้าไม่ทันเวลา ลองใหม่และหันช้าๆ';
 $string['enrol:replacing'] = 'คุณลงทะเบียนใบหน้าไว้แล้ว การทำรายการนี้จะแทนที่ของเดิม';
 $string['enrol:existing'] = 'ลงทะเบียนใบหน้าเมื่อ {$a}';
+// Shown on the learner's own profile, where the question is "have I done this
+// yet" rather than "how do I do it".
+$string['profile:enrolledon'] = 'ลงทะเบียนไว้แล้วเมื่อ {$a}';
+$string['profile:notenrolled'] = 'ยังไม่ได้ลงทะเบียนใบหน้า — ต้องลงทะเบียนก่อนเข้าบทเรียนหรือสอบที่มีการเฝ้าดู';
 
 
 $string['hint:noface'] = 'ขยับให้เห็นใบหน้าชัดๆ';
@@ -89,6 +117,8 @@ $string['liveness:right'] = 'ค่อยๆ หันหน้าไปทา�
 $string['notification:title'] = 'ระบบคุมสอบ';
 $string['paused:title'] = 'วิดีโอถูกหยุด';
 $string['paused:resume'] = 'เล่นต่อ';
+$string['countdown:idle'] = 'ไม่พบการเคลื่อนไหว จะหยุดวิดีโอในอีก {$a} วินาที';
+$string['countdown:presence'] = 'ไม่พบคุณหน้ากล้อง จะหยุดวิดีโอในอีก {$a} วินาที';
 $string['confirm:title'] = 'ยืนยันว่ายังเรียนอยู่';
 $string['confirm:body'] = 'กดปุ่มภายในเวลาที่กำหนด';
 $string['confirm:button'] = 'ยืนยัน';
@@ -148,7 +178,6 @@ $string['report:nosessions'] = 'ไม่มีการเรียนที่
 $string['report:ended'] = 'สิ้นสุด';
 $string['report:policy'] = 'กฎที่บังคับใช้ระหว่างการเรียนครั้งนี้';
 $string['report:policynote'] = 'นี่คือกฎที่บังคับอยู่ตอนเริ่ม บันทึกไว้ ณ เวลานั้น การแก้การตั้งค่าตอนนี้ไม่เปลี่ยนค่านี้';
-$string['report:everyminutes'] = 'ทุก {$a} นาที';
 $string['report:checkoff'] = 'ปิด';
 $string['report:orphans'] = 'บันทึกที่ไม่ได้อยู่ในการเรียนครั้งใด';
 $string['report:orphansnote'] = 'มาจากช่วงก่อนที่ระบบจะบันทึกเป็นครั้งๆ เก็บไว้แทนที่จะซ่อน แต่ไม่มีบันทึกกฎที่บังคับตอนนั้น';
@@ -170,6 +199,21 @@ $string['import:failed'] = 'นำเข้าไม่สำเร็จ';
 $string['import:nousable'] = 'ไม่มีข้อไหนที่จับคู่เฉลยได้';
 $string['import:expired'] = 'รายการนำเข้านี้หมดอายุแล้ว กรุณาอัปโหลดไฟล์ใหม่';
 $string['import:openbank'] = 'เปิดคลังข้อสอบ';
+
+// Building a paper that draws at random from the course's own bank.
+$string['paper:title'] = 'สร้างชุดข้อสอบสุ่ม';
+$string['paper:intro'] = 'สุ่มข้อสอบจากคลังของรายวิชานี้มาเป็นชุดข้อสอบ ผู้เข้าสอบแต่ละคนได้คนละชุด และไม่เห็นระดับความยากของข้อสอบ ตอนนี้คลังของรายวิชานี้มี <strong>{$a}</strong> ข้อให้สุ่ม';
+$string['paper:quiz'] = 'ใส่ลงในข้อสอบ';
+$string['paper:count'] = 'จำนวนข้อ';
+$string['paper:count_help'] = 'จำนวนข้อที่ผู้เข้าสอบแต่ละคนจะได้ ระบบจะสุ่มจากคลังของรายวิชานี้ใหม่ทุกครั้งที่มีคนเริ่มทำข้อสอบ จึงต้องไม่เกินจำนวนข้อที่มีในคลัง';
+$string['paper:replace'] = 'ล้างข้อสอบเดิมในชุดนี้ก่อน';
+$string['paper:replace_help'] = 'ถ้าไม่เลือก ข้อสอบสุ่มจะถูกเพิ่มต่อท้ายของเดิม ซึ่งมักไม่ใช่สิ่งที่ต้องการเมื่อกำลังสร้างชุดใหม่';
+$string['paper:build'] = 'สร้างชุดข้อสอบ';
+$string['paper:done'] = 'เพิ่มข้อสอบสุ่ม {$a->added} ข้อ (ลบของเดิม {$a->removed} ข้อ)';
+$string['paper:atleastone'] = 'ต้องมีอย่างน้อย 1 ข้อ';
+$string['paper:toomany'] = 'คลังของรายวิชานี้มีเพียง {$a} ข้อ จะสุ่มเกินจำนวนที่มีไม่ได้';
+$string['paper:noquizzes'] = 'รายวิชานี้ยังไม่มีข้อสอบให้ใส่ สร้างกิจกรรมข้อสอบก่อน แล้วกลับมาที่หน้านี้';
+$string['paper:nobank'] = 'คลังข้อสอบของรายวิชานี้ยังว่างอยู่ นำเข้าข้อสอบก่อนจึงจะสุ่มได้';
 $string['import:difficultynote'] = 'ระดับความยากถูกเก็บเป็น tag ของข้อสอบ ข้อสอบจึงสุ่มตามระดับความยากได้';
 
 $string['stats:title'] = 'สถิติระบบคุมสอบ';
@@ -271,6 +315,66 @@ $string['enrol:toosmall'] = 'ใบหน้าเล็กเกินไปใ
 $string['enrol:multiplefaces'] = 'มีใบหน้ามากกว่าหนึ่งในภาพ ให้มีคุณอยู่คนเดียวในกรอบ — ภาพถ่ายหรือจอที่อยู่ด้านหลังก็นับด้วย';
 $string['enrol:spoof'] = 'ยืนยันไม่ได้ว่าเป็นคนจริง ให้ลงทะเบียนด้วยกล้องของคุณเองและมองตรงเข้ากล้อง ไม่ใช่ถือภาพถ่ายหรือจออื่นมาส่อง';
 $string['hint:toosmall'] = 'ขยับเข้าใกล้กล้อง';
-// The assistant's launcher, on every page.
-$string['ask:icon'] = '?';
+// The assistant's launcher, on every page. Its icon is drawn in the template
+// rather than named here: a glyph is not something a translator should have to
+// choose, and the one this used to carry was a "?" that collided with Moodle's
+// own help button sitting directly under it.
 $string['ask:openfull'] = 'เปิดหน้าเต็ม';
+
+$string['settings:asksource'] = 'ให้ผู้ช่วยตัวไหนตอบในกล่องถาม';
+$string['settings:asksource_desc'] = 'ผู้ช่วยของ Moodle ตอบว่า "หน้าที่ต้องการอยู่ตรงไหน" จากคอร์สที่ผู้เรียนคนนั้นเปิดได้ ส่วนผู้ช่วย Indorama ตอบเรื่องโครงสร้างของ LMS เดิม — ตาราง route และไฟล์ซอร์ส — และไม่รู้อะไรเกี่ยวกับ Moodle เลย ทั้งสองเป็นคนละบริการ ตัวเลือกนี้เลือกว่ากล่องถามจะส่งคำถามไปที่ไหน ตัวเลือก Indorama ต้องมีสิทธิ์ local/kaiproctor:manage เพราะโครงสร้างฐานข้อมูลไม่ใช่สิ่งที่ควรวางไว้ตรงหน้าผู้เรียน';
+$string['settings:asksource:moodle'] = 'นำทางใน Moodle (เว็บนี้)';
+$string['settings:asksource:indorama'] = 'โครงสร้าง LMS ของ Indorama (บริการแยก)';
+$string['settings:ragbaseurl'] = 'ที่อยู่ของผู้ช่วย Indorama';
+$string['settings:ragbaseurl_desc'] = 'ที่อยู่ที่บริการ indorama-rag รออยู่ เช่น http://host.docker.internal:8110 เมื่อบริการรันบนเครื่อง host และ Moodle รันในคอนเทนเนอร์ ใช้เฉพาะเมื่อเลือกแหล่งเป็น Indorama';
+$string['settings:ragapikey'] = 'กุญแจของผู้ช่วย Indorama';
+$string['settings:ragapikey_desc'] = 'กุญแจลับที่ตั้งไว้ฝั่งบริการนั้น (RAG_API_KEY) ส่งไปในหัวข้อ X-Agent-Key เว้นว่างได้ถ้าบริการไม่ได้ตั้งกุญแจ ซึ่งปลอดภัยเฉพาะบนเครื่องที่ไม่มีอะไรอื่นเข้าถึงได้';
+$string['ask:rag:notconfigured'] = 'เลือกผู้ช่วย Indorama ไว้ แต่ยังไม่ได้ตั้งที่อยู่ของบริการ';
+$string['ask:rag:unreachable'] = 'ติดต่อผู้ช่วย Indorama ไม่ได้ ตรวจว่าบริการรันอยู่และที่อยู่ในการตั้งค่าถูกต้อง';
+$string['ask:rag:malformed'] = 'ผู้ช่วย Indorama ตอบกลับมาเป็นรูปแบบที่ปลั๊กอินอ่านไม่ได้';
+
+$string['chat:role:user'] = 'คุณ';
+$string['chat:role:assistant'] = 'ผู้ช่วย';
+$string['chat:sources'] = 'อ้างอิงจาก';
+$string['chat:overquota'] = 'ประวัติแชทของคุณเต็มโควตาแล้ว ลบบทสนทนาสักรายการเพื่อให้มีที่ว่าง';
+$string['chat:history'] = 'ประวัติแชทของฉัน';
+$string['chat:history_desc'] = 'ทุกอย่างที่คุณเคยถามผู้ช่วย เก็บเป็นไฟล์ Markdown ที่คุณอ่าน ดาวน์โหลด และลบเองได้ คนอื่นเปิดดูไม่ได้';
+$string['chat:none'] = 'คุณยังไม่เคยถามผู้ช่วย';
+$string['chat:turns'] = '{$a} ข้อความ';
+$string['chat:usage'] = 'ใช้ไป {$a->used} จาก {$a->quota}';
+$string['chat:open'] = 'เปิด';
+$string['chat:download'] = 'ดาวน์โหลด .md';
+$string['chat:rename'] = 'เปลี่ยนชื่อ';
+$string['chat:delete'] = 'ลบ';
+$string['chat:deleteall'] = 'ลบบทสนทนาทั้งหมด';
+$string['chat:confirmdelete'] = 'ลบบทสนทนานี้? ไม่มีการกู้คืน';
+$string['chat:confirmdeleteall'] = 'ลบบทสนทนาทั้งหมดที่เคยคุยกับผู้ช่วย? ไม่มีการกู้คืน';
+$string['chat:deleted'] = 'ลบแล้ว';
+$string['settings:chatquota'] = 'พื้นที่เก็บบทสนทนาต่อผู้ใช้';
+$string['settings:chatquota_desc'] = 'จำนวนไบต์ของบทสนทนาที่หนึ่งบัญชีเก็บได้ หนึ่งเทิร์นกินราวสองถึงห้ากิโลไบต์ ค่าตั้งต้นหนึ่งกิกะไบต์จึงเป็นกันชนกันสคริปต์วนลูป ไม่ใช่งบที่ต้องคอยบริหาร เมื่อเกินโควตาระบบจะปฏิเสธการบันทึก ไม่ตัดข้อความทิ้ง เพราะบทสนทนาที่หยุดบันทึกเงียบๆ หน้าตาเหมือนบทสนทนาที่ไม่มีใครคุยต่อ';
+$string['privacy:metadata:convo'] = 'บทสนทนากับผู้ช่วย เก็บไว้ให้เจ้าของกลับมาอ่านได้';
+$string['privacy:metadata:convo:userid'] = 'ใครเป็นคนคุย';
+$string['privacy:metadata:convo:title'] = 'ชื่อบทสนทนา ตั้งจากคำถามแรก';
+$string['privacy:metadata:convo:timecreated'] = 'เริ่มเมื่อไร';
+$string['privacy:metadata:convo:timemodified'] = 'คุยต่อครั้งล่าสุดเมื่อไร';
+
+$string['settings:ragstaffonly'] = 'จำกัดผู้ช่วย Indorama ไว้เฉพาะเจ้าหน้าที่';
+$string['settings:ragstaffonly_desc'] = 'เปิดไว้เป็นค่าตั้งต้น และควรเปิดไว้เว้นแต่ตัดสินใจเป็นอย่างอื่น เพราะผู้ช่วยตัวนั้นตอบเรื่องโครงสร้างฐานข้อมูล ซึ่งมีประโยชน์กับคนที่ดูแลระบบและแปลกถ้าเอาไปวางตรงหน้าคนที่กำลังเรียน ปิดตัวเลือกนี้เพื่อให้ผู้ใช้ที่ล็อกอินทุกคนถามได้ การปิดไม่ได้ทำให้ผู้ช่วยรู้อะไรมากขึ้น (มันไม่เคยเห็นข้อมูลในแถวอยู่แล้ว) แต่เปลี่ยนแค่ว่าใครถามได้';
+
+$string['ask:rag:off_topic'] = 'ฉันตอบได้เฉพาะเรื่องระบบการเรียนของ Indorama — หลักสูตร เนื้อหา และโครงสร้างของระบบ ลองถามเรื่องพวกนี้ดูนะคะ';
+$string['ask:rag:no_material'] = 'ไม่พบข้อมูลเกี่ยวกับเรื่องนั้นค่ะ ลองระบุชื่อหลักสูตร หัวข้อ หรือสิ่งที่กำลังจะทำดู';
+$string['ask:rag:ungrounded_answer'] = 'ฉันตอบไม่ได้แบบที่ตรวจสอบที่มาได้ จึงขอไม่ตอบดีกว่าค่ะ ลองถามด้วยคำอื่นดูนะคะ';
+$string['ask:rag:llm_timeout'] = 'ใช้เวลานานเกินไปค่ะ คำถามแรกหลังจากเว้นช่วงจะช้าเพราะระบบกำลังโหลดโมเดล ลองถามอีกครั้งนะคะ';
+$string['ask:rag:llm_empty'] = 'ฉันเรียบเรียงคำตอบไม่สำเร็จค่ะ ลองถามอีกครั้งนะคะ';
+$string['ask:rag:llm_unreachable'] = 'ตอนนี้ติดต่อผู้ช่วยไม่ได้ค่ะ รออีกสักครู่แล้วลองใหม่';
+$string['ask:rag:tool_limit'] = 'ฉันค้นหลายที่แล้วแต่ยังสรุปคำตอบไม่ได้ค่ะ ลองถามให้เจาะจงขึ้นดูนะคะ';
+$string['ask:rag:refused'] = 'ข้อนี้ฉันตอบไม่ได้ค่ะ ลองถามด้วยคำอื่นดูนะคะ';
+$string['settings:presenceseconds'] = 'ตรวจว่ามีคนอยู่หน้ากล้อง ทุกกี่วินาที';
+$string['settings:presenceseconds_desc'] = 'ระบบถ่ายภาพจากกล้องตามช่วงเวลานี้เพื่อดูว่ายังมีคนนั่งอยู่ ไม่ได้ดูว่าเป็นใคร ตัวอย่าง: 120 = ตรวจทุก 2 นาที';
+$string['settings:verifyseconds'] = 'ตรวจว่าเป็นคนเดิม ทุกกี่วินาที';
+$string['settings:verifyseconds_desc'] = 'เทียบใบหน้ากับที่ลงทะเบียนไว้ตามช่วงเวลานี้ ทำงานเฉพาะกับผู้เรียนที่ลงทะเบียนใบหน้าแล้ว ตัวอย่าง: 600 = ตรวจทุก 10 นาที';
+$string['settings:clickconfirmseconds'] = 'ให้ผู้เรียนกดยืนยัน ทุกกี่วินาที';
+$string['settings:clickconfirmseconds_desc'] = 'ขึ้นปุ่มให้กดยืนยันว่ายังเรียนอยู่ นับเฉพาะตอนวิดีโอกำลังเล่น ถ้าตั้งไว้นานกว่าความยาววิดีโอ ปุ่มจะไม่ขึ้นเลย ตัวอย่าง: 300 = ทุก 5 นาที';
+$string['settings:mouseidleseconds'] = 'หยุดวิดีโอเมื่อไม่ขยับนานกี่วินาที';
+$string['settings:mouseidleseconds_desc'] = 'ถ้าไม่ขยับเมาส์และไม่พิมพ์อะไรเลยนานเท่านี้ วิดีโอจะหยุด ตัวอย่าง: 30 = นิ่งเกินครึ่งนาทีแล้วหยุด';
+$string['report:everyseconds'] = 'ทุก {$a} วินาที';

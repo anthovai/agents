@@ -168,6 +168,7 @@ class timeline {
             'kaivideoid' => $kaivideoid,
             'attime' => $attime,
             'type' => $type,
+            'category' => self::clean_category($data['category'] ?? ''),
             'questiontext' => $text,
             'choices' => json_encode(array_values($choices), JSON_UNESCAPED_UNICODE),
             'answers' => json_encode(array_values($answers), JSON_UNESCAPED_UNICODE),
@@ -277,6 +278,46 @@ class timeline {
     public static function normalise(string $text): string {
         $text = trim(preg_replace('/\s+/u', ' ', $text));
         return \core_text::strtolower($text);
+    }
+
+    /** How long a category name may be, matching the column. */
+    const MAX_CATEGORY = 100;
+
+    /**
+     * Tidy a category name without changing what it says.
+     *
+     * Whitespace only. Case is left alone because "ความปลอดภัย" and "Safety"
+     * are the author's words and a report headed with a lowercased version of
+     * them reads like a mistake — but the same name typed with a stray double
+     * space must not become a second category in the report.
+     *
+     * @param mixed $name
+     * @return string
+     */
+    public static function clean_category($name): string {
+        $name = trim(preg_replace('/\s+/u', ' ', (string) $name));
+        return \core_text::substr($name, 0, self::MAX_CATEGORY);
+    }
+
+    /**
+     * The categories already in use on this video, for offering back to the
+     * author.
+     *
+     * Typing a category by hand is how you end up with "ความปลอดภัย" and
+     * "ความปลอดภัย " as two topics in a report, so the form suggests what is
+     * already there.
+     *
+     * @param int $kaivideoid
+     * @return string[]
+     */
+    public static function categories(int $kaivideoid): array {
+        global $DB;
+
+        $names = $DB->get_fieldset_select('kaivideo_item', 'DISTINCT category',
+            'kaivideoid = :id AND category <> :blank',
+            ['id' => $kaivideoid, 'blank' => '']);
+        sort($names, SORT_NATURAL | SORT_FLAG_CASE);
+        return array_values($names);
     }
 
     /**

@@ -1,2 +1,0 @@
-set the presence interval to a distinctive 7 minutes
-the monitored page is configured with the new interval

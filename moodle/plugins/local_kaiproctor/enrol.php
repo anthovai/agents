@@ -27,6 +27,14 @@ $existing = \local_kaiproctor\enrolment::get_active($USER->id);
 
 $PAGE->requires->js_call_amd('local_kaiproctor/enrol_page', 'init', [[
     'alreadyenrolled' => (bool) $existing,
+    // The learner's own context, not the page's. The page is rendered in the
+    // system context so Boost does not decorate it with a profile header, and
+    // logging the notice against the system context would ask a learner to
+    // write somewhere they have no business writing.
+    'contextid' => $context->id,
+    // Read from the setting the purge task runs on, so the notice cannot
+    // promise a retention period nobody enforces.
+    'retentiondays' => (int) get_config('local_kaiproctor', 'retentiondays'),
 ]]);
 
 echo $OUTPUT->header();

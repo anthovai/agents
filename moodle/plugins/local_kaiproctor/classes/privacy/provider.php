@@ -42,6 +42,20 @@ class provider implements
             'timecreated' => 'privacy:metadata:evidence:timecreated',
         ], 'privacy:metadata:evidence');
 
+        $collection->add_database_table('local_kaiproctor_convo', [
+            'userid' => 'privacy:metadata:convo:userid',
+            'title' => 'privacy:metadata:convo:title',
+            'timecreated' => 'privacy:metadata:convo:timecreated',
+            'timemodified' => 'privacy:metadata:convo:timemodified',
+        ], 'privacy:metadata:convo');
+
+        // The transcripts themselves. Declared through the files subsystem
+        // rather than as a table, because that is where the bytes are — and
+        // storing them there is what makes "delete this user" actually delete
+        // them instead of leaving Markdown behind in a directory nobody audits.
+        $collection->add_subsystem_link('core_files', [],
+            'privacy:metadata:convo');
+
         // Images leave the site to be analysed, so this has to be declared even
         // though the receiving service stores nothing.
         $collection->add_external_location_link('faceservice', [

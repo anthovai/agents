@@ -93,6 +93,36 @@ define([
             };
             window.addEventListener('pagehide', onLeave);
 
+            /**
+             * One interval from a policy, in seconds, whichever unit it was recorded in.
+             *
+             * A sitting records the rules in force when it began and keeps them until
+             * it ends — including across a reload, because re-entering the same
+             * activity reuses the open sitting rather than splitting one lesson's
+             * evidence in two. Changing the settings does start a fresh sitting, but a
+             * sitting opened before intervals moved from minutes to seconds and left
+             * running is still carrying `mouseidleminutes` in its policy.
+             *
+             * Reading only the new key left those sittings with undefined for every
+             * interval, and the monitor quietly fell back to its built-in defaults —
+             * so the settings on the page stopped applying and nothing said why. The
+             * snapshot is meant to keep working exactly as recorded; that is the whole
+             * reason it exists.
+             *
+             * @param {Object} policy
+             * @param {String} base setting name without its unit suffix
+             * @return {Number|undefined} seconds, or undefined if the policy has neither
+             */
+            var intervalSeconds = function(policy, base) {
+                if (policy[base + 'seconds'] !== undefined) {
+                    return policy[base + 'seconds'];
+                }
+                if (policy[base + 'minutes'] !== undefined) {
+                    return policy[base + 'minutes'] * 60;
+                }
+                return undefined;
+            };
+
             var start = function() {
                 if (started) {
                     return;
@@ -129,11 +159,13 @@ define([
                         identityEnabled: policy.enrolled,
                         strictLockdown: policy.strictlockdown,
                         blurAllowance: policy.blurallowance,
-                        presenceMinutes: policy.presenceminutes,
-                        verifyMinutes: policy.verifyminutes,
-                        clickConfirmMinutes: policy.clickconfirmminutes,
+                        presenceSeconds: intervalSeconds(policy, 'presence'),
+                        verifySeconds: intervalSeconds(policy, 'verify'),
+                        clickConfirmSeconds: intervalSeconds(policy, 'clickconfirm'),
                         clickConfirmGraceSec: policy.clickconfirmgracesec,
-                        mouseIdleMinutes: policy.mouseidleminutes,
+                        mouseIdleSeconds: intervalSeconds(policy, 'mouseidle'),
+                        mouseIdleWarnSec: policy.mouseidlewarnsec,
+                        presenceWarnSec: policy.presencewarnsec,
                         randomClipsPerHour: policy.randomclipsperhour,
                         clipSeconds: policy.clipseconds,
                         desktopNotification: policy.desktopnotification,

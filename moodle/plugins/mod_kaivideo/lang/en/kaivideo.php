@@ -25,6 +25,13 @@ $string['questionsaved'] = 'Question saved.';
 $string['questiondeleted'] = 'Question deleted.';
 $string['attime'] = 'At (seconds)';
 $string['attime_help'] = 'How many seconds into the video the question appears. Play the video above and read the time off the controls.';
+$string['category'] = 'Topic';
+$string['category_help'] = 'What this question is about — "Safety", "Quality", and so on. It goes on the question rather than on the video, because one video usually covers several topics.
+
+The report then breaks the results down by topic, so you can see what a learner or a cohort is actually weak on rather than only their overall percentage.
+
+Leave it empty if you are not separating topics. The field suggests the ones already used on this video, so the same topic does not end up spelled two ways and counted twice.';
+$string['error:categorytoolong'] = 'A topic name cannot be longer than {$a} characters.';
 $string['questiontext'] = 'Question';
 $string['choicen'] = 'Answer {$a}';
 $string['correctchoice'] = 'Correct answer';
@@ -67,6 +74,10 @@ $string['report'] = 'Results';
 $string['report:byquestion'] = 'By question';
 $string['report:byquestion_help'] = 'Hardest first. A question most of the class got wrong is usually a fact about the minutes of video before it, not about the class.';
 $string['report:bylearner'] = 'By learner';
+$string['report:bycategory'] = 'By topic';
+$string['report:bycategory_help'] = 'Weakest topic first. One question everybody misses is usually a badly worded question; a whole topic sitting at 40% is a section of the video that did not teach what it was meant to.';
+$string['report:learners'] = 'Learners';
+$string['report:uncategorised'] = '(no topic)';
 $string['report:answered'] = 'Answered';
 $string['report:correct'] = 'Correct';
 $string['report:correctshare'] = 'Got it right';

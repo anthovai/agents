@@ -1,0 +1,507 @@
+[
+  {
+    "model": "qwen2.5:7b-instruct",
+    "runs": 3,
+    "grounded_low": 8,
+    "grounded_high": 9,
+    "grounded_median": 8,
+    "total": 10,
+    "bounced": 0,
+    "errored": 0,
+    "median_seconds": 7.8,
+    "off_topic_refused": 4,
+    "off_topic_total": 4,
+    "unstable": [
+      "ตาราง tbl_certificate เก็บอะไร"
+    ],
+    "cases": [
+      {
+        "question": "มีตารางทั้งหมดกี่ตาราง",
+        "ok": true,
+        "code": "ok",
+        "answer": "192",
+        "detail": "",
+        "sources": [
+          "digest_tables"
+        ],
+        "seconds": 15.0,
+        "expected": "192",
+        "note": "total, straight from a digest",
+        "grounded": true
+      },
+      {
+        "question": "ตารางไหนบ้างที่มีข้อมูลอ่อนไหว",
+        "ok": true,
+        "code": "ok",
+        "answer": "26\n\nตารางที่มีคอลัมน์จัดชั้นเป็นข้อมูลอ่อนไหว (sensitive) รวม 26 ตาราง คือ:\n\n1. ci_sessions: ip_address\n2. email_queue: mail_config, recipient_email\n3. tbl_activity_log: ip_address\n4. tbl_certificate: cert_fullname, cert_fullname_center, cert_fullname_font_size, cert_fullname_left, cert_fullname_top\n5. tbl_company: allow_send_email, com_mail, default_user_password\n6. tbl_contact: ct_email, ct_fullname\n7. tbl_contactus_recipients: custom_email\n8. tbl_content: con_email_name, con_reply_email\n9. tbl_content_email_templates: send_reset_password\n10. tbl_detailWeb: da_address_en, da_address_th, da_cookies_policy_en, da_cookies_policy_th\n11. tbl_email_templates_master: send_reset_password\n12. tbl_followup_email_queue: email_body, email_subject, followup_email_queue_id, to_email\n13. tbl_followup_template: contact_admin_email\n14. tbl_logLogin: refresh_token\n15. tbl_logPassword: lp_password\n16. tbl_log_learn_via_channel: ip_address\n17. tbl_meetings_zoom: password\n18. tbl_meetings_zoom_setting: alternative_hosts_email_notification, contact_email, email_notification, registrants_confirmation_email, registrants_email_notification\n19. tbl_participants_zoom: user_email\n20. tbl_settingMail: sm_emailsender, sm_password, sm_username\n21. tbl_shared_link_clicks: ip_address\n22. tbl_skillsoft_detail: sd_image_mobile\n23. tbl_skillsoft_learning_activity_import: first_name, last_name\n24. tbl_template_certificate: tc_fullname, tc_fullname_center, tc_fullname_font_size, tc_fullname_left, tc_fullname_top\n25. tbl_users: force_password_change, reply_email, skillsoft_external_user_id, user_email, user_fullname, user_password, user_username\n26. tbl_users_zoom: email, first_name, last_name, phone_country, phone_number",
+        "detail": "",
+        "sources": [
+          "digest_sensitive_columns",
+          "tbl_logPassword",
+          "tbl_participants_zoom",
+          "tbl_shared_link_clicks"
+        ],
+        "seconds": 33.6,
+        "expected": "26",
+        "note": "total over a 26-row list",
+        "grounded": true
+      },
+      {
+        "question": "which tables hold personal data",
+        "ok": true,
+        "code": "ok",
+        "answer": "26\n\nรายการที่จัดชั้นเป็นข้อมูลอ่อนไหว (sensitive) ตาม data dictionary ทั้งหมด 26 ตาราง ครอบคลุมคอลัมน์ที่เก็บข้อมูลส่วนบุคคล (personal data) ดังนี้:\n\n- tbl_certificate: cert_fullname, cert_fullname_center, cert_fullname_font_size, cert_fullname_left, cert_fullname_top\n- tbl_company: allow_send_email, com_mail, default_user_password\n- tbl_contact: ct_email, ct_fullname\n- tbl_content_email_templates: send_reset_password\n- tbl_detailWeb: da_address_en, da_address_th, da_cookies_policy_en, da_cookies_policy_th\n- tbl_email_templates_master: send_reset_password\n- tbl_followup_email_queue: email_body, email_subject, followup_email_queue_id, to_email\n- tbl_followup_template: contact_admin_email\n- tbl_logLogin: refresh_token\n- tbl_logPassword: lp_password\n- tbl_log_learn_via_channel: ip_address\n- tbl_meetings_zoom: password\n- tbl_participants_zoom: user_email\n- tbl_settingMail: sm_emailsender, sm_password, sm_username\n- tbl_shared_link_clicks: ip_address\n- tbl_skillsoft_detail: sd_image_mobile\n- tbl_skillsoft_learning_activity_import: first_name, last_name\n- tbl_template_certificate: tc_fullname, tc_fullname_center, tc_fullname_font_size, tc_fullname_left, tc_fullname_top\n- tbl_users: force_password_change, reply_email, skillsoft_external_user_id, user_email, user_fullname, user_password, user_username\n- tbl_users_zoom: first_name, last_name, email, phone_number, phone_country",
+        "detail": "",
+        "sources": [
+          "digest_sensitive_columns",
+          "tbl_users_zoom",
+          "tbl_logPassword",
+          "tbl_participants_zoom"
+        ],
+        "seconds": 30.8,
+        "expected": "26",
+        "note": "same question in English",
+        "grounded": true
+      },
+      {
+        "question": "route ทั้งหมดมีกี่ route",
+        "ok": true,
+        "code": "ok",
+        "answer": "98",
+        "detail": "",
+        "sources": [
+          "digest_routes",
+          "entry",
+          "welcome",
+          "errors"
+        ],
+        "seconds": 4.8,
+        "expected": "427",
+        "note": "total over a 98-group list",
+        "grounded": false
+      },
+      {
+        "question": "tbl_company มีคอลัมน์อะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "tbl_company มีคอลัมน์ 35 คอลัมน์\n\nคอลัมน์:\n  - id\n  - com_code\n  - com_name_th\n  - com_name_eng\n  - com_add_th\n  - com_add_eng\n  - com_tel\n  - com_fax\n  - com_mail\n  - com_type\n  - com_facebook\n  - com_youtube\n  - com_twitter\n  - com_linkedin\n  - com_wiki\n  - com_amount_user\n  - com_defaultcert\n  - com_logo_full\n  - com_logo\n  - com_logo_title\n  - com_footer\n  - com_banner_header\n  - status\n  - deleted_at\n  - created_at\n  - created_by\n  - updated_at\n  - updated_by\n  - allow_send_email\n  - default_user_password\n  - show_course_detail_stats\n  - show_learning_certificates_tab\n  - show_welcome_pill\n  - com_default_cover\n  - show_learning_content_minutes\n\nคอลัมน์ default_user_password จัดชั้นเป็นข้อมูลอ่อนไหวตาม data dictionary",
+        "detail": "",
+        "sources": [
+          "tbl_company"
+        ],
+        "seconds": 19.4,
+        "expected": "default_user_password",
+        "note": "columns of one table, where the model invented com_ prefixes",
+        "grounded": true
+      },
+      {
+        "question": "ตาราง tbl_certificate เก็บอะไร",
+        "ok": true,
+        "code": "ok",
+        "answer": "27\n\nรายการที่แสดงในตาราง `tbl_certificate` ครอบคลุมข้อมูลเกี่ยวกับใบรับรอง เช่น:\n\n- `content_id`: รหัสเนื้อหา\n- `content_type`: ประเภทเนื้อหา\n- `cert_pass_criteria`: เกณฑ์ผ่าน\n- `cert_image`: ภาพใบรับรอง\n- `cert_fullname`: ชื่อเต็ม\n- `cert_finishdate`: วันที่สำเร็จ\n- `cert_contentname`: ชื่อเนื้อหา\n- `cert_status`: สถานะ\n- `deleted_at`, `created_at`, `created_by`, `updated_at`, `updated_by`: ประวัติการแก้ไข\n- `cert_orientation`: ทิศทางการพิมพ์\n\nตารางนี้มีคอลัมน์ที่จัดชั้นเป็นข้อมูลอ่อนไหว ได้แก่ `cert_fullname`, `cert_fullname_font_size`, `cert_fullname_top`, `cert_fullname_center`, `cert_fullname_left`",
+        "detail": "",
+        "sources": [
+          "tbl_certificate"
+        ],
+        "seconds": 19.5,
+        "expected": "cert_fullname",
+        "note": "one table, prose answer",
+        "grounded": true
+      },
+      {
+        "question": "Authorization_Token.php มีเมธอดอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "เมธอดที่มีในคลาส Authorization_Token คือ:\n\n- __construct\n- generateAccessToken\n- generateRefreshToken\n- generateToken\n- validateToken\n- refreshToken\n- tokenIsExist",
+        "detail": "",
+        "sources": [
+          "application/libraries/Authorization_Token.php"
+        ],
+        "seconds": 5.9,
+        "expected": "generateAccessToken",
+        "note": "methods of one file",
+        "grounded": true
+      },
+      {
+        "question": "ci_sessions มีคอลัมน์อะไร",
+        "ok": true,
+        "code": "ok",
+        "answer": "4\n\nคอลัมน์ในตาราง ci_sessions ได้แก่:\n\n  - id nvarchar(128) NOT NULL\n  - ip_address nvarchar(45) NOT NULL\n  - timestamp int NOT NULL\n  - data nvarchar(max)",
+        "detail": "",
+        "sources": [
+          "ci_sessions"
+        ],
+        "seconds": 6.8,
+        "expected": "ip_address",
+        "note": "a table whose rows are not indexed",
+        "grounded": true
+      },
+      {
+        "question": "ความสัมพันธ์ระหว่างตารางมีอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "28\n\nความสัมพันธ์ระหว่างตารางที่ประกาศไว้ในฐานข้อมูลมีดังนี้:\n\n- tbl_assignment_group_content.group_id -> tbl_assignment_group.group_id\n- tbl_assignment_group_enroll_log.group_content_id -> tbl_assignment_group_content.group_content_id\n- tbl_assignment_group_enroll_log.group_id -> tbl_assignment_group.group_id\n- tbl_assignment_group_users.group_id -> tbl_assignment_group.group_id\n- tbl_channel_permission.channel_id -> tbl_channel.tg_id\n- tbl_channel_permission.department_id -> tbl_position.position_id\n- tbl_content_position.con_id -> tbl_content.con_id\n- tbl_content_position.position_id -> tbl_position.position_id\n- tbl_followup_email_queue.followup_instance_id -> tbl_followup_instance.followup_instance_id\n- tbl_followup_instance.followup_rule_id -> tbl_followup_rule.followup_rule_id\n- tbl_followup_instance.followup_template_id -> tbl_followup_template.followup_template_id\n- tbl_followup_manager_feedback.followup_instance_id -> tbl_followup_instance.followup_instance_id\n- tbl_followup_popup_log.followup_instance_id -> tbl_followup_instance.followup_instance_id\n- tbl_followup_response.followup_instance_id -> tbl_followup_instance.followup_instance_id\n- tbl_followup_rule_scope.followup_rule_id -> tbl_followup_rule.followup_rule_id\n- tbl_followup_template_button.followup_template_id -> tbl_followup_template.followup_template_id\n- tbl_playlist_permission.playlist_id -> tbl_playlist.pl_id\n- tbl_playlist_permission.department_id -> tbl_position.position_id\n- tbl_point_ledger_skills.ledger_id -> tbl_point_ledger.ledger_id\n- tbl_point_ledger_skills.skill_id -> tbl_skill.skill_id\n- tbl_shared_link_clicks.shared_link_code -> tbl_shared_links.code\n- tbl_skillsoft_course_sort.course_id -> tbl_skillsoft_courses.id\n- tbl_skillsoft_detail_lang.sd_id -> tbl_skillsoft_detail.sd_id\n- tbl_survey_response_multiple.sr_id -> tbl_survey_response.sr_id\n- tbl_survey_response_table.sr_id -> tbl_survey_response.sr_id\n- tbl_user_badge.channel_id -> tbl_channel.tg_id\n- tbl_user_badge.user_id -> tbl_users.user_id\n- tbl_user_import_log_detail.import_log_id -> tbl_user_import_log.id",
+        "detail": "",
+        "sources": [
+          "foreign_keys"
+        ],
+        "seconds": 35.6,
+        "expected": "28",
+        "note": "the foreign-key count",
+        "grounded": true
+      },
+      {
+        "question": "route ของ Channels มีอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "2\nRoute ของ Channels มีดังนี้:\n\n  - ANY  manageChannel -> backend/channels/index\n  - ANY  manageChannel/(:num) -> backend/channels/index/$1",
+        "detail": "",
+        "sources": [
+          "backend/channels",
+          "api/Channels",
+          "entry",
+          "welcome"
+        ],
+        "seconds": 6.0,
+        "expected": "channels",
+        "note": "a route group by name",
+        "grounded": true
+      }
+    ]
+  },
+  {
+    "model": "llama3.1:8b",
+    "runs": 3,
+    "grounded_low": 7,
+    "grounded_high": 7,
+    "grounded_median": 7,
+    "total": 10,
+    "bounced": 2,
+    "errored": 1,
+    "median_seconds": 9.2,
+    "off_topic_refused": 4,
+    "off_topic_total": 4,
+    "unstable": [
+      "which tables hold personal data",
+      "ตาราง tbl_certificate เก็บอะไร",
+      "Authorization_Token.php มีเมธอดอะไรบ้าง",
+      "ci_sessions มีคอลัมน์อะไร"
+    ],
+    "cases": [
+      {
+        "question": "มีตารางทั้งหมดกี่ตาราง",
+        "ok": true,
+        "code": "ok",
+        "answer": "192",
+        "detail": "",
+        "sources": [
+          "digest_tables"
+        ],
+        "seconds": 17.4,
+        "expected": "192",
+        "note": "total, straight from a digest",
+        "grounded": true
+      },
+      {
+        "question": "ตารางไหนบ้างที่มีข้อมูลอ่อนไหว",
+        "ok": true,
+        "code": "ok",
+        "answer": "26 ตารางที่มีข้อมูลอ่อนไหวคือ:\n\n1. ci_sessions\n2. email_queue\n3. tbl_activity_log\n4. tbl_certificate\n5. tbl_company\n6. tbl_contact\n7. tbl_contactus_recipients\n8. tbl_content\n9. tbl_content_email_templates\n10. tbl_detailWeb\n11. tbl_email_templates_master\n12. tbl_followup_email_queue\n13. tbl_followup_template\n14. tbl_logLogin\n15. tbl_logPassword\n16. tbl_log_learn_via_channel\n17. tbl_meetings_zoom\n18. tbl_meetings_zoom_setting\n19. tbl_participants_zoom\n20. tbl_settingMail\n21. tbl_shared_link_clicks\n22. tbl_skillsoft_detail\n23. tbl_skillsoft_learning_activity_import\n24. tbl_template_certificate\n25. tbl_users\n26. tbl_users_zoom\n\nคอลัมน์ที่จัดชั้นเป็นข้อมูลอ่อนไหว (sensitive) คือ:\n\n* lp_password ในตาราง tbl_logPassword\n* user_email ในตาราง tbl_participants_zoom\n* ip_address ในตาราง tbl_shared_link_clicks",
+        "detail": "",
+        "sources": [
+          "digest_sensitive_columns",
+          "tbl_logPassword",
+          "tbl_participants_zoom",
+          "tbl_shared_link_clicks"
+        ],
+        "seconds": 29.9,
+        "expected": "26",
+        "note": "total over a 26-row list",
+        "grounded": true
+      },
+      {
+        "question": "which tables hold personal data",
+        "ok": false,
+        "code": "llm_timeout",
+        "answer": "",
+        "detail": "the model did not answer in time: timed out",
+        "sources": [],
+        "seconds": 92.4,
+        "expected": "26",
+        "note": "same question in English",
+        "grounded": false
+      },
+      {
+        "question": "route ทั้งหมดมีกี่ route",
+        "ok": true,
+        "code": "ok",
+        "answer": "98 \n\nกลุ่ม route ทั้งหมด",
+        "detail": "",
+        "sources": [
+          "digest_routes",
+          "entry",
+          "welcome",
+          "errors"
+        ],
+        "seconds": 6.4,
+        "expected": "427",
+        "note": "total over a 98-group list",
+        "grounded": false
+      },
+      {
+        "question": "tbl_company มีคอลัมน์อะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "35 รายการ\n\nคอลัมน์ของตาราง tbl_company ได้แก่:\n\n- id\n- com_code\n- com_name_th\n- com_name_eng\n- com_add_th\n- com_add_eng\n- com_tel\n- com_fax\n- com_mail\n- com_type\n- com_facebook\n- com_youtube\n- com_twitter\n- com_linkedin\n- com_wiki\n- com_amount_user\n- com_defaultcert\n- com_logo_full\n- com_logo\n- com_logo_title\n- com_footer\n- com_banner_header\n- status\n- deleted_at\n- created_at\n- created_by\n- updated_at\n- updated_by\n- allow_send_email\n- default_user_password\n- show_course_detail_stats\n- show_learning_certificates_tab\n- show_welcome_pill\n- com_default_cover\n- show_learning_content_minutes",
+        "detail": "",
+        "sources": [
+          "tbl_company"
+        ],
+        "seconds": 20.8,
+        "expected": "default_user_password",
+        "note": "columns of one table, where the model invented com_ prefixes",
+        "grounded": true
+      },
+      {
+        "question": "ตาราง tbl_certificate เก็บอะไร",
+        "ok": true,
+        "code": "ok",
+        "answer": "27 รายการ\n\nตาราง tbl_certificate เก็บข้อมูลเกี่ยวกับใบรับรอง (certificate) ที่มีคอลัมน์หลายรายการ เช่น cert_id, content_id, cert_pass_criteria, cert_image, cert_fullname, cert_finishdate, cert_contentname, cert_status, และอื่นๆ",
+        "detail": "",
+        "sources": [
+          "tbl_certificate"
+        ],
+        "seconds": 9.5,
+        "expected": "cert_fullname",
+        "note": "one table, prose answer",
+        "grounded": true
+      },
+      {
+        "question": "Authorization_Token.php มีเมธอดอะไรบ้าง",
+        "ok": false,
+        "code": "ungrounded_answer",
+        "answer": "",
+        "detail": "the model produced names or figures that were not in the material it was given: 7",
+        "sources": [],
+        "seconds": 14.5,
+        "expected": "generateAccessToken",
+        "note": "methods of one file",
+        "grounded": false
+      },
+      {
+        "question": "ci_sessions มีคอลัมน์อะไร",
+        "ok": true,
+        "code": "ok",
+        "answer": "4 คอลัมน์ คือ id, ip_address, timestamp และ data",
+        "detail": "",
+        "sources": [
+          "ci_sessions"
+        ],
+        "seconds": 5.2,
+        "expected": "ip_address",
+        "note": "a table whose rows are not indexed",
+        "grounded": true
+      },
+      {
+        "question": "ความสัมพันธ์ระหว่างตารางมีอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "28 รายการ\n\nตารางที่มีความสัมพันธ์กัน เช่น tbl_assignment_group_content และ tbl_assignment_group, tbl_channel_permission และ tbl_channel, และอื่นๆ",
+        "detail": "",
+        "sources": [
+          "foreign_keys"
+        ],
+        "seconds": 7.6,
+        "expected": "28",
+        "note": "the foreign-key count",
+        "grounded": true
+      },
+      {
+        "question": "route ของ Channels มีอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "2 รายการ\n\n- ANY  manageChannel -> backend/channels/index\n- ANY  manageChannel/(:num) -> backend/channels/index/$1",
+        "detail": "",
+        "sources": [
+          "backend/channels",
+          "api/Channels",
+          "entry",
+          "welcome"
+        ],
+        "seconds": 5.9,
+        "expected": "channels",
+        "note": "a route group by name",
+        "grounded": true
+      }
+    ]
+  },
+  {
+    "model": "gemma4:latest",
+    "runs": 3,
+    "grounded_low": 7,
+    "grounded_high": 9,
+    "grounded_median": 8,
+    "total": 10,
+    "bounced": 1,
+    "errored": 4,
+    "median_seconds": 43.8,
+    "off_topic_refused": 4,
+    "off_topic_total": 4,
+    "unstable": [
+      "ตารางไหนบ้างที่มีข้อมูลอ่อนไหว",
+      "which tables hold personal data",
+      "ตาราง tbl_certificate เก็บอะไร",
+      "ความสัมพันธ์ระหว่างตารางมีอะไรบ้าง",
+      "route ของ Channels มีอะไรบ้าง"
+    ],
+    "cases": [
+      {
+        "question": "มีตารางทั้งหมดกี่ตาราง",
+        "ok": true,
+        "code": "ok",
+        "answer": "192 ตาราง รายการนี้คือตารางทั้งหมดในฐานข้อมูล ประกอบด้วยตารางต่างๆ เช่น ci_sessions, email_queue, legacy_courses, sso_config, tbl_activity_log, และอื่นๆ",
+        "detail": "",
+        "sources": [
+          "digest_tables"
+        ],
+        "seconds": 48.4,
+        "expected": "192",
+        "note": "total, straight from a digest",
+        "grounded": true
+      },
+      {
+        "question": "ตารางไหนบ้างที่มีข้อมูลอ่อนไหว",
+        "ok": false,
+        "code": "ungrounded_answer",
+        "answer": "",
+        "detail": "the model produced names or figures that were not in the material it was given: tbl_skillsoft_learning",
+        "sources": [],
+        "seconds": 49.7,
+        "expected": "26",
+        "note": "total over a 26-row list",
+        "grounded": false
+      },
+      {
+        "question": "which tables hold personal data",
+        "ok": true,
+        "code": "ok",
+        "answer": "จากรายการครบ: คอลัมน์ที่เป็นข้อมูลอ่อนไหวทุกตาราง (มีทั้งหมด 26",
+        "detail": "",
+        "sources": [
+          "digest_sensitive_columns",
+          "tbl_users_zoom",
+          "tbl_logPassword",
+          "tbl_participants_zoom"
+        ],
+        "seconds": 50.7,
+        "expected": "26",
+        "note": "same question in English",
+        "grounded": true
+      },
+      {
+        "question": "route ทั้งหมดมีกี่ route",
+        "ok": true,
+        "code": "ok",
+        "answer": "427\nกลุ่ม route ทั้งหมดมี 427 route ประกาศไว้ใน application/config/routes.php โดยแบ่งเป็น 98 กลุ่ม route ตัวอย่างเช่น Apilink (1 route), Favourites_page (1 route), Myplaylist (4 route), Training (4 route), admin/interactive (12 route), api/AssignmentGroup (24 route) และอื่นๆ",
+        "detail": "",
+        "sources": [
+          "digest_routes",
+          "entry",
+          "welcome",
+          "errors"
+        ],
+        "seconds": 35.5,
+        "expected": "427",
+        "note": "total over a 98-group list",
+        "grounded": true
+      },
+      {
+        "question": "tbl_company มีคอลัมน์อะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "ตาราง `tbl_company` มีคอลัมน์ดังนี้:\n\n*   id\n*   com_code\n*   com_name_th\n*   com_name_eng\n*   com_add_th\n*   com_add_eng\n*   com_tel\n*   com_fax\n*   com_mail\n*   com_type\n*   com_facebook\n*   com_youtube\n*   com_twitter\n*   com_linkedin\n*   com_wiki\n*   com_amount_user\n*   com_defaultcert\n*   com_logo_full\n*   com_logo\n*   com_logo_title\n*   com_footer\n*   com_banner_header\n*   status\n*   deleted_at\n*   created_at\n*   created_by\n*   updated_at\n*   updated_by\n*   allow_send_email\n*   default_user_password\n*   show_course_detail_stats\n*   show_learning_certificates_tab\n*   show_welcome_pill\n*   com_default_cover\n*   show_learning_content_minutes\n\nคอลัมน์ที่จัดชั้นเป็นข้อมูลอ่อนไหว (sensitive) คือ: `com_mail`, `allow_send_email`, และ `default_user_password`",
+        "detail": "",
+        "sources": [
+          "tbl_company"
+        ],
+        "seconds": 47.6,
+        "expected": "default_user_password",
+        "note": "columns of one table, where the model invented com_ prefixes",
+        "grounded": true
+      },
+      {
+        "question": "ตาราง tbl_certificate เก็บอะไร",
+        "ok": true,
+        "code": "ok",
+        "answer": "ตาราง `tbl_certificate` เก็บข้อมูลที่เกี่ยวข้องกับใบรับรอง (certificate) โดยมีรายละเอียดโครงสร้างดังนี้:\n\n**คอลัมน์หลักที่เก็บข้อมูล:**\nตารางนี้มี 27 คอลัมน์ ซึ่งเก็บข้อมูลตั้งแต่:\n*   **รหัสและการอ้างอิง:** `cert_id`, `content_id`, `content_type`\n*   **ข้อมูลเนื้อหาและเกณฑ์:** `cert_pass_criteria`, `cert",
+        "detail": "",
+        "sources": [
+          "tbl_certificate"
+        ],
+        "seconds": 52.0,
+        "expected": "cert_fullname",
+        "note": "one table, prose answer",
+        "grounded": false
+      },
+      {
+        "question": "Authorization_Token.php มีเมธอดอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "เมธอดของคลาส `Authorization_Token` ในไฟล์ `application/libraries/Authorization_Token.php` ได้แก่:\n\n*   `__construct`\n*   `generateAccessToken`\n*   `generateRefreshToken`\n*   `generateToken`\n*   `validateToken`\n*   `refreshToken`\n*   `tokenIsExist`",
+        "detail": "",
+        "sources": [
+          "application/libraries/Authorization_Token.php"
+        ],
+        "seconds": 26.4,
+        "expected": "generateAccessToken",
+        "note": "methods of one file",
+        "grounded": true
+      },
+      {
+        "question": "ci_sessions มีคอลัมน์อะไร",
+        "ok": true,
+        "code": "ok",
+        "answer": "ตาราง `ci_sessions` มีคอลัมน์ดังนี้:\n\n*   `id` (nvarchar(128) NOT NULL)\n*   `ip_address` (nvarchar(45) NOT NULL)\n*   `timestamp` (int NOT NULL)\n*   `data` (nvarchar(max))\n\n**หมายเหตุ:** คอลัมน์ `ip_address` ถูกจัดชั้นเป็นข้อมูลอ่อนไหว (sensitive)",
+        "detail": "",
+        "sources": [
+          "ci_sessions"
+        ],
+        "seconds": 35.8,
+        "expected": "ip_address",
+        "note": "a table whose rows are not indexed",
+        "grounded": true
+      },
+      {
+        "question": "ความสัมพันธ์ระหว่างตารางมีอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "28 รายการ ความสัมพันธ์ระหว่างตารางที่ประกาศไว้ในฐานข้อมูล มีดังนี้:\n\n*   `tbl_assignment_group_content.group_id` -> `tbl_assignment_group.group_id` (declared, confidence 1)\n*   `tbl_assignment_group_enroll_log.group_content_id` -> `tbl_assignment_group_content.group_content_id` (declared, confidence 1)\n*   `tbl_assignment_group_enroll_log.group_id` -> `tbl_assignment_group.group_id` (declared, confidence 1)\n*   `tbl_assignment_group_users.group_id` -> `tbl_assignment_group.group_id` (declared, confidence 1)\n*   `tbl_channel_permission.channel_id` -> `tbl_channel.tg_id` (declared, confidence 1)\n*   `tbl_channel_permission.department_id` -> `tbl_position.position_id` (declared, confidence 1)\n*   `tbl_content_position.con_id` -> `tbl_content.con_id` (declared, confidence 1)\n*   `tbl_content_position.position_id` -> `tbl_position.position_id` (declared, confidence 1)\n*   `tbl_followup_email_queue.followup_instance_id` -> `tbl_followup_instance.followup_instance_id` (declared, confidence 1)\n*   `tbl_followup_instance.followup_rule_id` -> `tbl_followup_rule.followup_rule_id` (declared, confidence 1)\n*   `tbl_followup_instance.followup_template_id` -> `tbl_followup_template.followup_template_id` (declared, confidence 1)\n*   `tbl",
+        "detail": "",
+        "sources": [
+          "foreign_keys"
+        ],
+        "seconds": 52.9,
+        "expected": "28",
+        "note": "the foreign-key count",
+        "grounded": true
+      },
+      {
+        "question": "route ของ Channels มีอะไรบ้าง",
+        "ok": true,
+        "code": "ok",
+        "answer": "Route ของ Channels มีดังนี้:\n\n**Route ที่เข้าสู่ backend/channels:**\nประกาศไว้ใน application/config/routes.php มี 2 รายการ คือ:\n*   `ANY manageChannel -> backend/channels/index`\n*   `ANY manageChannel/(:num) -> backend/channels/index/$1`\n\n**Route ที่เข้าสู่ api/Channels:**\nประกาศไว้ใน application/config/routes.php มี 1 รายการ คือ:\n*   `GET api/playlists -> api/Channels/index`",
+        "detail": "",
+        "sources": [
+          "backend/channels",
+          "api/Channels",
+          "entry",
+          "welcome"
+        ],
+        "seconds": 37.9,
+        "expected": "channels",
+        "note": "a route group by name",
+        "grounded": true
+      }
+    ]
+  }
+]

@@ -26,6 +26,43 @@ def test_enrol_page_explains_what_will_happen(session, clean_learner):
     assert session.page.locator('[data-action="start"]').is_enabled()
 
 
+def test_a_learner_can_find_the_enrolment_page_without_being_told_the_url(
+        session, clean_learner):
+    """Reachable by looking, not only by knowing where it is.
+
+    The page had a navigation node, and Boost renders those for a local plugin
+    somewhere between nowhere and the bottom of a drawer — so in practice the
+    only way in was to open a proctored quiz, be refused, and follow the link
+    in the refusal. That works, but it makes the first encounter with the
+    feature a rejection, and it does not exist at all for a learner who wants
+    to enrol before their first exam.
+
+    Two ways in now, answering different questions: the user menu is "where do
+    I go to do this", the profile is "have I done it yet".
+    """
+    clean_learner("learner")
+    session.login("learner")
+
+    session.note("from the dashboard, without typing a URL")
+    session.goto("/my/")
+    in_menu = session.page.evaluate(
+        """() => [...document.querySelectorAll('a[href*="kaiproctor/enrol"]')]
+                 .some(a => a.closest('.usermenu, [data-region="user-menu"], .dropdown-menu'))"""
+    )
+    session.note(f"offered in the user menu: {in_menu}")
+    assert in_menu, "a learner has no way to reach enrolment but to be sent there"
+
+    session.note("and the profile says whether it has been done")
+    session.goto("/user/profile.php")
+    profile = session.page.locator('a[href*="kaiproctor/enrol"]')
+    assert profile.count() >= 1, "the profile does not mention face enrolment"
+
+    text = session.body_text()
+    assert "ยังไม่ได้ลงทะเบียน" in text, (
+        "the profile links to enrolment without saying it has not been done"
+    )
+
+
 def test_challenge_asks_for_a_randomised_sequence(session, clean_learner):
     clean_learner("learner")
 
@@ -62,6 +99,11 @@ def test_enrolment_is_refused_when_no_face_is_visible(session, clean_learner, ev
 
     session.note("start the challenge in front of a camera showing no face")
     session.page.click('[data-action="start"]')
+
+    # The camera notice comes first — consent is asked before the lens opens,
+    # every time, so every test that presses start walks through it.
+    session.note("agree to the camera notice")
+    session.page.click('.modal.show button[data-action="save"]', timeout=15_000)
 
     # The first pose has its own 15-second timeout, but each poll makes a
     # round trip to the face service, so the wait has to allow for a slow one
@@ -101,13 +143,30 @@ def test_the_page_reports_a_camera_that_will_not_start(session, clean_learner):
     session.login("learner")
     session.goto("/local/kaiproctor/enrol.php")
 
-    session.note("simulate the camera being unavailable")
+    # As the browser refuses, which is by name and not by message.
+    #
+    # This used to reject with new Error('nocamera'), borrowing one of our own
+    # internal words, and then assert that the page named the camera. It could
+    # not: Camera.reason() reads error.name, a plain Error is named "Error",
+    # and the page fell through to its generic message — correctly. The test
+    # was failing on a browser behaviour that does not exist. getUserMedia
+    # rejects with a DOMException, whose name is what says which of the three
+    # very different things went wrong.
+    session.note("simulate the learner having blocked the camera")
     session.page.evaluate(
         """() => {
-            navigator.mediaDevices.getUserMedia = () => Promise.reject(new Error('nocamera'));
+            navigator.mediaDevices.getUserMedia = () => Promise.reject(
+                new DOMException('Permission denied', 'NotAllowedError'));
         }"""
     )
     session.page.click('[data-action="start"]')
+
+    # The notice is asked before the camera is touched, so it appears even
+    # when the camera is going to refuse — agreeing is what lets the page
+    # reach the refusal this test is about.
+    session.note("agree to the camera notice")
+    session.page.click('.modal.show button[data-action="save"]', timeout=15_000)
+
     session.page.wait_for_selector('[data-region="status"]:not([hidden])', timeout=15_000)
     session.beat(1.5)
 

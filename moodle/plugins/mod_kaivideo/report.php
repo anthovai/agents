@@ -20,6 +20,7 @@ $PAGE->set_heading(format_string($video->name));
 
 $data = \mod_kaivideo\report::build((int) $video->id, (int) $course->id);
 $data['viewurl'] = (new moodle_url('/mod/kaivideo/view.php', ['id' => $cmid]))->out(false);
+$data['hascategories'] = !empty($data['categories']);
 $data['hasquestions'] = !empty($data['questions']);
 $data['haslearners'] = !empty($data['learners']);
 

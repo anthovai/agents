@@ -36,18 +36,33 @@ class start_session extends external_api {
         $context = \context::instance_by_id($params['contextid']);
         self::validate_context($context);
 
-        $record = session::start($USER->id, $context, $params['attemptid'] ?: null);
-        $policy = json_decode($record->policy, true) ?: session::current_policy();
+        $attemptid = $params['attemptid'] ?: null;
+        $record = session::start($USER->id, $context, $attemptid);
+        $policy = json_decode($record->policy, true) ?: session::current_policy($attemptid);
 
         return [
             'ok' => true,
             'sessionid' => (int) $record->id,
             'enrolled' => \local_kaiproctor\enrolment::has_enrolled($USER->id),
-            'presenceminutes' => (float) $policy['presenceminutes'],
-            'verifyminutes' => (float) $policy['verifyminutes'],
-            'clickconfirmminutes' => (float) $policy['clickconfirmminutes'],
+            // Seconds, matching the policy this reads from.
+            //
+            // These were 'presenceminutes' and friends, read straight out of
+            // $policy by name. When the policy moved to seconds those keys
+            // stopped existing, (float) null came out as 0.0, and 0 is how
+            // this system spells "check disabled" — so every check silently
+            // switched itself off and the settings page appeared to do
+            // nothing. Nothing errored; the browser was handed a policy that
+            // told it to watch for nothing.
+            'presenceseconds' => (float) $policy['presenceseconds'],
+            'verifyseconds' => (float) $policy['verifyseconds'],
+            'clickconfirmseconds' => (float) $policy['clickconfirmseconds'],
             'clickconfirmgracesec' => (float) $policy['clickconfirmgracesec'],
-            'mouseidleminutes' => (float) $policy['mouseidleminutes'],
+            'mouseidleseconds' => (float) $policy['mouseidleseconds'],
+            // ?? because a session already open when this shipped stored a
+            // policy snapshot without these keys; such a sitting gets no
+            // warning rather than a PHP notice over a cosmetic feature.
+            'mouseidlewarnsec' => (float) ($policy['mouseidlewarnsec'] ?? 0),
+            'presencewarnsec' => (float) ($policy['presencewarnsec'] ?? 0),
             'randomclipsperhour' => (float) $policy['randomclipsperhour'],
             'clipseconds' => (float) $policy['clipseconds'],
             'blurallowance' => (int) $policy['blurallowance'],
@@ -61,11 +76,13 @@ class start_session extends external_api {
             'ok' => new external_value(PARAM_BOOL, 'Whether a sitting was opened'),
             'sessionid' => new external_value(PARAM_INT, 'The sitting to file everything against'),
             'enrolled' => new external_value(PARAM_BOOL, 'Whether identity checks can run for this learner'),
-            'presenceminutes' => new external_value(PARAM_FLOAT, 'Presence check interval'),
-            'verifyminutes' => new external_value(PARAM_FLOAT, 'Identity check interval'),
-            'clickconfirmminutes' => new external_value(PARAM_FLOAT, 'Confirmation interval'),
-            'clickconfirmgracesec' => new external_value(PARAM_FLOAT, 'Confirmation grace period'),
-            'mouseidleminutes' => new external_value(PARAM_FLOAT, 'Idle tolerance'),
+            'presenceseconds' => new external_value(PARAM_FLOAT, 'Presence check interval, seconds'),
+            'verifyseconds' => new external_value(PARAM_FLOAT, 'Identity check interval, seconds'),
+            'clickconfirmseconds' => new external_value(PARAM_FLOAT, 'Confirmation interval, seconds'),
+            'clickconfirmgracesec' => new external_value(PARAM_FLOAT, 'Confirmation grace period, seconds'),
+            'mouseidleseconds' => new external_value(PARAM_FLOAT, 'Idle tolerance, seconds'),
+            'mouseidlewarnsec' => new external_value(PARAM_FLOAT, 'Idle countdown lead time'),
+            'presencewarnsec' => new external_value(PARAM_FLOAT, 'Presence countdown lead time'),
             'randomclipsperhour' => new external_value(PARAM_FLOAT, 'Random clips per hour'),
             'clipseconds' => new external_value(PARAM_FLOAT, 'Clip length'),
             'blurallowance' => new external_value(PARAM_INT, 'Focus losses tolerated'),

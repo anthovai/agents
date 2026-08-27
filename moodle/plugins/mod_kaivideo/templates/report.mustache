@@ -9,6 +9,43 @@
 
     <p><a href="{{viewurl}}">{{#str}}backtovideo, mod_kaivideo{{/str}}</a></p>
 
+    {{!
+        Topics first when there are any. One question everybody misses is
+        usually a badly worded question; a whole topic at 40% is a section of
+        the video that did not teach what it was meant to — and that is the
+        bigger finding, so it goes above the one that is easier to spot.
+    }}
+    {{#hascategories}}
+    <h3>{{#str}}report:bycategory, mod_kaivideo{{/str}}</h3>
+    <p class="text-muted">{{#str}}report:bycategory_help, mod_kaivideo{{/str}}</p>
+
+    <table class="table" data-region="by-category">
+        <thead>
+            <tr>
+                <th>{{#str}}category, mod_kaivideo{{/str}}</th>
+                <th>{{#str}}report:learners, mod_kaivideo{{/str}}</th>
+                <th>{{#str}}report:answered, mod_kaivideo{{/str}}</th>
+                <th>{{#str}}report:correct, mod_kaivideo{{/str}}</th>
+                <th>{{#str}}report:correctshare, mod_kaivideo{{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#categories}}
+            <tr{{#struggled}} class="table-warning"{{/struggled}}>
+                <td>{{category}}</td>
+                <td>{{learners}}</td>
+                <td>{{answered}}</td>
+                <td>{{correct}}</td>
+                {{! Rendered in PHP: mustache reads 0 as absent, and a topic
+                    the class scored 0% on is the opposite of one with no
+                    answers. }}
+                <td>{{sharelabel}}</td>
+            </tr>
+            {{/categories}}
+        </tbody>
+    </table>
+    {{/hascategories}}
+
     <h3>{{#str}}report:byquestion, mod_kaivideo{{/str}}</h3>
     <p class="text-muted">{{#str}}report:byquestion_help, mod_kaivideo{{/str}}</p>
 

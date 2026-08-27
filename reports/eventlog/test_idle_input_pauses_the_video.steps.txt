@@ -1,2 +1,0 @@
-run the monitor with a three-second idle limit, touching nothing
-paused after sitting idle: True

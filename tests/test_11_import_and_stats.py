@@ -91,6 +91,62 @@ def test_importing_puts_the_questions_in_the_bank_with_difficulty_tags(session):
         assert after["tags"].get(level, 0) >= before["tags"].get(level, 0) + 2
 
 
+def test_a_teacher_builds_a_random_paper_from_the_course_bank(session):
+    """The other half of importing: drawing a paper out again.
+
+    Moodle can already hold "a random question from this category" in a slot,
+    and picks a different one per attempt. What it cannot do is put thirty of
+    them in without thirty trips through a modal — which is the ordinary case
+    for a bank of imported questions, not an exotic one.
+
+    Built against a quiz created for this test. The demo course's blueprint
+    quiz is what test_12 measures reproducible draws against, and filling it
+    with untagged questions quietly breaks that.
+    """
+    courseid = int(moodle("course-id").strip())
+    quizcmid = int(moodle("make-quiz", "เทสต์ชุดข้อสอบสุ่ม").strip())
+    try:
+        session.note("sign in as the teacher and open the builder")
+        session.login("instructor")
+        session.goto(f"/local/kaiproctor/randompaper.php?courseid={courseid}")
+        session.beat(1.5)
+
+        available = int(moodle("bank-available").strip())
+        session.note(f"the course bank offers {available} questions")
+        assert available > 0, "nothing in the bank to draw from"
+
+        session.note("ask for more questions than exist")
+        session.page.select_option('select[name="quizid"]', str(
+            moodle("quiz-instance", str(quizcmid)).strip()))
+        session.page.fill('input[name="count"]', str(available + 1))
+        session.page.click("#id_submitbutton")
+        session.beat(1.5)
+
+        assert "randompaper.php" in session.page.url, (
+            "a paper larger than the bank was accepted"
+        )
+        body = session.body_text()
+        assert str(available) in body, "the refusal does not say what is available"
+        session.note("refused, naming the size of the bank")
+
+        session.note("ask for five, which the bank can supply")
+        session.page.fill('input[name="count"]', "5")
+        session.page.click("#id_submitbutton")
+        session.page.wait_for_url("**/mod/quiz/edit.php*", timeout=30_000)
+        session.beat(1.5)
+
+        slots = json.loads(moodle("quiz-slots", str(quizcmid)))
+        session.note(f"slots now: {slots}")
+
+        assert slots["count"] == 5, "the paper does not hold what was asked for"
+        assert slots["random"] == 5, "the slots hold fixed questions, not draws"
+        # A paper worth whatever the quiz was worth before is wrong everywhere
+        # it is shown, starting with the gradebook.
+        assert slots["sumgrades"] == 5.0, "the total was not recomputed"
+    finally:
+        moodle("delete-quiz", str(quizcmid))
+
+
 def test_the_stats_page_reports_the_service_and_the_evidence(session):
     session.note("sign in as an administrator")
     session.login("admin")

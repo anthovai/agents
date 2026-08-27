@@ -258,29 +258,33 @@ def test_something_that_is_not_a_link_is_refused():
     assert caught.value.path == "ask.context[0].url"
 
 
-def test_an_invented_link_is_caught():
+def test_a_link_in_an_answer_is_caught():
     """The failure that costs this feature its credibility is not a clumsy
     sentence, it is a link that looks right and goes nowhere: the learner
-    clicks it, lands on a 404, and stops trusting the next answer."""
+    clicks it, lands on a 404, and stops trusting the next answer.
+
+    The model is no longer shown any address, so there is no longer such a
+    thing as a link it was entitled to write — anything URL-shaped in a reply
+    was built from a guess, whether or not it happens to match a real page.
+    The interface renders the pages as links of its own beside the answer.
+    """
     from app import guard
-    offered = ["/mod/quiz/view.php?id=8", "/course/view.php?id=2"]
 
-    answer = "ไปที่ /mod/quiz/view.php?id=8 ได้เลย"
-    assert guard.invented_links(answer, offered) == []
+    assert guard.links_in("ไปที่หน้า “ข้อสอบทดสอบระบบคุมสอบ” ได้เลย") == []
 
-    # id=9 was never offered — the shape is right, the page is not.
     guessed = "ลองดูที่ /mod/quiz/view.php?id=9 ครับ"
-    assert guard.invented_links(guessed, offered) == ["/mod/quiz/view.php?id=9"]
+    assert guard.links_in(guessed) == ["/mod/quiz/view.php?id=9"]
+
+    absolute = "เปิด http://localhost:8080/course/view.php?id=2 ได้"
+    assert guard.links_in(absolute) == ["http://localhost:8080/course/view.php?id=2"]
 
 
-def test_a_link_ending_a_thai_sentence_is_not_mistaken_for_an_invention():
-    """Trailing punctuation gets swept into the match. Treating that as an
-    invented link would block correct answers, which is the same outage as
-    having no guard at all."""
+def test_a_link_ending_a_thai_sentence_is_reported_without_the_full_stop():
+    """Trailing punctuation gets swept into the match. Reporting it as part of
+    the link would put a URL nobody wrote into the error an operator reads."""
     from app import guard
-    offered = ["/course/view.php?id=2"]
 
-    assert guard.invented_links("อยู่ที่ /course/view.php?id=2.", offered) == []
+    assert guard.links_in("อยู่ที่ /course/view.php?id=2.") == ["/course/view.php?id=2"]
 
 
 def test_the_navigation_guardrails_are_published():
@@ -289,7 +293,7 @@ def test_the_navigation_guardrails_are_published():
 
     for guardrail in [
         "Answer only from the list",
-        "Copy any link you give exactly as it appears in the list",
+        "Never write a web address, a URL, or",
         # Grades may now be reported, which makes these the load-bearing ones:
         # the figure has to be the gradebook's, and reporting it must not turn
         # into an opinion about it.

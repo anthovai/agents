@@ -285,6 +285,87 @@ switch ($command) {
         echo (string) get_config('local_kaiproctor', $argv[2]) . "\n";
         break;
 
+    case 'bank-available':
+        // What the random-paper builder counts: entries a random slot could
+        // actually draw, not rows in the question table.
+        $bankcm = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type(
+            $DB->get_record('course', ['shortname' => 'KP-DEMO'], '*', MUST_EXIST), true);
+        $category = question_get_default_category(
+            context_module::instance($bankcm->id)->id, true);
+        echo \local_kaiproctor\random_paper::available($category) . "\n";
+        break;
+
+    case 'make-quiz':
+        // make-quiz <name> — a throwaway to build a paper into, so tests do
+        // not have to borrow a demo quiz that other tests measure.
+        require_once($CFG->dirroot . '/course/modlib.php');
+        $course = $DB->get_record('course', ['shortname' => 'KP-DEMO'], '*', MUST_EXIST);
+        // The long field list is not padding. Core access rules write their
+        // own columns straight into the quiz row, and the mod form always
+        // supplies them — a quiz built in code without them fails the NOT NULL
+        // constraints with nothing but "Error writing to database" to go on.
+        // Same set as docker/seed-demo.php, and for the same reason.
+        $created = add_moduleinfo((object) [
+            'course' => $course->id,
+            'name' => $argv[2],
+            'intro' => '',
+            'introformat' => FORMAT_HTML,
+            'modulename' => 'quiz',
+            'module' => $DB->get_field('modules', 'id', ['name' => 'quiz']),
+            'section' => 0,
+            'visible' => 1,
+            'cmidnumber' => '',
+            'grade' => 100,
+            'sumgrades' => 0,
+            'timelimit' => 0,
+            'preferredbehaviour' => 'deferredfeedback',
+            'quizpassword' => '',
+            'subnet' => '',
+            'delay1' => 0,
+            'delay2' => 0,
+            'browsersecurity' => '-',
+            'attempts' => 0,
+        ], $course);
+        echo get_coursemodule_from_instance('quiz', $created->instance)->id . "\n";
+        break;
+
+    case 'delete-quiz':
+        // delete-quiz <cmid>. course_delete_module lives in course/lib.php,
+        // which a CLI script does not get for free.
+        require_once($CFG->dirroot . '/course/lib.php');
+        course_delete_module((int) $argv[2]);
+        echo "deleted\n";
+        break;
+
+    case 'course-id':
+        echo $DB->get_field('course', 'id', ['shortname' => 'KP-DEMO']) . "\n";
+        break;
+
+    case 'quiz-instance':
+        // quiz-instance <cmid> — the id the builder's select uses.
+        echo get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST)->instance . "\n";
+        break;
+
+    case 'quiz-slots':
+        // quiz-slots <cmid> — how many slots, how many of them are draws, and
+        // what the paper is now worth.
+        $cm = get_coursemodule_from_id('quiz', (int) $argv[2], 0, false, MUST_EXIST);
+        $slots = \mod_quiz\quiz_settings::create($cm->instance)->get_structure()->get_slots();
+        $random = 0;
+        foreach ($slots as $slot) {
+            // A draw has no question of its own; it carries a filter instead.
+            if (!empty($slot->filtercondition)) {
+                $random++;
+            }
+        }
+        echo json_encode([
+            'count' => count($slots),
+            'random' => $random,
+            'sumgrades' => (float) $DB->get_field('quiz', 'sumgrades', ['id' => $cm->instance]),
+        ]);
+        echo "\n";
+        break;
+
     case 'seed-evidence':
         // A snapshot for a learner, so retention behaviour can be exercised
         // without driving a camera.
@@ -637,6 +718,40 @@ switch ($command) {
 
         delete_course($target->id, false);
         echo json_encode($out, JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'kaivideo-categorise':
+        // kaivideo-categorise <cmid> <itemindex> <category> — file a question
+        // under a topic, the way the editor's form does.
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[2], 0, false, MUST_EXIST);
+        $items = array_values($DB->get_records('kaivideo_item',
+            ['kaivideoid' => $cm->instance], 'attime ASC, id ASC'));
+        $DB->set_field('kaivideo_item', 'category',
+            \mod_kaivideo\timeline::clean_category($argv[4]),
+            ['id' => $items[(int) $argv[3]]->id]);
+        echo "categorised\n";
+        break;
+
+    case 'kaivideo-categories':
+        // kaivideo-categories <cmid> — what the report makes of the topics.
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[2], 0, false, MUST_EXIST);
+        echo json_encode(\mod_kaivideo\report::per_category((int) $cm->instance),
+            JSON_UNESCAPED_UNICODE);
+        echo "\n";
+        break;
+
+    case 'kaivideo-response-categories':
+        // kaivideo-response-categories <cmid> — the topic stamped on each
+        // answer at the time it was given.
+        $cm = get_coursemodule_from_id('kaivideo', (int) $argv[2], 0, false, MUST_EXIST);
+        $rows = $DB->get_records_sql(
+            "SELECT r.id, r.category, r.correct
+               FROM {kaivideo_response} r JOIN {kaivideo_item} i ON i.id = r.itemid
+              WHERE i.kaivideoid = :id ORDER BY r.id", ['id' => $cm->instance]);
+        echo json_encode(array_values(array_map(static function ($r) {
+            return ['category' => $r->category, 'correct' => (int) $r->correct];
+        }, $rows)), JSON_UNESCAPED_UNICODE);
         echo "\n";
         break;
 

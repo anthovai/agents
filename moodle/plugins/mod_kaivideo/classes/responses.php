@@ -38,6 +38,11 @@ class responses {
             'itemid' => $itemid,
             'userid' => $userid,
             'response' => $stored,
+            // Copied from the item as it stands now, not read back through it
+            // later. Recategorising a question is an ordinary thing to do
+            // between cohorts, and it must not change what a past report says
+            // about a topic somebody was already marked on.
+            'category' => (string) $item->category,
             'correct' => $correct ? 1 : 0,
             'timecreated' => time(),
         ]);
@@ -209,6 +214,64 @@ class responses {
             'furthest' => $record ? (float) $record->furthest : 0.0,
             'finished' => $record ? (bool) $record->finished : false,
         ];
+    }
+
+    /**
+     * How one learner did, broken down by what the questions were about.
+     *
+     * The reason the category exists. "60%" tells a teacher a learner is
+     * struggling; "100% on safety, 20% on quality" tells them what to do about
+     * it, and tells a compliance officer which topic a whole cohort is weak on.
+     *
+     * Graded items only, and unanswered counts against them, for the same
+     * reasons the overall fraction works that way — otherwise a learner who
+     * skipped every quality question would show as having no quality problem.
+     *
+     * @param int $kaivideoid
+     * @param int $userid
+     * @return array of {category, correct, total, fraction}, best first
+     */
+    public static function by_category(int $kaivideoid, int $userid): array {
+        global $DB;
+
+        [$insql, $params] = $DB->get_in_or_equal(timeline::GRADED, SQL_PARAMS_NAMED);
+        $params['kaivideoid'] = $kaivideoid;
+
+        $items = $DB->get_records_select('kaivideo_item',
+            "kaivideoid = :kaivideoid AND type $insql", $params, 'attime ASC',
+            'id, category');
+        if (!$items) {
+            return [];
+        }
+
+        $answers = self::latest($kaivideoid, $userid);
+
+        $totals = [];
+        foreach ($items as $item) {
+            $name = (string) $item->category;
+            if (!isset($totals[$name])) {
+                $totals[$name] = ['category' => $name, 'correct' => 0, 'total' => 0];
+            }
+            $totals[$name]['total']++;
+            $totals[$name]['correct'] +=
+                !empty($answers[(int) $item->id]['correct']) ? 1 : 0;
+        }
+
+        foreach ($totals as &$row) {
+            $row['fraction'] = $row['total'] ? $row['correct'] / $row['total'] : null;
+        }
+        unset($row);
+
+        // Named topics first and alphabetically; anything uncategorised last,
+        // because it is not a topic and reads oddly sorted among ones that are.
+        uasort($totals, static function ($a, $b) {
+            if (($a['category'] === '') !== ($b['category'] === '')) {
+                return $a['category'] === '' ? 1 : -1;
+            }
+            return strnatcasecmp($a['category'], $b['category']);
+        });
+
+        return array_values($totals);
     }
 
     /** Everything one learner did, for the activity's report. */

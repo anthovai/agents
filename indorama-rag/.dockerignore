@@ -1,0 +1,18 @@
+# The index and the archive it came from never enter the build context.
+#
+# Neither is COPYed by the Dockerfile, so this is not what keeps them out of
+# the image — it keeps them out of the daemon's reach entirely. A build context
+# is uploaded whole before any COPY runs, and the archive is a gigabyte of the
+# client's data with real email addresses in it. Excluding it here means a
+# careless COPY added later cannot pick it up either.
+*.zip
+index.sqlite
+index/
+build-report.json
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+reports/
+.git/

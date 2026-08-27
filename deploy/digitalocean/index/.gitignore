@@ -1,0 +1,4 @@
+# The index is a build artefact of one export and is not committed.
+# Copy index.sqlite here on the droplet — see README.md step 6.
+*
+!.gitignore

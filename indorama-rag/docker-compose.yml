@@ -1,0 +1,87 @@
+# Its own stack, not a service inside the proctor's.
+#
+# This assistant answers about the client's legacy LMS. It shares no database,
+# no model configuration and no lifecycle with kai-proctor, and the one thing
+# they do share — a repository directory — is convenience. Adding it to the
+# proctor's compose file would tie a customer's internal tooling to the release
+# schedule of a product sold to a different audience, and would mean bringing
+# the LMS assistant down to restart Moodle.
+
+services:
+  rag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # OpenAI by default, as of the switch to gpt-5-mini.
+      #
+      # This is a deliberate reversal and the trade it makes should be read
+      # before it is copied. The corpus is a complete map of the client's
+      # database — every table, every column, every route — and under this
+      # setting every question and every chunk retrieved for it is sent to a
+      # third party. The indexed material carries no personal data (the build
+      # report records nothing redacted, because there was nothing to redact:
+      # only structure was indexed), but the structure is the client's, and
+      # "no personal data left the building" is not the same claim as "nothing
+      # left the building".
+      #
+      # To keep it all local, point these two back at Ollama:
+      #     RAG_LLM_BASE_URL=http://host.docker.internal:11434/v1
+      #     RAG_LLM_MODEL=qwen2.5:7b-instruct
+      # Nothing else needs to change; app.llm sends what each family accepts.
+      RAG_LLM_BASE_URL: ${RAG_LLM_BASE_URL:-https://api.openai.com/v1}
+      # gpt-5-mini reasons before answering, which costs tokens from the same
+      # ceiling as the answer — see RAG_REASONING_HEADROOM and app.llm.
+      # Measured against this corpus rather than chosen from a leaderboard:
+      # 12–25s a turn where the local model took 20–60, and it stopped
+      # inventing what sensitive columns hold once the prompt forbade it.
+      # reports/MODEL-COMPARISON.md has the earlier local comparison.
+      RAG_LLM_MODEL: ${RAG_LLM_MODEL:-gpt-5-mini}
+      # Required by the hosted default above. A local model needs no key.
+      RAG_LLM_API_KEY: ${RAG_LLM_API_KEY:-}
+      RAG_REASONING_HEADROOM: ${RAG_REASONING_HEADROOM:-2000}
+      # What a caller must send as X-Agent-Key. Empty disables the check, which
+      # is right on one laptop and wrong the moment a second machine can reach
+      # the port — the conversation endpoints hand over any transcript they can
+      # name. See app/auth.py.
+      RAG_API_KEY: ${RAG_API_KEY:-}
+      # How many model-backed calls one caller gets per minute, and how many
+      # may arrive at once after a quiet spell. Nothing else stands between a
+      # retry loop and the bill. 0 switches the limit off.
+      RAG_RATE_PER_MINUTE: ${RAG_RATE_PER_MINUTE:-20}
+      RAG_RATE_BURST: ${RAG_RATE_BURST:-10}
+      RAG_TIMEOUT: ${RAG_TIMEOUT:-90}
+      RAG_CONTEXT_CHUNKS: ${RAG_CONTEXT_CHUNKS:-4}
+    volumes:
+      # Read-only. The service never writes to the index, and mounting it that
+      # way means a bug cannot quietly change what the answers are built from.
+      - ${RAG_INDEX_DIR:-./index}:/index:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      # Loopback only. Published on every interface, this was reachable
+      # from anywhere the moment it ran on a machine with a public
+      # address — and the conversation endpoints hand over any transcript
+      # they can name. Put a reverse proxy in front to expose it; see
+      # deploy/digitalocean/ in the kai-proctor repository for one.
+      - "127.0.0.1:${RAG_PORT:-9200}:9200"
+    restart: unless-stopped
+
+  # Rebuilds the index from an export archive, then exits.
+  #
+  #     RAG_EXPORT=/path/to/export.zip docker compose run --rm build-index
+  #
+  # A separate service rather than a step in the image build, because the
+  # archive is not something to copy into a layer: it holds personal data, and
+  # the client has been asked for a replacement. See ingest/sanitize.py.
+  build-index:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["tools"]
+    volumes:
+      - ${RAG_INDEX_DIR:-./index}:/index
+      - ${RAG_EXPORT:-./export.zip}:/export.zip:ro
+    command: ["python", "-m", "ingest.build", "/export.zip",
+              "--index", "/index/index.sqlite",
+              "--report", "/index/build-report.json"]

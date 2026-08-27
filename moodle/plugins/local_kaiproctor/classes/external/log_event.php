@@ -24,6 +24,19 @@ class log_event extends external_api {
         'mouse_idle', 'face_absent', 'multiple_faces',
         'presence_ok', 'presence_error', 'identity_check', 'face_mismatch',
         'face_review', 'verify_error',
+        // The grace window between a bad frame and the pause it may cause:
+        // started on the first absent frame, and either restored before the
+        // countdown runs out or followed by the face_absent that pauses it.
+        'presence_lost', 'presence_restored',
+        // A focus loss the proctor caused itself, by putting up the
+        // notification permission prompt. Recorded rather than dropped: a gap
+        // nobody explained is what an auditor cannot rule on later.
+        'focus_loss_ignored',
+        // The learner agreed to the notice shown immediately before the camera
+        // opened. Separate from the site policy, which tool_policy records:
+        // this one says they were told what was about to happen, at the moment
+        // it was about to happen.
+        'camera_notice_accepted',
         'clip_started', 'clip_uploaded', 'clip_error', 'clip_skipped',
         // The learner navigated away — clicked back to the course, closed the
         // tab. Distinct from tab_hidden and window_blur, which are somebody

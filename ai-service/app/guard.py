@@ -64,8 +64,13 @@ def verdicts_in(summary: str) -> list[str]:
 # it half-remembers will build one that matches the pattern of the others, and
 # the learner clicks it, lands on a 404, and stops believing the next answer.
 #
-# The prompt says to copy links exactly. This checks that it did, because
-# "usually copies correctly" is not a property worth shipping.
+# The model is not shown addresses at all, which is what actually removes that
+# failure — it cannot mistype what it never had. This is the check that the
+# withholding held: anything URL-shaped coming back was invented, and the
+# caller renders the real links itself, from the same list it supplied.
+#
+# It doubles as the reason nothing here compares against a permitted set any
+# more. There is no longer a link the model is entitled to write.
 
 _URL_IN_TEXT = re.compile(r"https?://[^\s<>\"'()\[\]]+|(?<![\w/])/[\w./?=&%#:-]+")
 
@@ -82,17 +87,11 @@ def links_in(answer: str) -> list[str]:
     return found
 
 
-def invented_links(answer: str, allowed: list[str]) -> list[str]:
-    """Links in the answer that were not among the pages supplied."""
-    permitted = set(allowed)
-    return [link for link in links_in(answer) if link not in permitted]
-
-
 LINK_NOTE = """
 
-Your previous answer contained a link that was not in the list you were given.
-Answer again using only the links exactly as they appear in the list. If the
-right page is not in the list, say that you cannot find it.
+Your previous answer contained a web address. You were not given any, so it was
+invented. Answer again naming each page by its title in quotes, with no URL and
+no path of any kind — the learner is shown the links beside your answer.
 """
 
 

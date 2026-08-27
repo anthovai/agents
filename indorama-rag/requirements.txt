@@ -1,0 +1,6 @@
+# Deliberately small. The corpus is about a megabyte of structured facts, so
+# nothing here needs a vector database or a GPU. See README, "ทำไมไม่ใช้ embedding".
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+pytest==8.3.4

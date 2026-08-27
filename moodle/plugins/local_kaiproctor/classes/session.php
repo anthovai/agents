@@ -30,21 +30,41 @@ class session {
      * record whose policy came from the client would prove nothing, because a
      * tampered client could report whatever policy suited it afterwards.
      *
+     * @param int|null $attemptid the exam attempt this governs, null for a
+     *        lesson. Only strictness differs, and only because ending a
+     *        lesson and ending an exam mean different things.
      * @return array
      */
-    public static function current_policy(): array {
+    public static function current_policy(?int $attemptid = null): array {
         $get = static fn(string $name) => get_config('local_kaiproctor', $name);
 
+        // A lesson is not ended by the monitor unless somebody asks for it.
+        //
+        // Ending an exam attempt protects something: the attempt is the thing
+        // being sat, and letting it continue after a breach is the failure.
+        // A lesson has nothing equivalent — ending it only sends the learner
+        // back to the start, while the breach is recorded either way, so the
+        // enforcement that means anything is pausing the video and writing
+        // down what happened. Sites that want the stricter reading can still
+        // have it; they just have to say so.
+        $strict = (bool) $get($attemptid === null ? 'lessonstrictlockdown' : 'strictlockdown');
+
         return [
-            'presenceminutes' => (float) $get('presenceminutes'),
-            'verifyminutes' => (float) $get('verifyminutes'),
-            'clickconfirmminutes' => (float) $get('clickconfirmminutes'),
+            // Seconds, and named so. Sittings recorded before this change
+            // carry the old *minutes keys and are read back as they were
+            // written — that is the point of snapshotting a policy, and
+            // report.php handles both.
+            'presenceseconds' => (float) $get('presenceseconds'),
+            'verifyseconds' => (float) $get('verifyseconds'),
+            'clickconfirmseconds' => (float) $get('clickconfirmseconds'),
             'clickconfirmgracesec' => (float) $get('clickconfirmgracesec'),
-            'mouseidleminutes' => (float) $get('mouseidleminutes'),
+            'mouseidleseconds' => (float) $get('mouseidleseconds'),
+            'mouseidlewarnsec' => (float) $get('mouseidlewarnsec'),
+            'presencewarnsec' => (float) $get('presencewarnsec'),
             'randomclipsperhour' => (float) $get('randomclipsperhour'),
             'clipseconds' => (float) $get('clipseconds'),
             'blurallowance' => (int) $get('blurallowance'),
-            'strictlockdown' => (bool) $get('strictlockdown'),
+            'strictlockdown' => $strict,
             'desktopnotification' => (bool) $get('desktopnotification'),
             // The matching thresholds belong in the snapshot too: "which rules
             // applied" includes how strict the face comparison was.
@@ -67,11 +87,31 @@ class session {
     public static function start(int $userid, \context $context, ?int $attemptid = null): \stdClass {
         global $DB;
 
+        $policy = self::current_policy($attemptid);
+
+        // Reuse the open sitting, but only while it is still running under
+        // today's rules.
+        //
+        // Reuse exists so that a reload does not split one lesson's evidence
+        // into two records. A settings change is not a reload: an
+        // administrator who lowers the idle tolerance and reloads the page was
+        // watching the old sitting carry the old numbers, with nothing on
+        // screen to say why, and reasonably concluded the settings did not
+        // work. Rewriting the snapshot instead would be worse — it would
+        // restate what was enforced during the earlier part of the sitting.
+        //
+        // So the old sitting is closed as it stands and a new one opens under
+        // the new rules. The report then shows both, each with the policy that
+        // actually governed it, and the moment the rules changed is visible
+        // rather than lost.
         $existing = self::active_for($userid, $context, $attemptid);
         if ($existing) {
-            $DB->set_field('local_kaiproctor_session', 'timemodified', time(),
-                ['id' => $existing->id]);
-            return $existing;
+            if (self::same_policy($existing->policy, $policy)) {
+                $DB->set_field('local_kaiproctor_session', 'timemodified', time(),
+                    ['id' => $existing->id]);
+                return $existing;
+            }
+            self::end((int) $existing->id, self::STATUS_COMPLETED, 'policy_changed');
         }
 
         $cmid = null;
@@ -85,7 +125,7 @@ class session {
             'contextid' => $context->id,
             'cmid' => $cmid,
             'attemptid' => $attemptid,
-            'policy' => json_encode(self::current_policy(), JSON_UNESCAPED_UNICODE),
+            'policy' => json_encode($policy, JSON_UNESCAPED_UNICODE),
             'status' => self::STATUS_ACTIVE,
             'reason' => null,
             'timestart' => $now,
@@ -95,6 +135,27 @@ class session {
         $record->id = $DB->insert_record('local_kaiproctor_session', $record);
 
         return $record;
+    }
+
+    /**
+     * Whether a recorded snapshot says the same thing as the current rules.
+     *
+     * Compared as sorted arrays rather than as JSON text: the encoder is free
+     * to order keys differently between releases, and a sitting restarted over
+     * a difference nobody made is the same annoyance in the other direction.
+     *
+     * @param string|null $recorded the snapshot as stored
+     * @param array $current
+     * @return bool
+     */
+    protected static function same_policy(?string $recorded, array $current): bool {
+        $decoded = $recorded ? json_decode($recorded, true) : null;
+        if (!is_array($decoded)) {
+            return false;
+        }
+        ksort($decoded);
+        ksort($current);
+        return $decoded == $current;
     }
 
     /**
@@ -149,8 +210,21 @@ class session {
     public static function touch(int $sessionid): void {
         global $DB;
 
-        $DB->set_field('local_kaiproctor_session', 'timemodified', time(),
-            ['id' => $sessionid, 'status' => self::STATUS_ACTIVE]);
+        // Every monitor call lands here, several times a minute per learner,
+        // and staleness is judged in hours. Guarding on the previous value
+        // keeps the frequent calls from writing a row each: the statement
+        // matches nothing until a minute has passed, so at most one real
+        // write per session per minute reaches the database.
+        $now = time();
+        $DB->execute('UPDATE {local_kaiproctor_session}
+                         SET timemodified = :now
+                       WHERE id = :id AND status = :status AND timemodified < :cutoff',
+            [
+                'now' => $now,
+                'id' => $sessionid,
+                'status' => self::STATUS_ACTIVE,
+                'cutoff' => $now - MINSECS,
+            ]);
     }
 
     /**

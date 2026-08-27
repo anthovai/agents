@@ -59,6 +59,43 @@ def _encode(embedding: np.ndarray) -> str:
     return base64.b64encode(embedding.astype(np.float32).tobytes()).decode("ascii")
 
 
+def _thresholds(match: str | None, review: str | None) -> dict:
+    """The thresholds to decide on, from the caller or from configuration.
+
+    Refused rather than silently corrected. A caller sending nonsense here has
+    a broken setting, and a service that quietly substituted its own default
+    would hide that while writing decisions the platform cannot account for —
+    the exact failure this argument exists to end.
+
+    :raises ValueError: if a supplied value is not a usable threshold
+    """
+    def one(raw: str | None, fallback: float, name: str) -> float:
+        if raw is None or raw == "":
+            return fallback
+        try:
+            value = float(raw)
+        except ValueError:
+            raise ValueError(f"{name} is not a number: {raw!r}")
+        # Cosine similarity of two L2-normalised vectors cannot leave [-1, 1],
+        # so a threshold outside it is a mistake rather than a strict policy:
+        # above 1 nothing can ever pass, below -1 everything does.
+        if not -1.0 <= value <= 1.0:
+            raise ValueError(f"{name} must be between -1 and 1, got {value}")
+        return value
+
+    resolved = {
+        "match": one(match, config.MATCH_THRESHOLD, "match_threshold"),
+        "review_min": one(review, config.REVIEW_MIN, "review_min"),
+        "liveness": config.LIVENESS_THRESHOLD,
+    }
+    if resolved["review_min"] > resolved["match"]:
+        raise ValueError(
+            f"review_min ({resolved['review_min']}) is above match_threshold "
+            f"({resolved['match']}), which leaves no band to review"
+        )
+    return resolved
+
+
 def _decode(raw: str) -> np.ndarray:
     try:
         arr = np.frombuffer(base64.b64decode(raw), dtype=np.float32)
@@ -175,13 +212,30 @@ async def parse_questions(file: UploadFile = File(...)):
 async def verify(
     live_image: UploadFile = File(...),
     reference_embedding: str = Form(...),
+    match_threshold: str | None = Form(default=None),
+    review_min: str | None = Form(default=None),
 ):
     """Identity re-check against a stored embedding.
 
     `decision` is one of pass / review / fail / fail_liveness. Liveness is
     checked first: a spoof that happens to match must never come back as a
     pass, so the similarity score is reported but the decision overridden.
+
+    The two thresholds are the caller's to set, and it should send them: the
+    platform is where an administrator configures them and where they are
+    written into the record of the decision. Omitting them falls back to this
+    service's own configuration, which keeps an older integration working —
+    but a deployment where the two disagree records one number and decides on
+    another, and the record is the only one anybody reads afterwards.
+
+    The thresholds actually applied come back in `thresholds`, so the caller
+    can store what was used rather than what it hoped would be used.
     """
+    try:
+        thresholds = _thresholds(match_threshold, review_min)
+    except ValueError as e:
+        return _error("invalid_threshold", str(e))
+
     try:
         img = face_engine.decode_image(await live_image.read())
         reference = _decode(reference_embedding)
@@ -198,18 +252,15 @@ async def verify(
 
     live = liveness.check_liveness(img, face.bbox)
     similarity = face_engine.cosine_similarity(face.embedding, reference)
-    decision = face_engine.decide(similarity)
+    decision = face_engine.decide(similarity, thresholds["match"],
+                                  thresholds["review_min"])
     if live["evaluated"] and not live["live"]:
         decision = "fail_liveness"
 
     return {
         "ok": True,
         **_meta(),
-        "thresholds": {
-            "match": config.MATCH_THRESHOLD,
-            "review_min": config.REVIEW_MIN,
-            "liveness": config.LIVENESS_THRESHOLD,
-        },
+        "thresholds": thresholds,
         "liveness": live,
         "similarity": round(similarity, 4),
         "decision": decision,

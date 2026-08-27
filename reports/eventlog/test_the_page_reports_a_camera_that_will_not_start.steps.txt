@@ -1,3 +1,0 @@
-sign in and open the enrolment page
-simulate the camera being unavailable
-status shown to the learner: เกิดข้อผิดพลาด กรุณาลองใหม่

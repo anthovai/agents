@@ -78,12 +78,19 @@ class verify_frame extends external_api {
         $livenessscore = isset($result['liveness']['score'])
             ? (float) $result['liveness']['score'] : null;
 
+        // The threshold the service reports back, not the one we sent: if a
+        // deployment ever declines the value it was given, the row has to say
+        // what the decision was really made against.
+        $applied = isset($result['thresholds']['match'])
+            ? (float) $result['thresholds']['match'] : null;
+
         checks::record(
             $USER->id, $context, 'identity', $decision,
             $similarity, $livenessscore, $result['model_pack'] ?? null,
             $params['attemptid'] ?: null,
             ['det_score' => $result['det_score'] ?? null],
-            $sessionid
+            $sessionid,
+            $applied
         );
 
         $failed = in_array($decision, ['fail', 'fail_liveness'], true);

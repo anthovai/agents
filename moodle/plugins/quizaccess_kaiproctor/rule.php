@@ -122,6 +122,10 @@ class quizaccess_kaiproctor extends access_rule_base {
         $PAGE->requires->js_call_amd('quizaccess_kaiproctor/preflight', 'init', [[
             'contextid' => $this->quizobj->get_context()->id,
             'attemptid' => (int) $attemptid,
+            // For the notice shown before the camera opens. Read from the
+            // setting the purge task runs on, so it cannot promise a
+            // retention period nobody enforces.
+            'retentiondays' => (int) get_config('local_kaiproctor', 'retentiondays'),
         ]]);
     }
 
@@ -217,17 +221,13 @@ class quizaccess_kaiproctor extends access_rule_base {
     public function setup_attempt_page($page) {
         // The policy the monitor runs under is fetched from the server when
         // the sitting opens, so it is not duplicated here.
+        // The policy is not passed here: attempt.js takes it from the reply to
+        // start_session, so that what it enforces and what is recorded against
+        // the attempt come from one place. See the note in
+        // local_kaiproctor\hooks::start_monitor().
         $page->requires->js_call_amd('quizaccess_kaiproctor/attempt', 'init', [[
             'contextid' => $this->quizobj->get_context()->id,
             'attemptid' => optional_param('attempt', 0, PARAM_INT),
-            'strictlockdown' => (bool) get_config('local_kaiproctor', 'strictlockdown'),
-            'blurallowance' => (int) get_config('local_kaiproctor', 'blurallowance'),
-            'presenceminutes' => (float) get_config('local_kaiproctor', 'presenceminutes'),
-            'verifyminutes' => (float) get_config('local_kaiproctor', 'verifyminutes'),
-            'mouseidleminutes' => (float) get_config('local_kaiproctor', 'mouseidleminutes'),
-            'randomclipsperhour' => (float) get_config('local_kaiproctor', 'randomclipsperhour'),
-            'clipseconds' => (float) get_config('local_kaiproctor', 'clipseconds'),
-            'desktopnotification' => (bool) get_config('local_kaiproctor', 'desktopnotification'),
             'returnurl' => (new moodle_url('/mod/quiz/view.php',
                 ['id' => $this->quizobj->get_cmid()]))->out(false),
         ]]);

@@ -29,6 +29,7 @@
         <FIELD NAME="kaivideoid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="attime" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Seconds into the video. Stored with decimals because a question landing mid-word is worse than one landing a moment late."/>
         <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="choice" SEQUENCE="false" COMMENT="choice, multichoice, shorttext or info."/>
+        <FIELD NAME="category" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="What this question is about, free text chosen by the author. On the item rather than the activity because one video usually covers several topics, and a report that cannot separate them cannot say which topic a cohort is weak on. Empty means uncategorised, which is a legitimate answer and not a missing value."/>
         <FIELD NAME="questiontext" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="choices" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON array of option texts in the order shown. Empty for shorttext and info."/>
         <FIELD NAME="answers" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON. Option indexes for the choice types, accepted strings for shorttext, empty for info. Never sent to the browser before the learner answers."/>
@@ -50,6 +51,7 @@
         <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="response" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="What the learner sent: JSON option indexes, or their typed text. Kept verbatim so a teacher can see what was actually said, not only whether it was accepted."/>
+        <FIELD NAME="category" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="The item's category as it stood when this was answered. Copied rather than read back through the item on purpose: recategorising a question next term must not silently rewrite what last term's report said about a cohort."/>
         <FIELD NAME="correct" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>

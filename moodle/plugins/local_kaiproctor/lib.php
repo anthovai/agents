@@ -13,16 +13,72 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Show face enrolment on the learner's own profile page.
+ *
+ * The second of two ways in, and they answer different questions. The user
+ * menu answers "where do I go to do this"; the profile answers "have I done
+ * it, and when" — so this one carries the date rather than only a link, and
+ * says plainly when there is nothing on file yet.
+ *
+ * Only on your own profile. Whether somebody has enrolled a face is between
+ * them and the proctoring, and a staff member browsing profiles has no reason
+ * to be shown it.
+ *
+ * @param core_user\output\myprofile\tree $tree
+ * @param stdClass $user
+ * @param bool $iscurrentuser
+ * @param stdClass|null $course
+ */
+function local_kaiproctor_myprofile_navigation(
+    core_user\output\myprofile\tree $tree,
+    $user,
+    $iscurrentuser,
+    $course
+) {
+    global $USER;
+
+    if (!$iscurrentuser || isguestuser($user)) {
+        return;
+    }
+    if (!has_capability('local/kaiproctor:enrolface', context_user::instance($USER->id))) {
+        return;
+    }
+
+    $existing = \local_kaiproctor\enrolment::get_active($USER->id);
+    $label = $existing
+        ? get_string('profile:enrolledon', 'local_kaiproctor', userdate($existing->timecreated))
+        : get_string('profile:notenrolled', 'local_kaiproctor');
+
+    $tree->add_node(new core_user\output\myprofile\node(
+        'miscellaneous',
+        'local_kaiproctor_face',
+        get_string('enrol:title', 'local_kaiproctor'),
+        null,
+        new moodle_url('/local/kaiproctor/enrol.php'),
+        $label
+    ));
+}
+
+/**
  * Offer staff a "monitor this activity" link on activities we can watch.
  *
- * @param cm_info $cm
+ * The name matters and is the whole reason this works now. It used to be
+ * local_kaiproctor_extend_navigation_course_module(), which reads like a
+ * Moodle callback and is not one: core calls
+ * local_<plugin>_extend_settings_navigation() for local plugins, and nothing
+ * anywhere calls the other name. The function was never invoked, the link
+ * never appeared, and the only way to turn monitoring on for an activity was
+ * to know the URL — while every test set it through the CLI helper and so
+ * never noticed.
+ *
+ * @param settings_navigation $settings
+ * @param context $context the context of the page being viewed
  */
-function local_kaiproctor_extend_navigation_course_module(
-    navigation_node $node,
-    stdClass $course,
-    cm_info $cm
-) {
-    if (!\local_kaiproctor\monitored::is_supported($cm->modname)) {
+function local_kaiproctor_extend_settings_navigation($settings, $context) {
+    global $PAGE;
+
+    $cm = $PAGE->cm;
+    if (!$cm || !\local_kaiproctor\monitored::is_supported($cm->modname)) {
         return;
     }
     if (!has_capability('local/kaiproctor:manage', $cm->context)
@@ -30,12 +86,18 @@ function local_kaiproctor_extend_navigation_course_module(
         return;
     }
 
+    // Onto the activity's own settings branch when there is one, so the link
+    // sits with the rest of that activity's administration rather than at the
+    // bottom of the page's settings.
+    $node = $settings->get('modulesettings') ?: $settings;
+
     $node->add(
         get_string('activity:settings', 'local_kaiproctor'),
         new moodle_url('/local/kaiproctor/monitor.php', ['cmid' => $cm->id]),
         navigation_node::TYPE_SETTING,
         null,
-        'local_kaiproctor_monitor'
+        'local_kaiproctor_monitor',
+        new pix_icon('i/settings', '')
     );
 }
 
@@ -166,4 +228,18 @@ function local_kaiproctor_extend_navigation_course(
         'local_kaiproctor_import',
         new pix_icon('i/import', '')
     );
+
+    // Beside the import, because it is the other half of the same job: the
+    // questions arrive, and then a paper is drawn from them.
+    if (has_capability('moodle/question:useall', $context)) {
+        $navigation->add(
+            get_string('paper:title', 'local_kaiproctor'),
+            new moodle_url('/local/kaiproctor/randompaper.php',
+                ['courseid' => $course->id]),
+            navigation_node::TYPE_SETTING,
+            null,
+            'local_kaiproctor_randompaper',
+            new pix_icon('i/shuffle', '')
+        );
+    }
 }

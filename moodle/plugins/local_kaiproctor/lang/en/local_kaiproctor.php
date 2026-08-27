@@ -32,30 +32,54 @@ $string['settings:reviewmin_desc'] = 'Scores between this and the match threshol
 $string['settings:retentiondays'] = 'Evidence retention (days)';
 $string['settings:retentiondays_desc'] = 'Photographs and clips older than this are deleted by the scheduled purge task.';
 
-$string['settings:policy'] = 'Monitoring policy';
-$string['settings:policy_desc'] = 'How often each check runs during a monitored lesson. An interval of 0 switches that check off.';
-$string['settings:presenceminutes'] = 'Presence check every (minutes)';
-$string['settings:presenceminutes_desc'] = 'How often to confirm somebody is in front of the camera.';
-$string['settings:verifyminutes'] = 'Identity check every (minutes)';
-$string['settings:verifyminutes_desc'] = 'How often to confirm it is still the person who enrolled. Only runs for learners who have enrolled a face.';
-$string['settings:clickconfirmminutes'] = 'Ask for confirmation every (minutes)';
-$string['settings:clickconfirmminutes_desc'] = 'How often the learner must click to confirm they are still watching. Counted only while the video is playing, so it never appears at all on a lesson shorter than this — five minutes against a one-minute video switches the check off in effect. 0 to disable.';
-$string['settings:clickconfirmgracesec'] = 'Confirmation grace period (seconds)';
-$string['settings:clickconfirmgracesec_desc'] = 'How long they have to click before the video is paused.';
-$string['settings:mouseidleminutes'] = 'Idle tolerance (minutes)';
-$string['settings:mouseidleminutes_desc'] = 'Pause the video after this long with no mouse or keyboard activity.';
-$string['settings:randomclipsperhour'] = 'Random clips per hour';
-$string['settings:randomclipsperhour_desc'] = 'Average number of short camera clips kept as evidence each hour. Timing is randomised so it cannot be anticipated.';
-$string['settings:clipseconds'] = 'Clip length (seconds)';
-$string['settings:clipseconds_desc'] = 'How long each random evidence clip runs.';
-$string['settings:blurallowance'] = 'Focus losses tolerated';
-$string['settings:blurallowance_desc'] = 'How many times the learner may leave the lesson window before the session ends. 0 ends it the first time.';
-$string['settings:strictlockdown'] = 'Strict mode';
-$string['settings:strictlockdown_desc'] = 'End the session on a policy breach instead of pausing and letting the learner continue.';
+$string['settings:policy'] = 'What is watched during a lesson';
+$string['settings:policy_desc'] = 'How often each check runs while somebody is learning. <strong>Every box is in seconds.</strong> Put 0 in a box to switch that check off.';
+$string['settings:clickconfirmgracesec'] = 'Seconds allowed to press confirm';
+$string['settings:clickconfirmgracesec_desc'] = 'How long they have to press it. The video pauses if they do not.';
+$string['settings:mouseidlewarnsec'] = 'Warn N seconds before pausing for stillness';
+$string['settings:mouseidlewarnsec_desc'] = 'A countdown appears this long before the pause. <strong>It cannot be longer than the box above.</strong> Example: 30 above and 10 here = twenty seconds of stillness, then a countdown 10, 9, 8 … then the pause. Put 0 to pause with no warning.';
+$string['settings:warntoolong'] = 'A {$a->warn} second warning does not fit: the video pauses after {$a->tolerance} seconds of inactivity, and the countdown has to run inside that. Lower this, or raise "Idle tolerance" first.';
+$string['settings:warnnegative'] = 'This cannot be negative.';
+$string['settings:presencewarnsec'] = 'Warn N seconds before pausing for a missing face';
+$string['settings:presencewarnsec_desc'] = 'When the camera cannot see a face, it re-checks and counts down for this long before pausing. Put 0 to pause on the first frame with no face.';
+$string['settings:randomclipsperhour'] = 'Evidence clips recorded per hour';
+$string['settings:randomclipsperhour_desc'] = 'How many short clips are kept as evidence in an average hour. The times are chosen at random so they cannot be predicted. Put 0 to record none.';
+$string['settings:clipseconds'] = 'Length of an evidence clip, in seconds';
+$string['settings:clipseconds_desc'] = 'How long each recorded clip is.';
+$string['settings:blurallowance'] = 'Times allowed to leave the lesson window';
+$string['settings:blurallowance_desc'] = 'How often they may switch to another window before the sitting is ended. Put 0 to end it the first time.';
+$string['settings:strictlockdown'] = 'Strict mode (exams)';
+$string['settings:strictlockdown_desc'] = 'End the attempt on a policy breach instead of pausing and letting the learner continue. Applies to exam attempts only.';
+$string['settings:lessonstrictlockdown'] = 'Strict mode for lessons too';
+$string['settings:lessonstrictlockdown_desc'] = 'By default a lesson is never ended: a breach pauses the video, keeps the evidence, and the learner can resume — ending it protects nothing and only makes them start again. Turn this on to have lessons ended the way exams are.';
 $string['settings:desktopnotification'] = 'Desktop notifications';
 $string['settings:desktopnotification_desc'] = 'Raise an operating-system notification when the learner leaves the lesson.';
 
 // Enrolment page.
+// The notice shown right before the camera opens. Separate from the site
+// policy, which is agreed to once and covers everything — this one is about
+// what is happening in the next few seconds. {$a} is the retention period,
+// read from the setting so the notice cannot promise something the purge task
+// does not do.
+$string['notice:title'] = 'The camera is about to open';
+$string['notice:enrol'] = '<p>The next step opens your camera to enrol your face.</p>
+<ul>
+<li>What is stored is a <strong>set of numbers representing your face</strong>, not a photograph of you.</li>
+<li>It is used only to confirm that the person studying and sitting exams is you.</li>
+<li>You can ask for it to be deleted at any time, from your account\'s privacy page.</li>
+</ul>
+<p>Press "Agree and open camera" to continue.</p>';
+$string['notice:verify'] = '<p>The next step opens your camera to confirm it is you, before the exam starts.</p>
+<ul>
+<li>Your live face is compared against the one you enrolled.</li>
+<li>Checks continue during the exam, and <strong>images are kept as evidence when something looks wrong</strong>.</li>
+<li>Evidence is deleted automatically after {$a} days.</li>
+</ul>
+<p>Press "Agree and open camera" to continue.</p>';
+$string['notice:agree'] = 'Agree and open camera';
+$string['notice:decline'] = 'Do not agree';
+$string['notice:declined'] = 'The camera cannot open without your agreement. Press again when you are ready.';
+
 $string['enrol:title'] = 'Enrol your face';
 $string['enrol:intro'] = 'Your identity is confirmed by camera during monitored lessons. Follow the on-screen instructions: look straight at the camera, then turn your head as asked.';
 $string['enrol:start'] = 'Start';
@@ -64,6 +88,10 @@ $string['enrol:failed'] = 'Your face could not be enrolled. Try again, and if it
 $string['enrol:timeout'] = 'You did not complete the movement in time. Try again, turning your head slowly.';
 $string['enrol:replacing'] = 'You have already enrolled a face. Completing this will replace it.';
 $string['enrol:existing'] = 'Face enrolled on {$a}.';
+// Shown on the learner's own profile, where the question is "have I done this
+// yet" rather than "how do I do it".
+$string['profile:enrolledon'] = 'Enrolled on {$a}';
+$string['profile:notenrolled'] = 'Not enrolled yet — required before a monitored lesson or exam.';
 
 
 // Camera hints.
@@ -96,6 +124,8 @@ $string['liveness:right'] = 'Slowly turn your head to the right';
 $string['notification:title'] = 'Proctoring';
 $string['paused:title'] = 'Video paused';
 $string['paused:resume'] = 'Resume';
+$string['countdown:idle'] = 'No movement detected. Pausing the video in {$a}s.';
+$string['countdown:presence'] = 'You are not visible to the camera. Pausing the video in {$a}s.';
 $string['confirm:title'] = 'Confirm you are still here';
 $string['confirm:body'] = 'Press the button before the time runs out.';
 $string['confirm:button'] = 'I am here';
@@ -159,7 +189,6 @@ $string['report:nosessions'] = 'No monitored sittings were recorded in this cont
 $string['report:ended'] = 'ended';
 $string['report:policy'] = 'Rules enforced during this sitting';
 $string['report:policynote'] = 'This is what was in force when the sitting began, recorded at the time. Changing the settings now does not change it.';
-$string['report:everyminutes'] = 'every {$a} minutes';
 $string['report:checkoff'] = 'off';
 $string['report:orphans'] = 'Recorded outside any sitting';
 $string['report:orphansnote'] = 'From before sittings were recorded. Kept rather than hidden, but there is no policy snapshot for them.';
@@ -182,6 +211,21 @@ $string['import:failed'] = 'The import failed.';
 $string['import:nousable'] = 'No question had a usable answer key.';
 $string['import:expired'] = 'That import is no longer pending. Upload the PDF again.';
 $string['import:openbank'] = 'Open the question bank';
+
+// Building a paper that draws at random from the course's own bank.
+$string['paper:title'] = 'Build a random paper';
+$string['paper:intro'] = 'Draw questions at random from this course\'s question bank. Every candidate gets a different paper, and none of them sees a question\'s difficulty. This course\'s bank currently holds <strong>{$a}</strong> questions to draw from.';
+$string['paper:quiz'] = 'Put them in';
+$string['paper:count'] = 'Number of questions';
+$string['paper:count_help'] = 'How many questions each candidate sits. They are drawn afresh from this course\'s bank every time somebody starts an attempt, so the number cannot exceed what the bank holds.';
+$string['paper:replace'] = 'Clear the existing questions first';
+$string['paper:replace_help'] = 'Leave this off and the random draws are appended to whatever is already there, which is rarely what building a new paper means.';
+$string['paper:build'] = 'Build the paper';
+$string['paper:done'] = 'Added {$a->added} random questions (removed {$a->removed}).';
+$string['paper:atleastone'] = 'A paper needs at least one question.';
+$string['paper:toomany'] = 'This course\'s bank holds only {$a} questions, so a larger paper cannot be drawn.';
+$string['paper:noquizzes'] = 'This course has no quiz to put questions in. Create one, then come back.';
+$string['paper:nobank'] = 'This course\'s question bank is empty. Import some questions before drawing a paper.';
 $string['import:difficultynote'] = 'Difficulty is stored as a question tag, so a quiz can draw random questions by difficulty.';
 
 // Statistics.
@@ -286,6 +330,66 @@ $string['enrol:toosmall'] = 'Your face is too small in the picture. Move closer 
 $string['enrol:multiplefaces'] = 'More than one face is in the picture. Make sure only you are in frame — a photograph or screen behind you counts too.';
 $string['enrol:spoof'] = 'The camera could not confirm a live person. Enrol using your own camera, looking straight at it, rather than holding up a photograph or another screen.';
 $string['hint:toosmall'] = 'Move closer to the camera.';
-// The assistant's launcher, on every page.
-$string['ask:icon'] = '?';
+// The assistant's launcher, on every page. Its icon is drawn in the template
+// rather than named here: a glyph is not something a translator should have to
+// choose, and the one this used to carry was a "?" that collided with Moodle's
+// own help button sitting directly under it.
 $string['ask:openfull'] = 'Open the full page';
+
+$string['settings:asksource'] = 'Which assistant answers the ask widget';
+$string['settings:asksource_desc'] = 'The Moodle assistant answers "where is the page I need", from the courses this learner can already open. The Indorama assistant answers about the structure of the legacy LMS — its tables, routes and source files — and knows nothing about Moodle. They are separate services; this chooses which one the widget asks. The Indorama option requires local/kaiproctor:manage, because a database schema is not something to put in front of a learner.';
+$string['settings:asksource:moodle'] = 'Moodle navigation (this site)';
+$string['settings:asksource:indorama'] = 'Indorama LMS structure (separate service)';
+$string['settings:ragbaseurl'] = 'Indorama assistant base URL';
+$string['settings:ragbaseurl_desc'] = 'Where the indorama-rag service is listening, for example http://host.docker.internal:8110 when it runs on the host and Moodle runs in a container. Only used when the source above is set to Indorama.';
+$string['settings:ragapikey'] = 'Indorama assistant key';
+$string['settings:ragapikey_desc'] = 'The shared key that service is configured with (RAG_API_KEY), sent as X-Agent-Key. Leave empty if it runs without one — which is only safe on a machine nothing else can reach.';
+$string['ask:rag:notconfigured'] = 'The Indorama assistant is selected but no address is configured for it.';
+$string['ask:rag:unreachable'] = 'Could not reach the Indorama assistant. Check that the service is running and that the address in the settings is right.';
+$string['ask:rag:malformed'] = 'The Indorama assistant replied with something this plugin could not read.';
+
+$string['chat:role:user'] = 'You';
+$string['chat:role:assistant'] = 'Assistant';
+$string['chat:sources'] = 'Referred to';
+$string['chat:overquota'] = 'Your saved conversations have reached the size limit for one account. Delete a conversation to make room.';
+$string['chat:history'] = 'My conversations';
+$string['chat:history_desc'] = 'Everything you have asked the assistant, kept as Markdown you can read, download or delete. Nobody else can open these.';
+$string['chat:none'] = 'You have not asked the assistant anything yet.';
+$string['chat:turns'] = '{$a} messages';
+$string['chat:usage'] = 'Using {$a->used} of {$a->quota}';
+$string['chat:open'] = 'Open';
+$string['chat:download'] = 'Download .md';
+$string['chat:rename'] = 'Rename';
+$string['chat:delete'] = 'Delete';
+$string['chat:deleteall'] = 'Delete every conversation';
+$string['chat:confirmdelete'] = 'Delete this conversation? There is no undo.';
+$string['chat:confirmdeleteall'] = 'Delete every conversation you have had with the assistant? There is no undo.';
+$string['chat:deleted'] = 'Deleted.';
+$string['settings:chatquota'] = 'Conversation storage per user';
+$string['settings:chatquota_desc'] = 'Bytes of transcript one account may keep. A turn of conversation runs two to five kilobytes, so the default of one gigabyte is a backstop against a runaway script rather than a budget anybody has to manage. Over the limit, saving refuses rather than trimming — a conversation that quietly stopped recording looks the same as one nobody continued.';
+$string['privacy:metadata:convo'] = 'Conversations with the assistant, kept so the person who had them can read them again.';
+$string['privacy:metadata:convo:userid'] = 'Who had the conversation.';
+$string['privacy:metadata:convo:title'] = 'A name for the conversation, taken from its first question.';
+$string['privacy:metadata:convo:timecreated'] = 'When it started.';
+$string['privacy:metadata:convo:timemodified'] = 'When it was last added to.';
+
+$string['settings:ragstaffonly'] = 'Restrict the Indorama assistant to staff';
+$string['settings:ragstaffonly_desc'] = 'On by default, and worth leaving on unless you have decided otherwise: that assistant answers about a database schema, which is useful to whoever maintains the system and odd to put in front of somebody taking a course. Turn it off to let every logged-in user ask it. This does not widen what the assistant knows — it never sees a row of data either way — only who may ask.';
+
+$string['ask:rag:off_topic'] = 'I can only answer about the Indorama learning system — its courses, content and how it is put together. Try asking about those.';
+$string['ask:rag:no_material'] = 'I could not find anything about that. Try naming a course, a topic, or what you are trying to do.';
+$string['ask:rag:ungrounded_answer'] = 'I could not give an answer I was able to check, so I have not given one. Please try asking a different way.';
+$string['ask:rag:llm_timeout'] = 'That took too long to answer. The first question after a quiet period is slow while the model loads — please try again.';
+$string['ask:rag:llm_empty'] = 'I did not manage to put an answer together. Please try again.';
+$string['ask:rag:llm_unreachable'] = 'The assistant is not responding right now. Please try again in a moment.';
+$string['ask:rag:tool_limit'] = 'I looked in several places and still could not settle on an answer. Try asking something more specific.';
+$string['ask:rag:refused'] = 'I could not answer that one. Please try asking a different way.';
+$string['settings:presenceseconds'] = 'Check somebody is at the camera, every N seconds';
+$string['settings:presenceseconds_desc'] = 'Takes a frame this often to see that a person is there. It does not check who. Example: 120 = every two minutes.';
+$string['settings:verifyseconds'] = 'Check it is the same person, every N seconds';
+$string['settings:verifyseconds_desc'] = 'Compares the face against the one enrolled, this often. Only applies to learners who have enrolled a face. Example: 600 = every ten minutes.';
+$string['settings:clickconfirmseconds'] = 'Ask the learner to confirm, every N seconds';
+$string['settings:clickconfirmseconds_desc'] = 'Shows a button to confirm they are still there. Counted only while the video is playing, so a interval longer than the video means the button never appears. Example: 300 = every five minutes.';
+$string['settings:mouseidleseconds'] = 'Pause after N seconds of no movement';
+$string['settings:mouseidleseconds_desc'] = 'If the mouse does not move and nothing is typed for this long, the video pauses. Example: 30 = pause after half a minute of stillness.';
+$string['report:everyseconds'] = 'every {$a} seconds';

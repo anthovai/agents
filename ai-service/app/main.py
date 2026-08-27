@@ -37,6 +37,20 @@ FACT_LABELS = {
     "notattempted": "สถานะ",
 }
 
+# What each kind of page is, in the language of the answer. Same reasoning as
+# the fact labels: whatever the model is handed, it copies.
+KIND_LABELS = {
+    "course": "รายวิชา",
+    "section": "หัวข้อในรายวิชา",
+    "activity": "กิจกรรม",
+    "page": "หน้าเนื้อหา",
+    "quiz": "ข้อสอบ",
+    "lesson": "บทเรียน",
+    "video": "วิดีโอ",
+    "resource": "ไฟล์ประกอบการเรียน",
+    "tool": "เครื่องมือ",
+}
+
 # Booleans read as prose or they read as "True", which is neither Thai nor an
 # answer. Written out here so the model has the finished words to copy.
 FACT_BOOLEANS = {
@@ -165,8 +179,21 @@ def ask(body: dict) -> JSONResponse | dict:
                        "no pages were supplied, so there is nothing to answer from", 422)
 
     def describe(index: int, item: dict) -> str:
-        lines = [f"{index + 1}. [{item['kind']}] {item['title']}",
-                 f"   ลิงก์: {item['url']}"]
+        # No URL, deliberately.
+        #
+        # The interface renders the pages as links beside the answer, so a URL
+        # written into the prose is a second copy of something the learner can
+        # already click — and it was arriving as a wall of
+        # "http://host/mod/kaivideo/view.php?id=177" in the middle of a Thai
+        # sentence. Withholding it also retires the failure the link guard
+        # exists for: a model that was never shown a URL cannot mistype one.
+        #
+        # The kind is labelled rather than bracketed for the same reason the
+        # facts below are: "[video]" gets copied into the reply verbatim, and
+        # a learner should not have to read our field names.
+        lines = [f"{index + 1}. {item['title']}"]
+        if item["kind"]:
+            lines.append(f"   {KIND_LABELS.get(item['kind'], item['kind'])}")
         if item["summary"]:
             lines.append(f"   {item['summary']}")
         # The learner's own record, one fact per line and already finished —
@@ -184,8 +211,6 @@ def ask(body: dict) -> JSONResponse | dict:
 
     pages = "\n".join(describe(n, item) for n, item in enumerate(asked["context"]))
     material = f"คำถามของผู้เรียน:\n{asked['question']}\n\nหน้าที่ผู้เรียนเปิดได้:\n{pages}"
-
-    allowed = [item["url"] for item in asked["context"]]
 
     # What the model may put a number to: the figures it was handed, plus any
     # the learner typed themselves. Deliberately not the rendered page list —
@@ -208,7 +233,7 @@ def ask(body: dict) -> JSONResponse | dict:
         # is left of the budget, not a fresh one: two full timeouts would put
         # the request past Moodle's outer limit and lose the diagnosis.
         if spend.enough_for_another():
-            if guard.invented_links(content, allowed):
+            if guard.links_in(content):
                 content, model = llm.ask(prompts.ASK + guard.LINK_NOTE, material,
                                          config.MODEL_ASK, spend.remaining())
             elif guard.unsupported_numbers(content, disclosed):
@@ -226,13 +251,17 @@ def ask(body: dict) -> JSONResponse | dict:
                        "the model produced figures it was not given: "
                        + ", ".join(made_up), 502)
 
-    invented = guard.invented_links(content, allowed)
+    invented = guard.links_in(content)
     if invented:
-        # A link that looks right and goes nowhere is the failure that costs
-        # the feature its credibility, so the answer is dropped rather than
-        # shown with a broken link in it.
+        # Every link is an invented one now: the model is shown page titles and
+        # no addresses at all, so anything URL-shaped in the reply was built
+        # from a guess. It used to be enough to check the link was one we
+        # offered, back when we offered them — a link that looks right and goes
+        # nowhere is the failure that costs the feature its credibility, and
+        # the surest way to avoid it is to never put the model in a position to
+        # write one.
         return _failed("invented_link",
-                       "the model produced links that were not offered: "
+                       "the model produced links, which it was not given: "
                        + ", ".join(invented), 502)
 
     return {

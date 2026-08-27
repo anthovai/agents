@@ -1,0 +1,352 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ผู้ช่วยระบบ Indorama LMS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Everything inline. The page is served by the same process as the API and
+     has no build step; a stylesheet in another file would be one more thing to
+     keep in sync for no gain at this size. */
+  :root {
+    --ink: #17202a; --muted: #5d6b7a; --line: #dfe4ea;
+    --bg: #f7f8fa; --card: #fff; --accent: #1f4e79;
+    --warn: #a4341f; --ok: #1d6b3f; --code: #f0f2f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 "Segoe UI", "Sarabun", system-ui, sans-serif;
+    display: grid; grid-template-columns: 280px 1fr; height: 100vh;
+  }
+  aside {
+    background: var(--card); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  aside header, main header {
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+  }
+  aside header h1 { font-size: 15px; margin: 0 0 10px; }
+  .who { display: flex; gap: 6px; }
+  .who input { flex: 1; min-width: 0; }
+  input, button, textarea {
+    font: inherit; border-radius: 6px; border: 1px solid var(--line);
+    padding: 7px 10px; background: #fff; color: inherit;
+  }
+  button { cursor: pointer; background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.ghost { background: #fff; color: var(--muted); border-color: var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  #list { flex: 1; overflow-y: auto; padding: 8px; }
+  .conv {
+    padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .conv:hover { background: var(--bg); }
+  .conv[aria-current="true"] { background: #eaf1f8; }
+  .conv b { font-weight: 600; font-size: 14px; }
+  .conv small, .meta { color: var(--muted); font-size: 12px; }
+  .conv-actions { display: flex; gap: 6px; margin-top: 4px; }
+  .conv-actions button { padding: 2px 7px; font-size: 12px; }
+  aside footer { padding: 10px 16px; border-top: 1px solid var(--line); }
+  .bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+
+  main { display: flex; flex-direction: column; overflow: hidden; }
+  main header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  #thread { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .turn { max-width: 760px; margin: 0 auto 20px; }
+  .turn .role { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .turn.user .body {
+    background: #eaf1f8; border-radius: 10px 10px 2px 10px; padding: 10px 14px;
+  }
+  .turn.assistant .body {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px 10px 10px 2px; padding: 12px 16px; white-space: pre-wrap;
+  }
+  .turn.refused .body { border-color: #e6c9c2; background: #fdf6f4; color: var(--warn); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag {
+    font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    background: var(--code); color: var(--muted); font-family: ui-monospace, monospace;
+  }
+  .tag.ok { color: var(--ok); }
+  details { margin-top: 8px; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+  details pre {
+    background: var(--code); padding: 10px 12px; border-radius: 6px;
+    overflow-x: auto; font-size: 12.5px; margin: 6px 0 0; white-space: pre;
+  }
+  form { border-top: 1px solid var(--line); padding: 12px 24px; background: var(--card); }
+  .row { display: flex; gap: 8px; max-width: 760px; margin: 0 auto; }
+  .row textarea { flex: 1; resize: none; height: 44px; }
+  .hint { max-width: 760px; margin: 8px auto 0; }
+  .hint button { background: #fff; color: var(--muted); border-color: var(--line);
+    font-size: 12.5px; padding: 3px 9px; margin: 0 6px 6px 0; }
+  .empty { max-width: 620px; margin: 8vh auto; color: var(--muted); }
+  .empty h2 { color: var(--ink); font-size: 17px; }
+  .empty code { background: var(--code); padding: 1px 5px; border-radius: 4px; }
+  @media (max-width: 720px) { body { grid-template-columns: 1fr; } aside { display: none; } }
+</style>
+
+<aside>
+  <header>
+    <h1>ผู้ช่วยระบบ Indorama LMS</h1>
+    <div class="who">
+      <input id="user" value="demo" aria-label="ผู้ใช้">
+      <button id="new" class="ghost" title="เริ่มบทสนทนาใหม่">ใหม่</button>
+    </div>
+  </header>
+  <div id="list"></div>
+  <footer>
+    <div class="meta" id="usage">—</div>
+    <div class="bar"><i id="usagebar" style="width:0"></i></div>
+    <button id="wipe" class="ghost" style="width:100%;margin-top:10px">ลบประวัติทั้งหมด</button>
+  </footer>
+</aside>
+
+<main>
+  <header>
+    <strong id="title">บทสนทนาใหม่</strong>
+    <span class="meta" id="status">—</span>
+  </header>
+  <div id="thread"></div>
+  <form id="form">
+    <div class="row">
+      <textarea id="q" placeholder="ถามเรื่องโครงสร้างระบบ — ตาราง, route, ไฟล์ซอร์ส" autofocus></textarea>
+      <button id="send">ถาม</button>
+    </div>
+    <div class="hint" id="hints"></div>
+  </form>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let cid = null;
+
+// Shown as buttons because this assistant answers a narrow set of things, and
+// a blank box invites the questions it cannot answer. The last one is
+// deliberately out of scope: a demo that never shows the refusal has not shown
+// how the thing works.
+const EXAMPLES = [
+  "tbl_company มีคอลัมน์อะไรบ้าง",
+  "ตารางไหนบ้างในระบบที่มีข้อมูลอ่อนไหว",
+  "มีตารางทั้งหมดกี่ตาราง",
+  "Authorization_Token.php มีเมธอดอะไร",
+  "route ของ Channels มีอะไรบ้าง",
+  "ในระบบมีผู้ใช้กี่คน",
+];
+
+const esc = (s) => String(s ?? "").replace(/[<>&]/g, (c) =>
+  ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+
+function bytes(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1024 ** 2) return (n / 1024).toFixed(1) + " KB";
+  return (n / 1024 ** 2).toFixed(1) + " MB";
+}
+
+// The key this page sends, asked for once and kept for the tab only.
+//
+// This page is an operator's tool, not the product: whoever opens it is staff
+// who already hold the key. Kept in sessionStorage rather than localStorage so
+// it goes when the tab does — a key that outlives the session on a shared
+// machine is a key the next person finds.
+function agentKey() {
+  let key = sessionStorage.getItem("agentKey");
+  if (key === null) {
+    key = window.prompt(
+      "ใส่ RAG_API_KEY ของเซิร์ฟเวอร์นี้ (เว้นว่างได้ถ้าเซิร์ฟเวอร์ไม่ได้ตั้งกุญแจ)") || "";
+    sessionStorage.setItem("agentKey", key);
+  }
+  return key;
+}
+
+async function api(path, options = {}) {
+  const opts = { ...options, headers: { ...(options.headers || {}) } };
+  const key = agentKey();
+  if (key) {
+    opts.headers["X-Agent-Key"] = key;
+  }
+  const res = await fetch(path, opts);
+  // A rejected key is worth one clear sentence and a second chance, rather
+  // than a raw 401 the page renders as "something went wrong".
+  if (res.status === 401) {
+    sessionStorage.removeItem("agentKey");
+    alert("กุญแจไม่ถูกต้อง — โหลดหน้านี้ใหม่แล้วใส่ใหม่อีกครั้ง");
+  }
+  return { status: res.status, body: await res.json() };
+}
+
+function turn(role, html, extra = "") {
+  const label = role === "user" ? "คุณ" : role === "refused" ? "ถูกปฏิเสธ" : "ผู้ช่วย";
+  const cls = role === "user" ? "user" : role === "refused" ? "assistant refused" : "assistant";
+  $("thread").insertAdjacentHTML("beforeend",
+    `<div class="turn ${cls}"><div class="role">${label}</div>
+     <div class="body">${html}</div>${extra}</div>`);
+  $("thread").scrollTop = $("thread").scrollHeight;
+}
+
+function detail(d) {
+  // The tools that ran and the chunks they returned. Shown rather than tucked
+  // away: an answer whose sources you cannot see is the thing this service is
+  // built not to produce, and hiding them in the UI would undo that.
+  const tags = (d.tool_calls || []).map((t) =>
+    `<span class="tag ${t.found ? "ok" : ""}">${esc(t.tool)}${t.found ? "" : " · ไม่พบ"}</span>`);
+  const srcs = (d.sources || []).map((s) => `<span class="tag">${esc(s)}</span>`);
+  let out = tags.length || srcs.length
+    ? `<div class="tags">${tags.join("")}${srcs.join("")}</div>` : "";
+  // Opened by default when there is exactly one, because the answer no longer
+  // contains the names and a reader who has to go looking for them has been
+  // given prose instead of an answer.
+  const lists = d.lists || [];
+  for (const l of lists) {
+    const open = lists.length === 1 ? " open" : "";
+    const what = l.kind === "digest" ? "รายการเต็ม" : "รายละเอียด";
+    out += `<details${open}><summary>${esc(l.title)} — ${what}</summary>
+            <pre>${esc(l.text)}</pre></details>`;
+  }
+  return out;
+}
+
+async function refresh() {
+  const user = $("user").value.trim();
+  if (!user) return;
+  const { body } = await api(`/conversations?user_id=${encodeURIComponent(user)}`);
+  if (!body.ok) { $("list").innerHTML = `<div class="meta" style="padding:8px">${esc(body.detail)}</div>`; return; }
+
+  $("list").innerHTML = (body.conversations || []).map((c) => `
+    <div class="conv" data-id="${c.id}" aria-current="${c.id === cid}">
+      <b>${esc(c.title)}</b>
+      <small>${c.turns} เทิร์น · ${bytes(c.bytes)}</small>
+      <div class="conv-actions">
+        <button class="ghost" data-act="rename" data-id="${c.id}">เปลี่ยนชื่อ</button>
+        <button class="ghost" data-act="del" data-id="${c.id}">ลบ</button>
+        <button class="ghost" data-act="md" data-id="${c.id}">.md</button>
+      </div>
+    </div>`).join("") || `<div class="meta" style="padding:8px">ยังไม่มีบทสนทนา</div>`;
+
+  const u = body.usage;
+  $("usage").textContent =
+    `${u.conversations} บทสนทนา · ${bytes(u.bytes)} จาก ${bytes(u.quota_bytes)}`;
+  $("usagebar").style.width = Math.min(100, (u.bytes / u.quota_bytes) * 100 || 0.4) + "%";
+}
+
+async function open_(id) {
+  cid = id;
+  const user = encodeURIComponent($("user").value.trim());
+  const { body } = await api(`/conversations/${id}?user_id=${user}`);
+  $("thread").innerHTML = "";
+  if (!body.ok) { turn("refused", esc(body.detail)); return; }
+  for (const t of body.turns) {
+    const refused = t.role === "assistant" && t.text.startsWith("[");
+    turn(refused ? "refused" : t.role, esc(t.text));
+  }
+  const row = document.querySelector(`.conv[data-id="${id}"] b`);
+  $("title").textContent = row ? row.textContent : "บทสนทนา";
+  refresh();
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = $("q").value.trim();
+  const user = $("user").value.trim();
+  if (!q || !user) return;
+
+  turn("user", esc(q));
+  $("q").value = "";
+  $("send").disabled = true;
+  $("status").textContent = "กำลังค้นและตอบ… (โมเดลบนเครื่อง ใช้เวลาสิบถึงสี่สิบวินาที)";
+
+  const payload = { user_id: user, message: q };
+  if (cid) payload.conversation_id = cid;
+
+  try {
+    const { body } = await api("/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    cid = body.conversation_id || cid;
+    if (body.ok) {
+      turn("assistant", esc(body.answer), detail(body));
+    } else {
+      // The code is shown, not just the sentence. Which guard stopped an
+      // answer is the whole diagnostic value of a refusal.
+      turn("refused", `<b>${esc(body.code)}</b><br>${esc(body.detail)}`);
+    }
+  } catch (err) {
+    turn("refused", "ติดต่อบริการไม่ได้: " + esc(err.message));
+  } finally {
+    $("send").disabled = false;
+    $("status").textContent = "—";
+    refresh();
+  }
+});
+
+$("q").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("form").requestSubmit(); }
+});
+
+$("new").addEventListener("click", () => {
+  cid = null;
+  $("thread").innerHTML = "";
+  $("title").textContent = "บทสนทนาใหม่";
+  refresh();
+});
+
+$("list").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-act]");
+  const user = $("user").value.trim();
+  if (btn) {
+    e.stopPropagation();
+    const id = btn.dataset.id;
+    if (btn.dataset.act === "rename") {
+      const title = prompt("ชื่อใหม่");
+      if (title) {
+        await api(`/conversations/${id}`, {
+          method: "PATCH", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ user_id: user, title }),
+        });
+        refresh();
+      }
+    } else if (btn.dataset.act === "del") {
+      if (confirm("ลบบทสนทนานี้? ไม่มีการกู้คืน")) {
+        await api(`/conversations/${id}?user_id=${encodeURIComponent(user)}`, { method: "DELETE" });
+        if (cid === id) { cid = null; $("thread").innerHTML = ""; }
+        refresh();
+      }
+    } else if (btn.dataset.act === "md") {
+      window.open(`/conversations/${id}?user_id=${encodeURIComponent(user)}&raw=true`, "_blank");
+    }
+    return;
+  }
+  const conv = e.target.closest(".conv");
+  if (conv) open_(conv.dataset.id);
+});
+
+$("wipe").addEventListener("click", async () => {
+  const user = $("user").value.trim();
+  if (!confirm(`ลบทุกบทสนทนาของ "${user}"? ไม่มีการกู้คืน`)) return;
+  const q = encodeURIComponent(user);
+  await api(`/conversations?user_id=${q}&confirm=${q}`, { method: "DELETE" });
+  cid = null; $("thread").innerHTML = ""; refresh();
+});
+
+$("user").addEventListener("change", () => { cid = null; $("thread").innerHTML = ""; refresh(); });
+
+$("hints").innerHTML = EXAMPLES.map((q) => `<button type="button">${esc(q)}</button>`).join("");
+$("hints").addEventListener("click", (e) => {
+  if (e.target.tagName === "BUTTON") { $("q").value = e.target.textContent; $("q").focus(); }
+});
+
+$("thread").innerHTML = `<div class="empty">
+  <h2>ถามเรื่องโครงสร้างของ LMS เดิม</h2>
+  <p>ผู้ช่วยตัวนี้ตอบจาก <b>schema, routing table และโครงสร้างซอร์สโค้ด</b> ที่อยู่ในไฟล์
+  export เท่านั้น — ทุกคำตอบมาจากการเรียกเครื่องมือ และชื่อตาราง ชื่อคอลัมน์ ตัวเลขทุกตัว
+  ถูกตรวจกับสิ่งที่เครื่องมือคืนมาก่อนแสดง</p>
+  <p><b>คำตอบเป็นภาษาคนล้วน</b> ชื่อตารางและชื่อคอลัมน์จะไม่อยู่ในประโยค แต่แสดงเป็น
+  รายละเอียดใต้คำตอบ ให้คัดลอกได้ตรงตัว — ชื่อที่โมเดลไม่ได้พิมพ์ คือชื่อที่มันพิมพ์ผิดไม่ได้</p>
+  <p><b>ตอบไม่ได้:</b> อะไรก็ตามที่เกี่ยวกับ<i>เนื้อหา</i>ในระบบ — มีผู้ใช้กี่คน ใครลงทะเบียนบ้าง
+  คอร์สสอนอะไร ดัชนีนี้ไม่เคยอ่านข้อมูลสักแถวเดียว ลองกดปุ่ม
+  <code>ในระบบมีผู้ใช้กี่คน</code> ดูว่ามันปฏิเสธอย่างไร</p>
+</div>`;
+refresh();
+</script>

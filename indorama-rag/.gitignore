@@ -1,0 +1,22 @@
+# The export itself never enters the repository. It carries real corporate
+# email addresses; see README, "ข้อมูลส่วนบุคคล".
+*.zip
+index.sqlite
+build-report.json
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Benchmark scratch. The reports themselves are committed — they are the
+# record — but the run log is just stdout.
+reports/bench-run.log
+index/
+
+# Conversation history is the user's, not the repository's.
+chats/
+
+# Runtime log.
+server.log
+
+# Holds the OpenAI key and the agent key.
+.env

@@ -48,6 +48,45 @@ class hooks {
     }
 
     /**
+     * Put face enrolment in the user menu.
+     *
+     * It had a node under global_navigation, which Boost renders somewhere
+     * between nowhere and the bottom of a drawer nobody opens — a learner
+     * looking for it could not find it, and the only reliable way in was
+     * being refused entry to a proctored quiz and following the link in the
+     * refusal. That is a fine safety net and a terrible front door: it makes
+     * the first experience of the feature a rejection.
+     *
+     * The user menu is where the rest of "things that are mine" live —
+     * profile, grades, preferences — and enrolling your own face is one of
+     * those. It is also the one menu a learner already knows to open, being
+     * where they log out from.
+     *
+     * @param \core_user\hook\extend_user_menu $hook
+     */
+    public static function add_enrolment_to_user_menu(
+            \core_user\hook\extend_user_menu $hook): void {
+        global $USER;
+
+        if (!isloggedin() || isguestuser() || during_initial_install()) {
+            return;
+        }
+
+        // Same capability the page itself checks, in the same context: a
+        // menu item that leads to "you may not do this" is worse than none.
+        if (!has_capability('local/kaiproctor:enrolface',
+                \context_user::instance($USER->id))) {
+            return;
+        }
+
+        $hook->add_navitem((object) [
+            'itemtype' => 'link',
+            'url' => new \moodle_url('/local/kaiproctor/enrol.php'),
+            'title' => get_string('enrol:title', 'local_kaiproctor'),
+        ]);
+    }
+
+    /**
      * Start the attention monitor on an activity flagged as monitored.
      *
      * Moved here from a legacy before_footer callback, and not by choice:
@@ -63,7 +102,7 @@ class hooks {
      */
     public static function start_monitor(
             \core\hook\output\before_footer_html_generation $hook): void {
-        global $PAGE, $USER;
+        global $PAGE;
 
         if (!isloggedin() || isguestuser() || CLI_SCRIPT) {
             return;
@@ -84,21 +123,20 @@ class hooks {
             return;
         }
 
+        // Only what the page cannot ask for later.
+        //
+        // The policy is deliberately NOT here. It used to be — every interval
+        // and threshold, copied into the page — and nothing in the browser
+        // ever read it: the monitor asks the server as it opens the sitting,
+        // so that the rules it enforces and the rules recorded against that
+        // sitting are the same object. The copy was dead weight that had
+        // started to rot, still reading `strictlockdown` for a lesson after
+        // lessons stopped being governed by it, and a test was asserting
+        // against it as though it proved the wiring worked.
         $PAGE->requires->js_call_amd('local_kaiproctor/monitor_activity', 'init', [[
             'contextid' => $PAGE->context->id,
-            'enrolled' => enrolment::has_enrolled($USER->id),
             'returnurl' => (new \moodle_url('/course/view.php',
                 ['id' => $cm->course]))->out(false),
-            'strictlockdown' => (bool) get_config('local_kaiproctor', 'strictlockdown'),
-            'blurallowance' => (int) get_config('local_kaiproctor', 'blurallowance'),
-            'presenceminutes' => (float) get_config('local_kaiproctor', 'presenceminutes'),
-            'verifyminutes' => (float) get_config('local_kaiproctor', 'verifyminutes'),
-            'clickconfirmminutes' => (float) get_config('local_kaiproctor', 'clickconfirmminutes'),
-            'clickconfirmgracesec' => (float) get_config('local_kaiproctor', 'clickconfirmgracesec'),
-            'mouseidleminutes' => (float) get_config('local_kaiproctor', 'mouseidleminutes'),
-            'randomclipsperhour' => (float) get_config('local_kaiproctor', 'randomclipsperhour'),
-            'clipseconds' => (float) get_config('local_kaiproctor', 'clipseconds'),
-            'desktopnotification' => (bool) get_config('local_kaiproctor', 'desktopnotification'),
         ]]);
     }
 }

@@ -20,14 +20,18 @@ class report {
         }
 
         $rows = [
-            ['label' => get_string('settings:presenceminutes', 'local_kaiproctor'),
-             'value' => self::interval($policy['presenceminutes'] ?? null)],
-            ['label' => get_string('settings:verifyminutes', 'local_kaiproctor'),
-             'value' => self::interval($policy['verifyminutes'] ?? null)],
-            ['label' => get_string('settings:clickconfirmminutes', 'local_kaiproctor'),
-             'value' => self::interval($policy['clickconfirmminutes'] ?? null)],
-            ['label' => get_string('settings:mouseidleminutes', 'local_kaiproctor'),
-             'value' => self::interval($policy['mouseidleminutes'] ?? null)],
+            // Either shape. Sittings recorded before intervals moved to
+            // seconds carry *minutes keys, and rewriting them to match today's
+            // settings is exactly what a policy snapshot exists to prevent —
+            // so they are read in the unit they were written in.
+            ['label' => get_string('settings:presenceseconds', 'local_kaiproctor'),
+             'value' => self::seconds_of($policy, 'presence')],
+            ['label' => get_string('settings:verifyseconds', 'local_kaiproctor'),
+             'value' => self::seconds_of($policy, 'verify')],
+            ['label' => get_string('settings:clickconfirmseconds', 'local_kaiproctor'),
+             'value' => self::seconds_of($policy, 'clickconfirm')],
+            ['label' => get_string('settings:mouseidleseconds', 'local_kaiproctor'),
+             'value' => self::seconds_of($policy, 'mouseidle')],
             ['label' => get_string('settings:randomclipsperhour', 'local_kaiproctor'),
              'value' => (string) ($policy['randomclipsperhour'] ?? '—')],
             ['label' => get_string('settings:blurallowance', 'local_kaiproctor'),
@@ -47,14 +51,39 @@ class report {
         return $rows;
     }
 
-    protected static function interval(?float $minutes): string {
-        if ($minutes === null) {
+    /**
+     * One interval from a policy snapshot, in seconds, whichever unit it was
+     * written in.
+     *
+     * Intervals moved from minutes to seconds. A sitting recorded before that
+     * holds ``mouseidleminutes``; one recorded after holds
+     * ``mouseidleseconds``. Converting the old ones on read is right and
+     * rewriting them on disk would not be: the snapshot is the record of what
+     * was enforced, and a record that changes when the code changes is not one.
+     *
+     * @param array $policy
+     * @param string $base setting name without its unit suffix
+     * @return string
+     */
+    protected static function seconds_of(array $policy, string $base): string {
+        if (isset($policy[$base . 'seconds'])) {
+            return self::interval((float) $policy[$base . 'seconds']);
+        }
+        if (isset($policy[$base . 'minutes'])) {
+            return self::interval((float) $policy[$base . 'minutes'] * 60);
+        }
+        return '—';
+    }
+
+    protected static function interval(?float $seconds): string {
+        if ($seconds === null) {
             return '—';
         }
-        if ((float) $minutes <= 0.0) {
+        if ((float) $seconds <= 0.0) {
             return get_string('report:checkoff', 'local_kaiproctor');
         }
-        return get_string('report:everyminutes', 'local_kaiproctor', format_float($minutes, 1));
+        return get_string('report:everyseconds', 'local_kaiproctor',
+            format_float($seconds, 0));
     }
 
     protected static function yesno(?bool $value): string {

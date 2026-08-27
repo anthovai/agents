@@ -311,11 +311,31 @@ def test_the_console_shows_which_model_answers_and_where_it_runs(session):
     for task in expected["tasks"]:
         assert task["model"] in facts, f"no model shown for {task['task']}"
 
-    # This deployment answers from the container host, so the page should be
-    # saying that nothing leaves the network — not the warning.
-    assert session.page.query_selector('[data-region="onpremises"]'), \
-        "the console does not confirm where the model runs"
-    assert not session.page.query_selector('[data-region="offpremises"]')
+    # Which of the two banners is correct depends on where this deployment
+    # points its model, so the test asks the same question the page does
+    # rather than assuming the answer. It used to assume on-premises, and
+    # started failing the day somebody configured a hosted model — reporting
+    # the safeguard working as though it were a fault.
+    #
+    # What must hold either way: exactly one of them is shown, and it is the
+    # one that matches reality. A console that says nothing leaves the network
+    # while it does is the failure worth catching here.
+    offpremises = expected["offpremises"]
+    session.note(f"this deployment answers off the premises: {offpremises}")
+
+    shown = session.page.query_selector(
+        '[data-region="offpremises"]' if offpremises else '[data-region="onpremises"]')
+    hidden = session.page.query_selector(
+        '[data-region="onpremises"]' if offpremises else '[data-region="offpremises"]')
+
+    assert shown, "the console does not say where the model runs"
+    assert not hidden, "the console says both, so it says nothing"
+
+    # Not the wording, which follows whichever language the administrator
+    # reads the console in — only that the banner has something to say. An
+    # empty one is a missing string, and a missing string is the warning not
+    # arriving at the moment it is supposed to be read.
+    assert shown.inner_text().strip(), "the banner is shown but says nothing"
 
 
 def test_a_learner_cannot_reach_the_console(session):

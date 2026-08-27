@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import time
 
-from conftest import QUIZ_CMID, moodle
+from conftest import QUIZ_CMID, moodle, open_monitored
 
 
 def open_attempt(session):
@@ -231,30 +231,43 @@ def test_the_attempt_limit_is_enforced(session, clean_learner):
         restore_timing(original)
 
 
-def test_monitoring_policy_edits_reach_the_lesson_page(session):
+def test_monitoring_policy_edits_reach_the_lesson_page(session, clean_learner):
     """The interval a proctor sets is the interval the lesson runs under.
 
-    Checked end to end — admin setting to the JS configuration on a monitored
-    page — because this is the wiring the whole monitoring feature hangs off:
-    a value that saves in the back office but never reaches the page would
-    fail silently, with every check still running on the old schedule.
+    Read back from the monitor's own first log line, which it writes out of the
+    configuration it is about to run on, and from the policy stored against the
+    sitting. Those are the two places the value has to arrive for the feature
+    to work: one governs behaviour, the other is what an auditor is shown.
+
+    This used to assert that "presenceseconds":7 appeared in the page source,
+    and it passed for a year while proving nothing. The page did carry a copy
+    of the whole policy — and no code in the browser ever read it. The monitor
+    asks the server as it opens the sitting. The copy could have held any value
+    at all, and the schedule the learner actually ran under would not have
+    changed; the assertion would have gone on passing if the live path broke
+    completely. The copy is gone now, and this reads the live one.
     """
-    cmid = moodle("kaivideo-cmid-monitored").strip()
-    original = moodle("get-setting", "presenceminutes").strip()
+    original = moodle("get-setting", "presenceseconds").strip()
 
     try:
-        session.note("set the presence interval to a distinctive 7 minutes")
-        moodle("set-setting", "presenceminutes", "7")
+        session.note("set the presence interval to a distinctive 7 seconds")
+        moodle("set-setting", "presenceseconds", "7")
+        clean_learner("learner")
 
         session.login("learner")
-        session.goto(f"/mod/kaivideo/view.php?id={cmid}")
+        open_monitored(session)
         session.beat(2)
 
-        # The page's AMD init call carries the policy; read it back from what
-        # was actually delivered to the browser, not from the database.
-        content = session.page.content()
-        assert '"presenceminutes":7' in content.replace(" ", ""), \
-            "the new interval never reached the page configuration"
-        session.note("the monitored page is configured with the new interval")
+        session.note("what the monitor reported as it started")
+        log = moodle("events", "learner")
+        assert '"presence_seconds":7' in log.replace(" ", ""), (
+            "the monitor started on an interval that was not the one configured"
+        )
+
+        session.note("and what was recorded against the sitting")
+        sitting = json.loads(moodle("sessions", "learner"))[0]
+        assert sitting["policy"]["presenceseconds"] == 7.0, (
+            "the sitting records an interval nobody set"
+        )
     finally:
-        moodle("set-setting", "presenceminutes", original)
+        moodle("set-setting", "presenceseconds", original)

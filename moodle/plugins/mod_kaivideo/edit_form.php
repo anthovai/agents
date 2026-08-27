@@ -45,6 +45,26 @@ class mod_kaivideo_edit_form extends moodleform {
         $mform->addRule('attime', null, 'required', null, 'client');
         $mform->addHelpButton('attime', 'attime', 'mod_kaivideo');
 
+        // Free text with the ones already used offered alongside. A fixed list
+        // would need managing before the first question could be written, and
+        // a plain box alone is how a report ends up with the same topic spelled
+        // three ways.
+        $mform->addElement('text', 'category',
+            get_string('category', 'mod_kaivideo'),
+            ['size' => 40, 'list' => 'kaivideo-categories']);
+        $mform->setType('category', PARAM_TEXT);
+        $mform->addHelpButton('category', 'category', 'mod_kaivideo');
+
+        $known = $this->_customdata['categories'] ?? [];
+        if ($known) {
+            $options = '';
+            foreach ($known as $name) {
+                $options .= \html_writer::empty_tag('option', ['value' => $name]);
+            }
+            $mform->addElement('html', \html_writer::tag('datalist', $options,
+                ['id' => 'kaivideo-categories']));
+        }
+
         $mform->addElement('textarea', 'questiontext',
             get_string('questiontext', 'mod_kaivideo'), ['rows' => 3, 'cols' => 60]);
         $mform->setType('questiontext', PARAM_TEXT);
@@ -87,6 +107,12 @@ class mod_kaivideo_edit_form extends moodleform {
 
         if ((float) $data['attime'] < 0) {
             $errors['attime'] = get_string('error:negativetime', 'mod_kaivideo');
+        }
+
+        if (core_text::strlen(trim((string) ($data['category'] ?? '')))
+                > \mod_kaivideo\timeline::MAX_CATEGORY) {
+            $errors['category'] = get_string('error:categorytoolong', 'mod_kaivideo',
+                \mod_kaivideo\timeline::MAX_CATEGORY);
         }
 
         $type = (string) ($data['type'] ?? 'choice');

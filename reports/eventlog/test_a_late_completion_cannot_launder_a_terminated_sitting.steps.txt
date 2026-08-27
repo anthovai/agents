@@ -1,4 +1,0 @@
-sign in and start the lesson
-the sitting is terminated
-the client then claims it completed normally
-server response: {'ok': True}

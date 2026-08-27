@@ -8,9 +8,10 @@
 define([
     'local_kaiproctor/camera',
     'local_kaiproctor/active_liveness',
+    'local_kaiproctor/camera_notice',
     'core/str',
     'core/notification'
-], function(Camera, ActiveLiveness, Str, Notification) {
+], function(Camera, ActiveLiveness, CameraNotice, Str, Notification) {
 
     return {
         init: function(config) {
@@ -122,6 +123,24 @@ define([
             button.addEventListener('click', function() {
                 button.disabled = true;
                 status.hidden = true;
+
+                // Asked before the camera, not after. The site policy was
+                // agreed to once and covers the site; this says what is about
+                // to happen in the next few seconds, which is a different
+                // thing to be told.
+                CameraNotice.ask(config.contextid, 'verify',
+                    config.retentiondays).then(function(agreed) {
+                    if (!agreed) {
+                        button.disabled = false;
+                        setState('idle');
+                        return show('notice:declined', 'info');
+                    }
+                    return run();
+                }).catch(Notification.exception);
+            });
+
+            /** The check itself, once there is permission to open a lens. */
+            var run = function() {
                 setState('running');
 
                 // A retry gets a fresh sequence, so the chips start over too.
@@ -133,7 +152,7 @@ define([
                 var current = -1;
                 var total = 0;
 
-                camera.start().then(function() {
+                return camera.start().then(function() {
                     var liveness = new ActiveLiveness({
                         mode: 'verify',
                         contextid: config.contextid,
@@ -210,7 +229,7 @@ define([
                         return message;
                     }).catch(Notification.exception);
                 });
-            });
+            };
         }
     };
 });

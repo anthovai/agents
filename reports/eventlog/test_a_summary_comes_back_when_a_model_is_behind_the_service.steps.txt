@@ -1,3 +1,0 @@
-generate a sitting
-model behind the service: qwen2.5:7b-instruct at http://host.docker.internal:11434/v1
-summary: {'ok': True, 'summary': 'การสอบมีความสอดคล้องกับเงื่อนไขที่กำหนด โดยไม่มีเหตุการณ์ที่ผิดปกติหรือไม่ชัดเจน ผู้ตรวจสอบไม่จำเป็นต้องให้ความสนใจเพิ่มเติมในบันทึกนี้.', 'model': 'qwen2.5:7b-instruct', 'contract': '1.1', 'reviewed': {'status': 'active', 'reason': None, 'minutes': None, 'checks': [], 'events': {'monitor_started': 1}, 'evidence': [], 'policy': {'presenceminutes': 2, 'verifyminutes': 10, '

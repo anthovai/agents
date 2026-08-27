@@ -1,10 +1,15 @@
-// ActiveLiveness — enrolment and verification by performing a randomised
-// sequence of head poses, in the style of ThaiID and other government apps.
+// ActiveLiveness — enrolment by performing a randomised sequence of head
+// poses, in the style of ThaiID and other government apps.
 //
 // Ported from face-re/app/static/active-liveness.js. The challenge logic is
-// unchanged; what changed is that /analyze, /embed and /verify now go through
-// the plugin's web services, and the human-facing strings come from Moodle's
+// unchanged; what changed is that /analyze and /embed now go through the
+// plugin's web services, and the human-facing strings come from Moodle's
 // language packs instead of being hard-coded Thai.
+//
+// Enrolment only. The prototype also verified through a pose challenge, but
+// in the plugin verification is the periodic silent check in
+// attention_monitor — nothing ever ran this in verify mode, and a mode that
+// nothing exercises is a mode that quietly rots.
 //
 // Pose convention, on the raw frame sent to the server:
 //   turning to the subject's own left  -> yaw positive
@@ -16,15 +21,10 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
     /**
      * @param {Object} opts
      * @param {Function} opts.getSnapshot returns a Promise<Blob> of a raw frame
-     * @param {String} [opts.mode] 'enrol' (default) or 'verify'
-     * @param {Number} [opts.contextid] required when mode is 'verify'
      * @param {Function} [opts.onProgress] receives progress objects for the UI
      */
     var ActiveLiveness = function(opts) {
         this.getSnapshot = opts.getSnapshot;
-        this.mode = opts.mode || 'enrol';
-        this.contextid = opts.contextid || 0;
-        this.attemptid = opts.attemptid || 0;
         this.onProgress = opts.onProgress || function() {};
 
         this.yawThreshold = opts.yawThreshold === undefined ? 22 : opts.yawThreshold;
@@ -193,7 +193,7 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
         return runStep(0);
     };
 
-    /** Every pose passed: enrol or verify using the straight-ahead frame. */
+    /** Every pose passed: enrol using the straight-ahead frame. */
     ActiveLiveness.prototype._finish = function(centerBlob, record, startedAt) {
         var self = this;
         var challenge = {
@@ -205,17 +205,6 @@ define(['local_kaiproctor/api', 'core/str'], function(Api, Str) {
         var withBlob = centerBlob ? Promise.resolve(centerBlob) : this.getSnapshot();
 
         return withBlob.then(function(blob) {
-            if (self.mode === 'verify') {
-                return Api.verify(self.contextid, blob, self.attemptid, true)
-                    .then(function(response) {
-                        self.onProgress({phase: 'done', ok: response.ok});
-                        return {
-                            ok: response.ok && response.decision === 'pass',
-                            result: response,
-                            challenge: challenge
-                        };
-                    });
-            }
             return Api.enrolFace(blob, challenge).then(function(response) {
                 self.onProgress({phase: 'done', ok: response.ok});
                 return {ok: response.ok, result: response, challenge: challenge};
