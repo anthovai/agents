@@ -103,8 +103,18 @@ echo "domain: $DOMAIN"
 # A domain that does not point here yet is the most common way this ends
 # badly: Caddy asks Let's Encrypt for a certificate immediately, fails, and
 # Let's Encrypt allows five such failures per domain per week.
-if command -v dig >/dev/null 2>&1 && [ "${DOMAIN#:}" = "$DOMAIN" ]; then
-    RESOLVED="$(dig +short "$DOMAIN" | tail -1)"
+# getent as well as dig: a fresh Ubuntu has no dnsutils, and skipping the
+# check on the machines least likely to be set up correctly is backwards.
+resolve() {
+    if command -v dig >/dev/null 2>&1; then
+        dig +short "$1" | tail -1
+    else
+        getent hosts "$1" 2>/dev/null | head -1 | awk '{print $1}'
+    fi
+}
+
+if [ "${DOMAIN#:}" = "$DOMAIN" ]; then
+    RESOLVED="$(resolve "$DOMAIN")"
     MINE="$(curl -fsS --max-time 10 https://api.ipify.org 2>/dev/null || echo '')"
     if [ -n "$RESOLVED" ] && [ -n "$MINE" ] && [ "$RESOLVED" != "$MINE" ]; then
         die "$DOMAIN resolves to $RESOLVED but this droplet is $MINE.
