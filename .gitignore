@@ -41,3 +41,6 @@ ai-service/reports/
 
 # Holds the OpenAI key and both service keys.
 deploy/digitalocean/.env
+
+# Real keys for the running deployment. Never committed.
+handoff/
