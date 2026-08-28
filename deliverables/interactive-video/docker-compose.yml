@@ -1,0 +1,35 @@
+# The interactive video service on its own.
+#
+# The port is published to loopback only. This service holds the correct
+# answers to everything it serves, and the network that can reach it is part
+# of its access control rather than an afterthought behind the keys.
+
+services:
+  video:
+    build:
+      context: .
+    environment:
+      # Two keys, two audiences. The player key fetches timelines (with the
+      # answers stripped) and submits answers; the admin key writes the
+      # timelines and reads everyone's results. A leak of the first must not
+      # hand over the marking scheme, which is why they are separate.
+      VIDEO_API_KEY: ${VIDEO_API_KEY:-change-me}
+      VIDEO_ADMIN_KEY: ${VIDEO_ADMIN_KEY:-change-me-too}
+      VIDEO_RATE_PER_MINUTE: ${VIDEO_RATE_PER_MINUTE:-300}
+      VIDEO_RATE_BURST: ${VIDEO_RATE_BURST:-100}
+    volumes:
+      # A named volume rather than a bind mount, so that `docker compose down`
+      # cannot take the answers with it — only `down -v` can.
+      - video-data:/data
+    ports:
+      - "127.0.0.1:${VIDEO_PORT:-9300}:9300"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://localhost:9300/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  video-data:

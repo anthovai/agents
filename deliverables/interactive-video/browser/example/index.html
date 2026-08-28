@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive video — ตัวอย่าง</title>
+<link rel="stylesheet" href="../player.css">
+<style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif;
+           max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
+    .note { background: #fff8e1; border-left: 4px solid #f0b429;
+            padding: 0.75rem 1rem; border-radius: 4px; }
+    #log { background: #f4f4f5; border-radius: 8px; padding: 0.75rem 1rem;
+           font-family: ui-monospace, monospace; font-size: 0.8rem;
+           max-height: 220px; overflow: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>Interactive video — ตัวอย่าง</h1>
+
+<p class="note">
+  ตัวอย่างนี้ <strong>ไม่เรียกเซิร์ฟเวอร์จริง</strong> — ใช้ api ปลอมที่ตรวจคำตอบในหน้านี้เอง
+  เพื่อให้เห็นพฤติกรรมของตัวเล่นโดยไม่ต้องมี backend<br>
+  <strong>ตอนใช้งานจริงห้ามทำแบบนี้</strong> เพราะเฉลยจะอยู่ในหน้าเว็บ ให้ใช้
+  <code>InteractiveVideo.createApi({baseUrl: '/api/video'})</code> ซึ่งยิงไป backend ของคุณ
+  แล้วให้ backend เรียกบริการนี้อีกที (ดู <code>src/api.js</code>)
+</p>
+
+<p>
+  วิดีโอทดสอบมีคำถาม 3 จุด — <strong>วินาทีที่ 3</strong> (ข้อความ),
+  <strong>วินาทีที่ 6</strong> (เลือกข้อเดียว) และ <strong>วินาทีที่ 10</strong> (พิมพ์ตอบ)
+  ลองกดเล่นแล้วดูว่ามันหยุดเองตรงจุดไหน และลองกดถอยหลังแล้วเล่นข้ามดู
+</p>
+
+<div id="player"></div>
+
+<h2>สิ่งที่เกิดขึ้น</h2>
+<div id="log">ยังไม่เริ่ม</div>
+
+<script src="../src/backends.js"></script>
+<script src="../src/strings.js"></script>
+<script src="../src/api.js"></script>
+<script src="../src/player.js"></script>
+<script>
+var logEl = document.getElementById('log');
+var lines = [];
+function show(text) {
+    lines.push(new Date().toLocaleTimeString() + '  ' + text);
+    logEl.textContent = lines.slice(-30).join('\n');
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+// A public-domain test pattern, so the page works with no assets of its own.
+var SOURCE = 'https://upload.wikimedia.org/wikipedia/commons/transcoded/c/c0/Big_Buck_Bunny_4K.webm/Big_Buck_Bunny_4K.webm.360p.vp9.webm';
+
+// The timeline as the SERVER would send it: no correct answers in it.
+var TIMELINE = [
+    {id: 'i1', at: 3, type: 'info',
+     text: 'บทเรียนนี้จะหยุดถามเป็นระยะ ตอบให้ถูกจึงจะดูต่อได้'},
+    {id: 'q1', at: 6, type: 'choice', text: 'สีใดหมายถึงอันตราย',
+     choices: ['เขียว', 'แดง', 'ฟ้า']},
+    {id: 'q2', at: 10, type: 'shorttext',
+     text: 'อุปกรณ์ป้องกันศีรษะเรียกว่าอะไร', choices: []}
+];
+
+// A stand-in for your backend. The marking is here ONLY so the example runs
+// with nothing behind it; in production this lives on the server, which is
+// the entire reason the real timeline arrives without answers.
+var ANSWERS = {q1: [1], q2: ['หมวกนิรภัย', 'helmet']};
+var FEEDBACK = {q1: 'แดงคือหยุด', q2: ''};
+var answered = {};
+
+var fakeApi = {
+    load: function () {
+        return Promise.resolve({
+            ok: true,
+            video: {id: 'demo', provider: 'file', source: SOURCE,
+                    must_answer: true, allow_retry: true},
+            timeline: TIMELINE,
+            answered: [],
+            resume_at: 0
+        });
+    },
+    answer: function (itemId, response) {
+        var item = TIMELINE.filter(function (i) { return i.id === itemId; })[0];
+        var correct = true;
+        if (item.type === 'choice') {
+            correct = JSON.stringify(ANSWERS[itemId]) === response;
+        } else if (item.type === 'shorttext') {
+            var typed = response.trim().toLowerCase().replace(/\s+/g, ' ');
+            correct = ANSWERS[itemId].indexOf(typed) !== -1;
+        }
+        var first = !answered[itemId];
+        answered[itemId] = true;
+        var mayRetry = !correct && first;
+        show('answer  ' + itemId + '  ' + (correct ? 'ถูก' : 'ผิด'));
+        return Promise.resolve({
+            ok: true, correct: correct, may_retry: mayRetry,
+            // Withheld while a retry is on offer — exactly what the real
+            // server does, and why the player can display whatever arrives.
+            answers: (correct || mayRetry) ? [] : (item.type === 'shorttext'
+                ? ANSWERS[itemId]
+                : ANSWERS[itemId].map(function (i) { return item.choices[i]; })),
+            feedback: FEEDBACK[itemId] || ''
+        });
+    },
+    progress: function (seconds) {
+        show('progress ' + seconds.toFixed(1) + 's');
+        return Promise.resolve({ok: true});
+    },
+    beacon: function () { return false; }
+};
+
+new InteractiveVideo.Player({
+    mount: document.getElementById('player'),
+    api: fakeApi,
+    strings: InteractiveVideo.strings.th,
+    onAnswer: function (item, result) {
+        show('  → ' + item.id + ' บันทึกแล้ว (' +
+             (result.correct ? 'correct' : 'wrong') + ')');
+    },
+    onFinished: function () { show('จบวิดีโอ'); }
+});
+show('พร้อมแล้ว — กดเล่น');
+</script>
+</body>
+</html>

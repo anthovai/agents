@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env
+
+# The database: answers and progress belong to a deployment, not a repository.
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

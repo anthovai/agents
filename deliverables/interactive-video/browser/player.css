@@ -1,0 +1,199 @@
+/* Styles for the player, its question panel and its controls.
+
+   A stylesheet rather than inline styles so you can restyle any of it to
+   match your own theme without editing the module that draws it. Nothing here
+   is load-bearing except the two position rules on .iv-stage and .iv-panel —
+   the panel has to sit over the video, and it can only do that if the stage
+   is a positioned ancestor. */
+
+.iv-root {
+    --iv-accent: #2563eb;
+    --iv-right: #15803d;
+    --iv-wrong: #b91c1c;
+    --iv-ink: #f8fafc;
+    font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif;
+    max-width: 900px;
+}
+
+.iv-stage {
+    position: relative;              /* load-bearing: the panel sits over this */
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+}
+
+.iv-video,
+.iv-frame {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: 0;
+}
+
+.iv-frame:empty {
+    display: none;
+}
+
+/* A transparent sheet over the iframe providers.
+   YouTube and Vimeo will both happily let a viewer seek and resume from
+   inside their own iframe, where nothing in this library can intervene — and
+   "the video does not continue past an unanswered question" would stop being
+   true. Asking them to hide their controls is not enough: whether the request
+   is honoured depends on the account the video sits in. */
+.iv-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+}
+
+.iv-panel {
+    position: absolute;              /* load-bearing */
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    background: rgba(4, 8, 18, 0.92);
+    color: var(--iv-ink);
+    overflow-y: auto;
+}
+
+.iv-question {
+    font-size: 1.15rem;
+    font-weight: 700;
+    max-width: 46ch;
+    margin: 0;
+}
+
+.iv-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: min(100%, 30rem);
+    text-align: start;
+}
+
+.iv-choice,
+.iv-check {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid rgba(248, 250, 252, 0.35);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.iv-choice:hover:not(:disabled),
+.iv-check:hover {
+    border-color: var(--iv-accent);
+    background: rgba(37, 99, 235, 0.15);
+}
+
+.iv-choice:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.iv-input {
+    width: min(100%, 24rem);
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid rgba(248, 250, 252, 0.35);
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+    font: inherit;
+}
+
+.iv-verdict {
+    font-weight: 700;
+    margin: 0;
+}
+
+.iv-right { color: #4ade80; }
+.iv-wrong { color: #fca5a5; }
+
+.iv-feedback {
+    margin: 0;
+    max-width: 46ch;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.iv-outcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ---------- controls ---------- */
+
+.iv-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0;
+}
+
+.iv-btn {
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, 0.25);
+    background: #fff;
+    color: #0f172a;
+    font: inherit;
+    cursor: pointer;
+}
+
+.iv-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.iv-btn-primary {
+    background: var(--iv-accent);
+    border-color: var(--iv-accent);
+    color: #fff;
+}
+
+/* Not a seek bar, and deliberately not clickable.
+   Dragging ahead is dragging past questions; the only way forward is to
+   watch, and the only way back is the button that steps back ten seconds. */
+.iv-progress {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(15, 23, 42, 0.15);
+    overflow: hidden;
+}
+
+.iv-progress-fill {
+    height: 100%;
+    width: 0;
+    background: var(--iv-accent);
+    transition: width 0.25s linear;
+}
+
+.iv-clock {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+    opacity: 0.75;
+    min-width: 3.5rem;
+    text-align: end;
+}
+
+.iv-problem {
+    margin: 0.25rem 0 0;
+    color: var(--iv-wrong);
+    font-size: 0.9rem;
+}
