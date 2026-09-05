@@ -27,14 +27,40 @@ import os
 from fastapi import Depends, FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import (agent, auth, config, guard, llm, memory, prompts, scope,
-               store as store_mod)
+from . import (agent, auth, config, guard, learner_prompts, learner_scope,
+               llm, memory, prompts, scope, store as store_mod)
 
 app = FastAPI(title="Indorama LMS system assistant", version="1.0.0")
 
 _store: store_mod.Store | None = None
 _vocabulary: set[str] = set()
 _chats: memory.Store | None = None
+
+# The learner catalogue, opened separately and never mixed with the one above.
+# Its corpus text is held in memory because the scope gate tests every question
+# against it — see app/learner_scope, which cannot use a vocabulary because
+# Thai has no word boundaries to build one from.
+_learner: store_mod.Store | None = None
+_learner_corpus: str = ""
+
+
+def _open_learner() -> store_mod.Store | None:
+    """The learner index, or None when this deployment has not been given one.
+
+    Absent rather than empty: a deployment that only answers developer
+    questions should say the learner endpoints are not configured, not answer
+    every catalogue question with "nothing matched" and leave somebody
+    wondering which of the two it meant.
+    """
+    global _learner, _learner_corpus
+    if not config.LEARNER_INDEX_PATH:
+        return None
+    if _learner is None:
+        if not os.path.exists(config.LEARNER_INDEX_PATH):
+            return None
+        _learner = store_mod.Store(config.LEARNER_INDEX_PATH)
+        _learner_corpus = learner_scope.corpus_text(_learner)
+    return _learner
 
 
 def _memory() -> memory.Store:
@@ -298,6 +324,96 @@ def chat(body: dict) -> JSONResponse | dict:
                  note=f"อ้างอิง: {note}" if note else "")
 
     return {"ok": True, "conversation_id": conversation_id, **result}
+
+
+# --------------------------------------------------------------------------
+# The learner assistant
+# --------------------------------------------------------------------------
+#
+# A different corpus, a different audience, and deliberately a different set
+# of endpoints rather than a flag on the ones above. The export these answers
+# come from forbids showing a learner any controller, API or database name,
+# and the developer index is nothing else — so the separation is enforced by
+# there being no code path from one to the other, rather than by a parameter
+# somebody can pass wrongly.
+#
+# No tools here, unlike /chat. The catalogue is small and flat: retrieval puts
+# the right two or three courses in front of the model, and a tool loop would
+# add latency and a way to go wrong in exchange for nothing.
+
+
+@app.get("/learner/health")
+def learner_health() -> dict:
+    store = _open_learner()
+    if store is None:
+        return {"ok": False, "code": "not_configured",
+                "detail": "this deployment has no learner index; set "
+                          "RAG_LEARNER_INDEX_PATH"}
+    return {"ok": True, "chunks": store.count(), "model": config.LLM_MODEL,
+            "build": store.meta()}
+
+
+@app.post("/learner/ask", response_model=None,
+          dependencies=[Depends(auth.require_key_and_allowance)])
+def learner_ask(body: dict) -> JSONResponse | dict:
+    """One question about the course catalogue.
+
+    Stateless. A learner asking which course to take is not usually holding a
+    conversation, and the answer to "is there a first-aid course" does not
+    depend on what they asked before.
+    """
+    question = (body.get("question") or body.get("message") or "").strip()
+    if not question:
+        return _failed("empty_question", "no question was supplied", 422)
+
+    store = _open_learner()
+    if store is None:
+        return _failed("not_configured",
+                       "this deployment has no learner index", 503)
+
+    # Refused before retrieval and before any model call, for the reason in
+    # app/learner_scope: once material comes back there is nothing left to
+    # refuse on, and four course descriptions plus a question about the
+    # weather still produces something shaped like an answer.
+    assessment = learner_scope.assess(question, _learner_corpus)
+    if not assessment.in_scope:
+        return _failed("off_topic",
+                       "ผู้ช่วยนี้ตอบเฉพาะเรื่องหลักสูตรและการใช้งานระบบเรียนรู้ "
+                       f"[{assessment.why()}]", 400)
+
+    rows = store.db.execute(
+        """SELECT c.chunk_id, c.kind, c.ref, c.title, c.text,
+                  bm25(chunk_fts, 10.0, 3.0) AS score
+           FROM chunk_fts JOIN chunk c ON c.rowid = chunk_fts.rowid
+           WHERE chunk_fts MATCH ? ORDER BY score LIMIT ?""",
+        (learner_scope.query(assessment), config.CONTEXT_CHUNKS)).fetchall()
+    hits = [dict(r) for r in rows]
+    if not hits:
+        return _failed("no_material",
+                       "คำถามเกี่ยวกับระบบเรียนรู้ แต่ไม่พบหลักสูตรหรือหน้าที่ตรง "
+                       f"[{assessment.why()}]", 404)
+
+    material = "\n\n".join(f"--- {h['title']} ---\n{h['text']}" for h in hits)
+    user = f"คำถาม:\n{question}\n\nข้อมูลจากคลังหลักสูตร:\n{material}"
+
+    budget = llm.Budget(config.TIMEOUT)
+    try:
+        content, model = llm.ask(learner_prompts.LEARNER, user, budget.remaining())
+    except llm.LlmError as exc:
+        return _failed(exc.code, exc.message,
+                       504 if exc.code == "llm_timeout" else 502)
+
+    return {
+        "ok": True,
+        "answer": content,
+        "model": model,
+        # The chunks that were actually put in front of the model, so a
+        # reader can check the answer against the catalogue rather than
+        # against their memory of it.
+        "sources": [h["ref"] for h in hits],
+        "lists": [{"ref": h["ref"], "title": h["title"], "text": h["text"],
+                   "kind": h["kind"]} for h in hits],
+    }
 
 
 # --------------------------------------------------------------------------

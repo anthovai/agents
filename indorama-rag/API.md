@@ -186,6 +186,65 @@ curl -s localhost:9200/search \
 
 ---
 
+## ผู้ช่วยสำหรับ "ผู้เรียน" — `/learner/*`
+
+คนละ endpoint คนละคลังข้อมูลกับด้านบน และตั้งใจให้แยกกันจริง ไม่ใช่แค่ส่ง flag
+ต่างกัน
+
+คลังของ `/chat` และ `/ask` คือ schema, ชื่อตาราง, ชื่อ controller และ path
+ของซอร์สโค้ด ส่วน export ของฝั่งผู้เรียนเขียนกติกาของตัวเองไว้ว่า
+**ห้ามแสดงชื่อ controller, API, ตาราง หรือ path ให้ผู้เรียนเห็น** — index
+เดียวถือทั้งสองอย่างแล้วรักษากติกานั้นไม่ได้ สองอันแยกกันทำผิดไม่ได้
+
+`/learner/ask` **ไม่มี** tool loop และ**ไม่มี**บทสนทนา คำถามเดียว คำตอบเดียว
+คนที่ถามว่า "มีหลักสูตรปฐมพยาบาลไหม" ไม่ได้กำลังคุยต่อเนื่อง
+
+### `POST /learner/ask`
+
+```bash
+curl -X POST https://HOST/agent/learner/ask   -H 'X-Agent-Key: <คีย์ของคุณ>'   -H 'Content-Type: application/json'   -d '{"question": "มีหลักสูตรเกี่ยวกับการช่วยชีวิตฉุกเฉินไหม"}'
+```
+
+```json
+{
+  "ok": true,
+  "answer": "มีครับ หลักสูตร ... ใช้เวลา ... ดูรายละเอียดได้ที่ https://...",
+  "model": "gpt-5-mini",
+  "sources": ["vajira-basic-life-support-2026", "digest_courses"],
+  "lists": [{"ref": "...", "title": "...", "kind": "course", "text": "..."}]
+}
+```
+
+| field | หมายถึง |
+|---|---|
+| `question` | คำถาม (รับ `message` ด้วย) — จำเป็น |
+| `sources` | alias ของหลักสูตร/หน้าที่ถูกป้อนให้โมเดลจริง |
+| `lists` | ตัวข้อความที่ป้อนให้โมเดล ตรวจคำตอบย้อนกลับได้ |
+
+**ไม่มี** `user_id` และ `conversation_id` โดยตั้งใจ — endpoint นี้ไม่เก็บอะไรเลย
+
+### สิ่งที่ endpoint นี้ตอบไม่ได้ และไม่ใช่บั๊ก
+
+- **"ฉันเรียนจบไปกี่หลักสูตรแล้ว" / "ฉันได้กี่คะแนน"** — export ไม่มีข้อมูล
+  รายบุคคลเลย (ไม่มี profile, ไม่มี enrollment, ไม่มีคะแนน) ผู้ช่วยจะบอกตรง ๆ
+  ว่าไม่มีข้อมูล แล้วชี้หน้าที่ผู้เรียนเปิดดูเองได้ ระบบฝั่งคุณคือฝ่ายที่รู้เรื่องนั้น
+  ไม่ใช่ผู้ช่วยตัวนี้
+- **ชื่อตาราง/API/โค้ด** — ถ้าอยากถามเรื่องพวกนี้ ใช้ `/chat` กับคีย์ของฝั่ง
+  developer
+- **คำถามนอกเรื่อง** เช่นดินฟ้าอากาศ ถูกปฏิเสธก่อนถึงโมเดลด้วย `off_topic`
+
+### `GET /learner/health` — ไม่ต้องใช้กุญแจ
+
+```json
+{"ok": true, "chunks": 109, "model": "gpt-5-mini", "build": {"source_sha256": "..."}}
+```
+
+`{"ok": false, "code": "not_configured"}` = deployment นี้ยังไม่ได้ใส่ index
+ฝั่งผู้เรียน (ตั้ง `RAG_LEARNER_INDEX_PATH`) ซึ่งไม่เหมือนกับ "ค้นไม่เจอ" —
+อย่างแรกแก้ที่ไฟล์ env อย่างหลังแก้ที่คำถาม
+
+---
+
 ## รหัสข้อผิดพลาด
 
 ทุกความผิดพลาดคือ `{"ok": false, "code": "...", "detail": "..."}`
@@ -203,6 +262,7 @@ curl -s localhost:9200/search \
 | `quota_exceeded` | 413 | `user_id` นั้นใช้พื้นที่เต็มโควตา | ให้ผู้ใช้ลบบทสนทนาเก่า |
 | `no_such_conversation` | 404 | ไม่มี `conversation_id` นี้ของ `user_id` นี้ | เริ่มบทใหม่ |
 | `rate_limited` | 429 | เรียกถี่เกินเพดานของกุญแจนี้ | รอตาม `Retry-After` แล้วค่อยยิงใหม่ |
+| `not_configured` | 503 | deployment นี้ไม่มี index ฝั่งผู้เรียน (`/learner/*` เท่านั้น) | ตั้ง `RAG_LEARNER_INDEX_PATH` แล้ว restart |
 | `not_confirmed` | 400 | `DELETE /conversations` ไม่ได้ส่ง `confirm` ให้ตรง | ส่ง `confirm` เท่ากับ `user_id` |
 
 `off_topic`, `no_material`, `ungrounded_answer` **ไม่ใช่บั๊ก** — เป็นการทำงานตามที่ออกแบบ

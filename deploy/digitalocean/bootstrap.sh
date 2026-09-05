@@ -37,16 +37,40 @@ say "2/7  Firewall"
 # Only three ways in. Everything else — including the two services — listens
 # on loopback and is reachable through the proxy or not at all.
 #
-# OpenSSH first and on its own line: enabling ufw without it locks this
-# session out of the machine, and the only way back is the provider's console.
-if command -v ufw >/dev/null 2>&1; then
+# THE FIREWALL IS ONLY TOUCHED IF IT IS ALREADY ON.
+#
+# An earlier version enabled it unconditionally, on the reasoning that a
+# droplet running this should have a firewall. It ran on a machine that had
+# ufw switched off and about a dozen other services on it — several of them
+# Node apps on host ports, reached by the reverse proxy from inside a
+# container. Enabling ufw cut that path, and a deploy that touched none of
+# those services took all of them down.
+#
+# Turning a firewall on is a change to what the whole machine allows, and it
+# is not a side effect a deploy script gets to have. If ufw is off, this says
+# so and moves on; if it is on, the three rules are added and nothing that
+# was already allowed is removed.
+if ! command -v ufw >/dev/null 2>&1; then
+    echo "ufw not installed — check the provider's cloud firewall instead"
+elif ufw status 2>/dev/null | head -1 | grep -qi inactive; then
+    echo "ufw is inactive — left that way"
+    echo "  To use it, turn it on yourself, and allow the docker bridge first:"
+    echo "    ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp"
+    echo "    ufw allow from 172.16.0.0/12   # containers reaching host ports"
+    echo "    ufw enable"
+else
+    # Already on, so rules are added rather than a policy being changed.
+    # OpenSSH first: a firewall enabled without it locks this session out,
+    # and the only way back is the provider's console.
     ufw allow OpenSSH >/dev/null
     ufw allow 80/tcp >/dev/null
     ufw allow 443/tcp >/dev/null
-    ufw --force enable >/dev/null
-    echo "ufw: $(ufw status | head -1)"
-else
-    echo "ufw not present — check the provider's cloud firewall instead"
+    # Anything in a container that talks to a service on the host goes
+    # through here. Without it a reverse proxy in a container cannot reach a
+    # process outside one, which is a common enough arrangement that leaving
+    # it out breaks machines quietly.
+    ufw allow from 172.16.0.0/12 >/dev/null
+    echo "ufw: $(ufw status | head -1) (rules added, nothing removed)"
 fi
 
 # --------------------------------------------------------------------------

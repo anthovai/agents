@@ -17,6 +17,16 @@ LLM_API_KEY = os.environ.get("RAG_LLM_API_KEY", "").strip()
 
 INDEX_PATH = os.environ.get("RAG_INDEX_PATH", "index.sqlite")
 
+# The learner catalogue, which is a second index rather than more rows in the
+# first one. The export it is built from says why in its own usage_rules:
+# learners must never be shown controller, API or database names, and the
+# first index is nothing else. One index cannot hold both and honour that;
+# two cannot fail to.
+#
+# Unset means the learner endpoints report that they are not configured, and
+# the developer ones carry on unaffected.
+LEARNER_INDEX_PATH = os.environ.get("RAG_LEARNER_INDEX_PATH", "").strip()
+
 # --------------------------------------------------------------------------
 # Access control
 # --------------------------------------------------------------------------

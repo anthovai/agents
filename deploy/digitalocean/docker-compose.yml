@@ -11,10 +11,16 @@
 #
 # PORTS
 #
-# Nothing but Caddy is published. The two services bind to loopback on the
-# droplet, so the only way in is through the proxy, and the only ports open to
-# the internet are 80 and 443 (plus SSH, which is the provider's firewall to
-# manage, not this file's).
+# Nothing here is published to the internet. Both services bind to loopback on
+# the droplet and are reached through a reverse proxy that is NOT in this file.
+#
+# It was, once. The first version shipped its own Caddy on 80 and 443, which is
+# right on a machine dedicated to this and wrong on the one it went to: that
+# droplet already runs about forty containers behind a Caddy of its own, and
+# the port bind failed. Failing was the good outcome — winning the port would
+# have taken every other site on the box down.
+#
+# See PROXY.md for the block to add to the existing proxy's config.
 #
 # The loopback ports are 18081 and 18082 rather than the 9000 and 9200 the
 # services default to. Both defaults are heavily used: 9000 belongs to MinIO,
@@ -26,33 +32,6 @@
 name: kai-services
 
 services:
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    environment:
-      # Caddy reads {$SITE_DOMAIN} from its own environment, not from the
-      # compose file's. Without this line the placeholder expands to nothing,
-      # the site block opens with a bare `{`, and Caddy reads the whole file
-      # as global options — reporting the first directive inside it as an
-      # unrecognised global option, which says nothing about the real cause.
-      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in deploy/digitalocean/.env}
-    ports:
-      # The only two ports open to the world. 80 is not optional: it is how
-      # Let's Encrypt answers its own challenge, and how a plain http:// link
-      # gets redirected instead of hanging.
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      # Certificates and account keys. Losing this volume means re-issuing on
-      # every restart, which Let's Encrypt rate-limits — five per week per
-      # domain, after which the site has no certificate until it expires.
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      - face
-      - agent
-
   face:
     build:
       context: ../../deliverables/face-recognition
@@ -106,6 +85,12 @@ services:
       RAG_LLM_MODEL: ${RAG_LLM_MODEL:-gpt-5-mini}
       RAG_LLM_API_KEY: ${RAG_LLM_API_KEY:?set RAG_LLM_API_KEY in deploy/digitalocean/.env}
       RAG_INDEX_PATH: /index/index.sqlite
+      # The learner catalogue, which is a second index in the same mounted
+      # directory rather than more rows in the first one — learners must never
+      # be shown the controller and table names the first index is made of.
+      # Unset, /learner/* reports that it is not configured and the developer
+      # endpoints carry on unaffected.
+      RAG_LEARNER_INDEX_PATH: ${RAG_LEARNER_INDEX_PATH:-/index/learner-index.sqlite}
       RAG_CHAT_DIR: /chats
       RAG_AGENT_TIMEOUT: ${RAG_AGENT_TIMEOUT:-300}
     volumes:
@@ -139,6 +124,4 @@ services:
           memory: 512M
 
 volumes:
-  caddy-data:
-  caddy-config:
   agent-chats:

@@ -3,13 +3,17 @@
 Face Recognition กับ Agent บน droplet เดียว หลัง reverse proxy ตัวเดียว
 เปิดสู่อินเทอร์เน็ตแค่ 443 (และ 22 สำหรับ SSH)
 
+**reverse proxy ไม่ได้อยู่ใน compose ชุดนี้** ทั้งสองบริการผูกกับ loopback
+เท่านั้น จะมีทางเข้าจากภายนอกได้ต้องอ่าน [PROXY.md](PROXY.md) ก่อน — มีสองทาง
+คือยก Caddy ของโฟลเดอร์นี้ขึ้นเอง หรือเกาะ proxy ที่เครื่องมีอยู่แล้ว
+
 ---
 
 ## แผนผัง port
 
 | บริการ | port เดิม | port บน droplet | เปิดสู่เน็ต |
 |---|---|---|---|
-| Caddy (reverse proxy) | — | **80, 443** | ✅ ทางเข้าเดียว |
+| reverse proxy (ดู PROXY.md) | — | **80, 443** | ✅ ทางเข้าเดียว |
 | Face Recognition | 9000 | `127.0.0.1:18081` | ❌ loopback |
 | Agent | 9200 | `127.0.0.1:18082` | ❌ loopback |
 
@@ -102,15 +106,18 @@ sh /opt/kai/deploy/digitalocean/bootstrap.sh
 
 ### 2. ชี้ DNS ก่อนเริ่ม
 
-สร้าง A record ชี้ `<domain>` มาที่ IP ของ droplet **แล้วรอให้ resolve จริงก่อน**
-Caddy จะขอใบรับรองทันทีที่สตาร์ต ถ้า DNS ยังไม่ตาม จะขอไม่ผ่าน และ
-Let's Encrypt จำกัดไว้ 5 ครั้งต่อสัปดาห์ต่อโดเมน
+จำเป็นเฉพาะเมื่อจะยก Caddy ของโฟลเดอร์นี้ขึ้นเอง (ทาง A ใน
+[PROXY.md](PROXY.md)) — สร้าง A record ชี้ `<domain>` มาที่ IP ของ droplet
+**แล้วรอให้ resolve จริงก่อน** Caddy ขอใบรับรองทันทีที่สตาร์ต ถ้า DNS ยังไม่ตาม
+คือขอไม่ผ่าน และ Let's Encrypt จำกัดไว้ 5 ครั้งต่อสัปดาห์ต่อโดเมน
 
 ```bash
 dig +short <domain>
 ```
 
 ต้องได้ IP ของ droplet ออกมาก่อนจึงไปขั้นถัดไป
+
+ยังไม่มีโดเมน ใช้ `<ip>.sslip.io` ไปก่อนได้สำหรับให้ลูกค้าทดลอง — ดู PROXY.md
 
 ### 3. ติดตั้ง Docker และ firewall
 
@@ -122,9 +129,19 @@ ssh root@<droplet-ip>
 curl -fsSL https://get.docker.com | sh
 ```
 
+firewall **เฉพาะเมื่อเครื่องนี้เป็นของงานนี้อย่างเดียว** การเปิด ufw
+คือการเปลี่ยนสิ่งที่ทั้งเครื่องยอมให้ผ่าน ไม่ใช่ผลข้างเคียงของการ deploy —
+บนเครื่องที่มีบริการอื่นอยู่ ให้ข้ามขั้นนี้ไป (`bootstrap.sh` ก็ข้ามให้เอง
+ถ้าพบว่า ufw ปิดอยู่)
+
 ```bash
-ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable
+ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp
+ufw allow from 172.16.0.0/12   # คอนเทนเนอร์ที่ต้องเรียก service บน host
+ufw enable
 ```
+
+บรรทัดที่สองสำคัญ ถ้าไม่มี proxy ที่อยู่ในคอนเทนเนอร์จะเรียกโปรเซสที่อยู่นอก
+คอนเทนเนอร์ไม่ได้ ซึ่งเคยทำให้เว็บที่ไม่เกี่ยวกับ deploy นี้ดับไปด้วย
 
 ### 4. เอาโค้ดขึ้น
 
@@ -148,6 +165,17 @@ Index ไม่ได้อยู่ใน repository เพราะเป็�
 ```bash
 scp indorama-rag/index.sqlite root@<droplet-ip>:/opt/kai/deploy/digitalocean/index/index.sqlite
 ```
+
+ถ้าจะเปิดผู้ช่วยฝั่ง**ผู้เรียน** (`/agent/learner/*`) ส่งอีกไฟล์ขึ้นไปด้วย
+เป็นคนละ index กันโดยตั้งใจ เพราะผู้เรียนต้องไม่เห็นชื่อตารางและ controller
+ที่ index ตัวแรกทำมาจากมันทั้งอัน
+
+```bash
+scp indorama-rag/learner-index.sqlite root@<droplet-ip>:/opt/kai/deploy/digitalocean/index/learner-index.sqlite
+```
+
+ไม่ส่งไฟล์นี้ก็ได้ — `/agent/learner/health` จะตอบว่า `not_configured`
+ส่วน endpoint ฝั่ง developer ทำงานตามปกติ
 
 ### 7. ตั้งค่า
 
@@ -175,6 +203,10 @@ curl -s https://<domain>/face/health
 
 ```bash
 curl -s https://<domain>/agent/health
+```
+
+```bash
+curl -s https://<domain>/agent/learner/health
 ```
 
 ทั้งคู่ต้องได้ `"ok": true` — `/face/health` ต้องมี `models_present` 4 ไฟล์

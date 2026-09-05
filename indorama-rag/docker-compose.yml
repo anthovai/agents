@@ -50,6 +50,12 @@ services:
       # retry loop and the bill. 0 switches the limit off.
       RAG_RATE_PER_MINUTE: ${RAG_RATE_PER_MINUTE:-20}
       RAG_RATE_BURST: ${RAG_RATE_BURST:-10}
+      # The learner catalogue, which is a second index in the same mounted
+      # directory rather than more rows in the first one — learners must never
+      # be shown the controller and table names the first index is made of.
+      # Unset, /learner/* reports that it is not configured and the developer
+      # endpoints carry on unaffected.
+      RAG_LEARNER_INDEX_PATH: ${RAG_LEARNER_INDEX_PATH:-/index/learner-index.sqlite}
       RAG_TIMEOUT: ${RAG_TIMEOUT:-90}
       RAG_CONTEXT_CHUNKS: ${RAG_CONTEXT_CHUNKS:-4}
     volumes:
@@ -85,3 +91,23 @@ services:
     command: ["python", "-m", "ingest.build", "/export.zip",
               "--index", "/index/index.sqlite",
               "--report", "/index/build-report.json"]
+
+  # Rebuilds the learner catalogue from the LMS knowledge export, then exits.
+  #
+  #     RAG_LEARNER_EXPORT=/path/to/lms-agent-knowledge.json   #       docker compose run --rm build-learner-index
+  #
+  # A different builder rather than a flag on the one above, because the two
+  # exports are not interchangeable: ingest/learner.py refuses anything whose
+  # audience is not "learner", and refuses an export that has started carrying
+  # enrolment or profile records.
+  build-learner-index:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["tools"]
+    volumes:
+      - ${RAG_INDEX_DIR:-./index}:/index
+      - ${RAG_LEARNER_EXPORT:-./learner-export.json}:/export.json:ro
+    command: ["python", "-m", "ingest.learner", "/export.json",
+              "--index", "/index/learner-index.sqlite",
+              "--report", "/index/learner-build-report.json"]
