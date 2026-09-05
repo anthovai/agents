@@ -3,6 +3,12 @@
 *.zip
 index.sqlite
 build-report.json
+# The learner index and its report, built from the LMS knowledge export.
+# Same reasoning: an index is a build artefact of one export, and this one
+# carries a customer's whole course catalogue.
+learner-index.sqlite
+learner-build-report.json
+*.json.bak
 __pycache__/
 .pytest_cache/
 .venv/

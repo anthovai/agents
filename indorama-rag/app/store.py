@@ -81,8 +81,25 @@ class Store:
             self._local.conn = conn
         return conn
 
-    def create(self) -> None:
-        self.db.executescript(_SCHEMA)
+    def create(self, tokenizer: str = _TOKENIZER) -> None:
+        """Build an empty index.
+
+        The tokenizer is a parameter because the two corpora this code serves
+        need different ones, and the difference is not a preference.
+
+        ``unicode61`` — the default, and right for the developer corpus, which
+        is identifiers: ``tbl_contentEnroll`` must be one token or a search for
+        it matches every table whose name starts the same way.
+
+        ``trigram`` — right for a corpus written in Thai. Thai is written
+        without spaces, so unicode61 makes a whole sentence into a single
+        token: measured on one course title, "การช่วยชีวิต" at the start could
+        be found by prefix and "ฉุกเฉิน" in the middle could not be found at
+        all, by any query. A learner asking about emergencies would be told
+        the course does not exist. Trigrams match substrings, which is what a
+        language with no word boundaries needs.
+        """
+        self.db.executescript(_SCHEMA.replace(_TOKENIZER, tokenizer))
 
     def add(self, chunks: list[dict]) -> None:
         for chunk in chunks:
