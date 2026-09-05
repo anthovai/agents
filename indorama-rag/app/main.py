@@ -371,15 +371,30 @@ def learner_ask(body: dict) -> JSONResponse | dict:
         return _failed("not_configured",
                        "this deployment has no learner index", 503)
 
+    # A greeting is neither a catalogue question nor the weather, and it is
+    # very often the first thing anybody types. Answered here, from a fixed
+    # string: no retrieval, no model call, and no HTTP 400 in the first
+    # exchange somebody has with the assistant.
+    if learner_scope.is_greeting(question):
+        return {"ok": True, "answer": learner_prompts.GREETING,
+                "model": "", "sources": [], "lists": []}
+
     # Refused before retrieval and before any model call, for the reason in
     # app/learner_scope: once material comes back there is nothing left to
     # refuse on, and four course descriptions plus a question about the
     # weather still produces something shaped like an answer.
     assessment = learner_scope.assess(question, _learner_corpus)
     if not assessment.in_scope:
-        return _failed("off_topic",
-                       "ผู้ช่วยนี้ตอบเฉพาะเรื่องหลักสูตรและการใช้งานระบบเรียนรู้ "
-                       f"[{assessment.why()}]", 400)
+        # `detail` is what a learner may be shown; `why` is for whoever is
+        # reading a log. Putting the measurement in the sentence meant a
+        # learner asking about the weather was told how many characters of
+        # their message matched the corpus.
+        return JSONResponse(
+            {"ok": False, "code": "off_topic",
+             "detail": "ผู้ช่วยนี้ตอบเฉพาะเรื่องหลักสูตรและการใช้งาน"
+                       "ระบบเรียนรู้ ลองถามชื่อหลักสูตรหรือหัวข้อที่สนใจดูครับ",
+             "why": assessment.why()},
+            status_code=400)
 
     rows = store.db.execute(
         """SELECT c.chunk_id, c.kind, c.ref, c.title, c.text,
@@ -389,9 +404,12 @@ def learner_ask(body: dict) -> JSONResponse | dict:
         (learner_scope.query(assessment), config.CONTEXT_CHUNKS)).fetchall()
     hits = [dict(r) for r in rows]
     if not hits:
-        return _failed("no_material",
-                       "คำถามเกี่ยวกับระบบเรียนรู้ แต่ไม่พบหลักสูตรหรือหน้าที่ตรง "
-                       f"[{assessment.why()}]", 404)
+        return JSONResponse(
+            {"ok": False, "code": "no_material",
+             "detail": "ไม่พบหลักสูตรหรือหน้าที่ตรงกับที่ถาม "
+                       "ลองระบุชื่อหลักสูตรหรือหัวข้อให้ชัดขึ้นอีกนิดครับ",
+             "why": assessment.why()},
+            status_code=404)
 
     material = "\n\n".join(f"--- {h['title']} ---\n{h['text']}" for h in hits)
     user = f"คำถาม:\n{question}\n\nข้อมูลจากคลังหลักสูตร:\n{material}"

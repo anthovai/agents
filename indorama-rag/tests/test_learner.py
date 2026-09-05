@@ -137,7 +137,6 @@ def test_a_how_many_question_reaches_the_complete_list(index, corpus):
 @pytest.mark.parametrize("question", [
     "เมืองหลวงของฝรั่งเศสคืออะไร",
     "วันนี้อากาศเป็นยังไง",
-    "สวัสดีครับ สบายดีไหม",
     "2+2 เท่ากับเท่าไหร่",
 ])
 def test_an_off_topic_question_never_reaches_retrieval(question, corpus):
@@ -325,3 +324,58 @@ def test_a_key_is_required_when_one_is_configured(client, monkeypatch):
                           json={"question": "มีหลักสูตรเรื่องฉุกเฉินไหม"},
                           headers={"X-Agent-Key": "s3cret"})
     assert allowed.status_code == 200
+
+
+# --------------------------------------------------------------------------
+# Greetings
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("question", [
+    "สวัสดีครับ", "สวัสดีค่ะ", "หวัดดี", "hello", "Hi!", "ขอบคุณครับ",
+    "คุณคือใคร", "ช่วยอะไรได้บ้าง",
+])
+def test_an_opening_is_a_greeting(question):
+    assert learner_scope.is_greeting(question)
+
+
+@pytest.mark.parametrize("question", [
+    "สวัสดีครับ มีหลักสูตรเรื่องความปลอดภัยไหม",
+    "hello, is there a first aid course",
+    "มีหลักสูตรเรื่องฉุกเฉินไหม",
+])
+def test_a_greeting_with_a_question_after_it_is_a_question(question):
+    """The distinction that matters.
+
+    Somebody who says hello and then asks something has asked something, and
+    answering the hello and dropping the question is the rudest possible
+    reading of it.
+    """
+    assert not learner_scope.is_greeting(question)
+
+
+def test_a_greeting_is_answered_without_a_model_call(client):
+    """A learner's first message is very often "สวัสดีครับ".
+
+    Before this it was measured against the corpus, found to share four
+    characters with it, and refused with HTTP 400 — which is the assistant
+    looking broken in the first exchange anybody has with it.
+    """
+    response = client.post("/learner/ask", json={"question": "สวัสดีครับ"})
+    assert response.status_code == 200
+    body = response.json()
+    assert "หลักสูตร" in body["answer"]
+    assert not client.asked, "a fixed reply should not cost a model call"
+
+
+def test_a_refusal_does_not_show_the_learner_the_measurement(client):
+    """`why` is for whoever reads the log; `detail` is for the person.
+
+    The gate's reasoning is a character count against a corpus. Told that,
+    a learner learns nothing they can act on and quite a lot about how the
+    thing is built.
+    """
+    body = client.post("/learner/ask",
+                       json={"question": "เมืองหลวงของฝรั่งเศสคืออะไร"}).json()
+    assert "ตัวอักษร" not in body["detail"]
+    assert "ตัวอักษร" in body["why"]

@@ -130,6 +130,35 @@ def assess(question: str, corpus: str) -> Assessment:
     return Assessment(in_scope=True, longest_match=match, terms=grams(question))
 
 
+# Openings and pleasantries, which are not questions about the catalogue and
+# are also not the weather. A learner's first message is very often one of
+# these, and a greeting that comes back as HTTP 400 makes the assistant look
+# broken in the first exchange somebody has with it.
+#
+# Matched against the message as a whole rather than searched for inside it,
+# so "สวัสดีครับ" is a greeting and "สวัสดีครับ มีหลักสูตรอะไรบ้าง" is a
+# question, which is the distinction that matters. No model call: the reply is
+# fixed, and there is nothing here worth spending a call or a chunk on.
+_GREETINGS = (
+    "สวัสดี", "หวัดดี", "ดีครับ", "ดีค่ะ", "hello", "hi", "hey",
+    "ขอบคุณ", "ขอบใจ", "thanks", "thank you", "โอเค", "ok", "okay",
+    "ทดสอบ", "test", "ช่วยอะไรได้บ้าง", "ทำอะไรได้บ้าง", "คุณคือใคร",
+    "help", "สวัสดีตอนเช้า",
+)
+
+
+def is_greeting(question: str) -> bool:
+    """True when the whole message is an opening, a thank-you or a "what are
+    you for" — not when it merely starts with one.
+
+    :param question: as typed
+    """
+    stripped = _WORDISH.sub("", question.lower())
+    if len(stripped) > 24:
+        return False
+    return any(stripped.startswith(_WORDISH.sub("", g)) for g in _GREETINGS)
+
+
 def corpus_text(store) -> str:
     """One lowercased string of everything indexed, for the gate to test against.
 

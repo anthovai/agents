@@ -73,3 +73,16 @@ How to answer well:
   - Keep it short. Two or three sentences and a link is a good answer; a
     restatement of the whole extract is not.
 """.strip()
+
+# What a greeting gets. Fixed rather than generated: it costs nothing, it
+# cannot drift, and it is the one message where saying what the assistant is
+# for is more useful than anything a model would compose.
+GREETING = (
+    "สวัสดีครับ ผมเป็นผู้ช่วยเรื่องหลักสูตรและการใช้งานระบบเรียนรู้\n\n"
+    "ถามได้เลยครับ เช่น\n"
+    "  • มีหลักสูตรเรื่องอะไรบ้าง / มีหลักสูตรเรื่อง<หัวข้อ>ไหม\n"
+    "  • หลักสูตร<ชื่อ>ใช้เวลาเรียนเท่าไหร่\n"
+    "  • ดูหลักสูตรที่ได้รับมอบหมายได้ที่ไหน\n\n"
+    "ส่วนความก้าวหน้าหรือคะแนนของแต่ละคน ผมดูให้ไม่ได้ครับ "
+    "ต้องดูในหน้าของระบบเอง"
+)
